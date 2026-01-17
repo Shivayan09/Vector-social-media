@@ -17,6 +17,9 @@ export default function RegistrationForm() {
 
             <p className="font-semibold">Full Name</p>
             <input type="text" placeholder="demousername09" className="outline-none h-10 bg-black/5 border dark:border-white/10 w-full rounded-md p-3 my-2 text-[0.95rem]"/>
+            
+            <p className="font-semibold">Phone number</p>
+            <input type="number" placeholder="+0 00000 00000" className="outline-none h-10 bg-black/5 border dark:border-white/10 w-full rounded-md p-3 my-2 text-[0.95rem]"/>
 
             <p className="font-semibold">Email</p>
             <input type="email" placeholder="demo9@gmail.com" className="outline-none h-10 bg-black/5 border dark:border-white/10 w-full rounded-md p-3 my-2 text-[0.95rem]"/>

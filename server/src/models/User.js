@@ -2,7 +2,15 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
-    fullName: {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 2,
+      maxlength: 100,
+    },
+
+    surname: {
       type: String,
       required: true,
       trim: true,
@@ -12,12 +20,27 @@ const userSchema = new mongoose.Schema(
 
     username: {
       type: String,
-      required: true,
       unique: true,
       lowercase: true,
       trim: true,
       minlength: 3,
       maxlength: 30,
+      default: null,
+    },
+
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+
+    password: {
+      type: String,
+      required: true,
+      minlength: 6,
+      select: false,
     },
 
     description: {
@@ -34,25 +57,10 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
 
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      trim: true,
-    },
-
     phoneNumber: {
       type: String,
       trim: true,
       default: "",
-    },
-
-    password: {
-      type: String,
-      required: true,
-      minlength: 6, 
-      select: false,
     },
 
     followers: [
@@ -68,6 +76,16 @@ const userSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+
+    isProfileComplete: {
+      type: Boolean,
+      default: false,
+    },
+
+    signupStep: {
+      type: Number,
+      default: 1,
+    },
   },
   {
     timestamps: true,

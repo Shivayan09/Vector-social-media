@@ -1,7 +1,6 @@
 "use client";
 import { Home, Search, Bell, User, Plus, TrendingUp, UserPlus, Compass, Lightbulb, Dumbbell, Activity, Trophy, Shuffle } from "lucide-react";
 import { Button } from "../ui/button";
-import { FaTableTennis } from "react-icons/fa";
 
 export default function HomeSidebar() {
     return (

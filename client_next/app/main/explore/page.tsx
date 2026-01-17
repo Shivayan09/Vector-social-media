@@ -29,21 +29,21 @@ export default function Explore() {
                 <div className="mt-5">
                     <p className="font-semibold">Top posts of the week</p>
                     <div className="flex flex-col gap-5 md:flex-row items-center justify-between mt-5">
-                        <div className="box h-50 w-[90%] md:w-[30%] border rounded-md px-5 py-4 relative cursor-pointer hover:shadow-md">
+                        <div className="box h-50 w-[90%] md:w-[32%] border rounded-md px-5 py-4 relative cursor-pointer hover:shadow-md">
                             <p className="text-blue-500">30k likes</p>
                             <p className="absolute top-4 right-4 text-[0.9rem] text-gray-600">#sports</p>
                             <p className="text-[0.9rem] my-2 h-23">Virat Kohli is the best batsman in the world and there is no doubt about it</p>
                             <p>username</p>
                             <p className="text-gray-500 text-[0.8rem]">23/10/2025</p>
                         </div>
-                        <div className="box h-50 w-[90%] md:w-[30%] border rounded-md px-5 py-4 relative cursor-pointer hover:shadow-md">
+                        <div className="box h-50 w-[90%] md:w-[32%] border rounded-md px-5 py-4 relative cursor-pointer hover:shadow-md">
                             <p className="text-blue-500">50k likes</p>
                             <p className="absolute top-4 right-4 text-[0.9rem] text-gray-600">#science</p>
                             <p className="text-[0.9rem] my-2 h-23">Another stellar milestone, some random ass dude invented same fuse no use ai chatbot</p>
                             <p>username</p>
                             <p className="text-gray-500 text-[0.8rem]">23/10/2025</p>
                         </div>
-                        <div className="box h-50 w-[90%] md:w-[30%] border rounded-md px-5 py-4 relative cursor-pointer hover:shadow-md">
+                        <div className="box h-50 w-[90%] md:w-[32%] border rounded-md px-5 py-4 relative cursor-pointer hover:shadow-md">
                             <p className="text-blue-500">20k likes</p>
                             <p className="absolute top-4 right-4 text-[0.9rem] text-gray-600">#politics</p>
                             <p className="text-[0.9rem] my-2 h-23">Donald trump when asked about his plans to reform America : "Bomb Iran"</p>
