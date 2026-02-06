@@ -17,17 +17,21 @@ export default function ProfileForm() {
 
     const [loading, setLoading] = useState(false);
 
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
+
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) {
             return;
         }
+        setAvatarFile(file);
         const url = URL.createObjectURL(file);
         setPreview(url);
     };
 
     const handleRemove = () => {
         setPreview(null);
+        setAvatarFile(null);
         if (fileRef.current) {
             fileRef.current.value = "";
         }
@@ -40,10 +44,15 @@ export default function ProfileForm() {
         e.preventDefault();
         try {
             setLoading(true);
-            const {data} = await axios.post(BACKEND_URL + '/api/auth/profileSetup', {username, bio, description}, {withCredentials: true})
-            if(data.success) {
+            if (avatarFile) {
+                const formData = new FormData();
+                formData.append("avatar", avatarFile);
+                await axios.post(BACKEND_URL + "/api/users/avatar", formData, { withCredentials: true });
+            }
+            const { data } = await axios.post(BACKEND_URL + "/api/auth/profileSetup", { username, bio, description }, { withCredentials: true });
+            if (data.success) {
                 toast.success("Profile created successfully!");
-                router.replace('/main');
+                router.replace("/main");
                 return;
             } else {
                 toast.error(data.message);
@@ -57,7 +66,8 @@ export default function ProfileForm() {
         } finally {
             setLoading(false);
         }
-    }
+    };
+
 
     return (
         <div className="flex flex-col items-center justify-center mx-auto border border-black/10 rounded-2xl w-[90vw] md:w-[40vw] px-10 py-5">
@@ -104,8 +114,8 @@ export default function ProfileForm() {
                 <p className="font-semibold mt-3">Set a description</p>
                 <textarea placeholder="Enter your bio (200 words max)" className="w-full border outline-0 px-3 py-1 rounded-md mt-2 h-20 bg-black/3"
                     onChange={(e) => setDescription(e.target.value)} />
-                <Button className="h-10 mt-2 w-full cursor-pointer bg-blue-500 hover:bg-blue-600" onClick={handleSubmit}>
-                    Continue
+                <Button disabled={loading} className={`h-10 mt-2 w-full ${loading ? 'cursor-not-allowed bg-blue-400' : 'cursor-pointer bg-blue-500 hover:bg-blue-600'}`} onClick={handleSubmit}>
+                    {loading ? 'Setting your profile..' : 'Continue'}
                 </Button>
             </div>
         </div>

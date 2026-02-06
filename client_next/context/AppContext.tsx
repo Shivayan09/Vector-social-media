@@ -14,6 +14,7 @@ export type User = {
   username?: string;
   bio?: string;
   description?: string;
+  avatar?: string;
   isProfileComplete: boolean;
   signupStep?: number;
 };

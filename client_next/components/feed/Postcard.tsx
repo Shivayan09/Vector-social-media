@@ -1,17 +1,7 @@
 "use client";
 
-import {
-    Bookmark,
-    Heart,
-    MessageCircle,
-    Repeat,
-    HelpCircle,
-    Hammer,
-    Share2,
-    MessagesSquare,
-    MoreHorizontal,
-    Trash2
-} from "lucide-react";
+import { useAppContext } from "@/context/AppContext";
+import { Bookmark, Heart, MessageCircle, Repeat, HelpCircle, Hammer, Share2, MessagesSquare, MoreHorizontal, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 type PostCardProps = {
@@ -27,6 +17,9 @@ const intentIconMap: Record<string, any> = {
 };
 
 export default function PostCard({ post }: PostCardProps) {
+
+    const { userData } = useAppContext();
+
     const [liked, setLiked] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
 
@@ -52,7 +45,13 @@ export default function PostCard({ post }: PostCardProps) {
         <div className="border overflow-clip relative border-black/10 dark:border-white/10 bg-white dark:bg-black cursor-pointer hover:shadow-md dark:hover:scale-[1.01] px-5 py-3 hover:bg-gray-50 rounded-2xl transition">
 
             <div className="flex items-center gap-2 mb-1">
-                <div className="h-8 md:h-10 w-8 md:w-10 rounded-full bg-gray-300" />
+                <div className="h-8 md:h-10 w-8 md:w-10 rounded-full">
+                    <img
+                        src={post.author.avatar || "/default-avatar.png"}
+                        className="h-full w-full rounded-full object-cover"
+                    />
+
+                </div>
 
                 <span className="font-semibold">{post.author.username}</span>
 
@@ -81,11 +80,11 @@ export default function PostCard({ post }: PostCardProps) {
 
                     {menuOpen && (
                         <div className="absolute overflow-clip top-0 right-0 w-30 bg-white dark:bg-black border border-black/10 dark:border-white/20 rounded-md shadow-lg z-50">
-                            <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-500 transition-all duration-300 hover:bg-black/3 dark:hover:bg-white/5" onClick={() => {setMenuOpen(false)}}>
+                            <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-500 transition-all duration-300 hover:bg-black/3 dark:hover:bg-white/5" onClick={() => { setMenuOpen(false) }}>
                                 <Trash2 size={14} />
                                 Delete post
                             </button>
-                            <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-blue-500 transition-all duration-300 hover:bg-black/3 dark:hover:bg-white/5" onClick={() => {setMenuOpen(false)}}>
+                            <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-blue-500 transition-all duration-300 hover:bg-black/3 dark:hover:bg-white/5" onClick={() => { setMenuOpen(false) }}>
                                 <Share2 size={14} />
                                 Share post
                             </button>
@@ -106,7 +105,7 @@ export default function PostCard({ post }: PostCardProps) {
                     <Repeat size={20} className="hover:text-blue-500" />0
                 </p>
                 <p className="flex gap-1 items-center" onClick={() => setLiked(prev => !prev)}>
-                    <Heart size={20} className={`cursor-pointer hover:text-blue-500 ${liked ? "text-blue-500" : ""}`} fill={liked ? "currentColor" : "none"}/>
+                    <Heart size={20} className={`cursor-pointer hover:text-blue-500 ${liked ? "text-blue-500" : ""}`} fill={liked ? "currentColor" : "none"} />
                     0
                 </p>
             </div>
