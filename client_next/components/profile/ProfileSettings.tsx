@@ -208,7 +208,7 @@ export default function ProfileSettings() {
       </div>
 
       {/* Actions */}
-      <div className="flex justify-end gap-4 mt-8">
+      <div className="flex justify-end gap-4 mt-7">
         <button className="w-40 py-2 border cursor-pointer rounded-lg">Cancel</button>
         <button disabled={loading || !isFormChanged} onClick={handleSave} className={`w-40 py-2 text-white rounded-lg ${isFormChanged ? 'bg-blue-600 cursor-pointer' : 'cursor-not-allowed bg-blue-400'} ${loading ? 'cursor-not-allowed bg-blue-400' : ''}`}>
           {loading ? 'Saving..' : 'Save changes'}

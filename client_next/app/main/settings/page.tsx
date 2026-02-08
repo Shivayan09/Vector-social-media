@@ -1,6 +1,6 @@
 "use client";
 
-import ProfileSettings from "@/components/pages/ProfileSettings";
+import ProfileSettings from "@/components/profile/ProfileSettings";
 
 export default function Settings() {
     return (

@@ -62,7 +62,7 @@ export default function Sidebar(): JSX.Element {
                 <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={() => setOpen(false)} />
             )}
 
-            <aside className={`fixed md:static top-0 left-0 z-50 h-screen w-45 md:w-55 border-r border-black/5 shadow-lg flex flex-col justify-start items-center gap-4 px-2 py-8 font-serif text-[1.1rem] bg-white dark:bg-black transform transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
+            <aside className={`fixed md:static top-0 left-0 z-50 h-screen w-45 md:w-55 border-r border-black/5 shadow-lg flex flex-col justify-start items-center gap-5 px-2 py-8 font-serif text-[1.1rem] bg-white dark:bg-black transform transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
                 <div className="flex w-full ml-5 mb-5 md:mb-0">
                     <div className="flex flex-col justify-center ml-3">
                         <p className="font-semibold text-[1.1rem]">Hello there</p>
