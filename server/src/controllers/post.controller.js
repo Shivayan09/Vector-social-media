@@ -66,23 +66,21 @@ export const deletePost = async (req, res) => {
 };
 
 export const toggleLike = async (req, res) => {
-  const post = await Post.findById(req.params.id);
-  if (!post) return res.status(404).json({ success: false });
-
-  const userId = req.user.id;
-  const index = post.likes.indexOf(userId);
-
-  if (index === -1) {
-    post.likes.push(userId); // like
-  } else {
-    post.likes.splice(index, 1); // unlike
-  }
-
-  await post.save();
-
-  res.json({
-    success: true,
-    likesCount: post.likes.length,
-    liked: index === -1,
-  });
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+        return res.status(404).json({ success: false });
+    }
+    const userId = req.user.id;
+    const index = post.likes.indexOf(userId);
+    if (index === -1) {
+        post.likes.push(userId);
+    } else {
+        post.likes.splice(index, 1);
+    }
+    await post.save();
+    res.json({
+        success: true,
+        likesCount: post.likes.length,
+        liked: index === -1,
+    });
 };
