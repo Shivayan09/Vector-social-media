@@ -54,17 +54,12 @@ export default function ReportPost({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/40 transition-opacity duration-200 ${
-        visible ? "opacity-100" : "opacity-0"
-      }`}
-      onClick={closeModal}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className={`w-[90%] max-w-md rounded-xl bg-white dark:bg-black p-5 shadow-lg transform transition-all duration-200 ${
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/40 transition-opacity duration-200 ${visible ? "opacity-100" : "opacity-0"}`}
+      onClick={closeModal}>
+      <div onClick={(e) => e.stopPropagation()}
+        className={`w-[90%] max-w-md rounded-xl bg-white dark:bg-black border p-5 shadow-lg transform transition-all duration-200 ${
           visible ? "scale-100 translate-y-0" : "scale-95 translate-y-2"
-        }`}
-      >
+        }`}>
         <h2 className="text-[1.2rem] font-semibold text-blue-600 mb-3">
           Report post
         </h2>
@@ -76,7 +71,7 @@ export default function ReportPost({
         <select
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          className="w-full mb-3 text-[0.95rem] rounded-md border px-3 py-2 bg-transparent"
+          className="w-full mb-3 text-[0.95rem] rounded-md border px-3 py-2 bg-transparent dark:bg-black"
         >
           <option value="">Select a reason</option>
           {REPORT_REASONS.map((r) => (
