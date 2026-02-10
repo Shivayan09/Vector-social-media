@@ -53,8 +53,8 @@ export default function LoginForm() {
                 Continue with Google
             </button>
             <div className="relative flex items-center justify-center mt-5">
-                <div className="absolute inset-x-0 h-px bg-black/20 mt-1"></div>
-                <p className="relative bg-white px-2 text-sm text-gray-600">or</p>
+                <div className="absolute inset-x-0 h-px bg-black/20 dark:bg-white/20 mt-1"></div>
+                <p className="relative bg-white dark:bg-[oklch(0.145_0_0)] px-2 text-sm text-gray-600">or</p>
             </div>
             <p className="font-semibold">Username</p>
             <input type="text" placeholder="demousername09" className="outline-none h-10 bg-black/5 border dark:border-white/10 w-full rounded-md p-3 my-3"

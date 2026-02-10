@@ -58,9 +58,9 @@ export default function RegistrationForm() {
                 <img src="/Google.png" alt="" className="h-5"/>
                 Continue with Google
             </button>
-            <div className="relative flex items-center justify-center my-3">
-                <div className="absolute inset-x-0 h-px bg-black/20 mt-1"></div>
-                <p className="relative bg-white px-2 text-sm text-gray-600">or</p>
+            <div className="relative flex items-center justify-center mt-5 mb-2">
+                <div className="absolute inset-x-0 h-px bg-black/20 dark:bg-white/20 mt-1"></div>
+                <p className="relative bg-white dark:bg-[oklch(0.145_0_0)] px-2 text-sm text-gray-600">or</p>
             </div>
 
             <div className="flex gap-5">
