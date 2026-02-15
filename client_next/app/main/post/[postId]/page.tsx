@@ -38,7 +38,7 @@ export default function PostPage() {
     return (
         <div className="overflow-y-auto h-screen">
             <Navbar />
-            <div className="px-10">
+            <div className="px-5 md:px-10">
                 <PostCard post={post} />
                 <div className="mt-6">
                     <CommentsSection postId={post._id} />

@@ -116,11 +116,11 @@ export default function PostCard({ post }: PostCardProps) {
 
             <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
-                    <div className="h-8 md:h-12 w-8 md:w-12 rounded-full transition-all duration-200" onClick={openUserProfile}>
+                    <div className="h-8 md:h-12 w-8 md:w-12 rounded-full transition-all duration-200" onClick={(e) => {e.stopPropagation(); openUserProfile();}}>
                         <img src={post.author.avatar || "/default-avatar.png"} className="h-full w-full rounded-full object-cover" />
                     </div>
-                    <span className="font-semibold ml-1 transition-all duration-200 hover:text-blue-600" onClick={openUserProfile}>{post.author.name}</span>
-                    <span className="text-[0.9rem] text-gray-500 transition-all duration-200 hover:text-gray-700" onClick={openUserProfile}>
+                    <span className="font-semibold ml-1 transition-all duration-200 hover:text-blue-600" onClick={(e) => {e.stopPropagation(); openUserProfile();}}>{post.author.name}</span>
+                    <span className="text-[0.9rem] text-gray-500 transition-all duration-200 hover:text-gray-700" onClick={(e) => {e.stopPropagation(); openUserProfile();}}>
                         @{post.author.username}
                     </span>
                     <p className="absolute left-195 text-[0.9rem] font-semibold text-blue-500 flex items-center gap-1.5">
