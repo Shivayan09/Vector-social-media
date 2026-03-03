@@ -5,13 +5,14 @@ import axios from "axios";
 import { Bookmark, Heart, MessageCircle, Repeat, HelpCircle, Hammer, Share2, MessagesSquare, MoreHorizontal, Trash2, Flag } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import PostDelete from "../modals/PostDelete";
+import DeleteWarning from "../modals/DeleteWarning";
 import ReportPost from "../modals/ReportPost";
 import { useRouter } from "next/navigation";
 import CommentsSection from "./CommentsSection";
 
 type PostCardProps = {
     post: any;
+    setPost?: React.Dispatch<React.SetStateAction<any>>;
 };
 
 const intentIconMap: Record<string, any> = {
@@ -22,7 +23,7 @@ const intentIconMap: Record<string, any> = {
     reflect: Bookmark,
 };
 
-export default function PostCard({ post }: PostCardProps) {
+export default function PostCard({ post, setPost }: PostCardProps) {
 
     const router = useRouter();
     const { userData, posts, setPosts } = useAppContext();
@@ -30,28 +31,19 @@ export default function PostCard({ post }: PostCardProps) {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
     const isOwner = userData?.id === post.author._id;
-    const isLiked = post.likes.includes(userData?.id);
+    const isLiked = post.likes?.map(String).includes(String(userData?.id));
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
     const [likeAnimating, setLikeAnimating] = useState(false);
-    const [showComments, setShowComments] = useState(false);
 
     function timeAgo(dateString: string) {
         const now = new Date().getTime();
         const past = new Date(dateString).getTime();
         const diff = Math.floor((now - past) / 1000);
-        if (diff < 60) {
-            return `${diff}s ago`;
-        }
-        if (diff < 3600) {
-            return `${Math.floor(diff / 60)}m ago`;
-        }
-        if (diff < 86400) {
-            return `${Math.floor(diff / 3600)}h ago`;
-        }
-        if (diff < 604800) {
-            return `${Math.floor(diff / 86400)}d ago`;
-        }
+        if (diff < 60) return `${diff}s ago`;
+        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+        if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
         return new Date(dateString).toLocaleDateString("en-GB", {
             day: "2-digit",
             month: "2-digit",
@@ -73,7 +65,24 @@ export default function PostCard({ post }: PostCardProps) {
                 setLikeAnimating(true);
                 setTimeout(() => setLikeAnimating(false), 300);
             }
-            setPosts(prev => prev.map(p => p._id === post._id ? { ...p, likes: isLiked ? p.likes.filter((id: string | undefined) => id !== userData?.id) : [...p.likes, userData?.id], } : p));
+            const updatedLikes = isLiked
+                ? post.likes.filter((id: string) => String(id) !== String(userData?.id))
+                : [...post.likes, userData?.id];
+            if (setPost) {
+                setPost((prev: any) => ({
+                    ...prev,
+                    likes: updatedLikes,
+                }));
+            }
+            else {
+                setPosts(prev =>
+                    prev.map(p =>
+                        p._id === post._id
+                            ? { ...p, likes: updatedLikes }
+                            : p
+                    )
+                );
+            }
             await axios.put(`${BACKEND_URL}/api/posts/${post._id}/like`, {}, { withCredentials: true });
         } catch {
             toast.error("Failed to like post");
@@ -86,21 +95,19 @@ export default function PostCard({ post }: PostCardProps) {
             setPosts(prevPosts => prevPosts.filter(p => p._id !== post._id));
             setMenuOpen(false);
             toast.success("Post deleted");
-        } catch (err) {
+        } catch {
             toast.error("Failed to delete post");
         }
     };
 
-    const handleReport = async () => {
-    }
+    const handleReport = async () => { }
 
     useEffect(() => {
-        if (!menuOpen) return;
+        if (!menuOpen) {
+            return;
+        }
         const handleOutsideClick = (e: MouseEvent) => {
-            if (
-                menuRef.current &&
-                !menuRef.current.contains(e.target as Node)
-            ) {
+            if (menuRef.current &&!menuRef.current.contains(e.target as Node)) {
                 setMenuOpen(false);
             }
         };
@@ -112,15 +119,14 @@ export default function PostCard({ post }: PostCardProps) {
 
     return (
         <div className="border overflow-clip relative border-black/10 dark:border-white/10 bg-white dark:bg-black cursor-pointer hover:bg-black/2 dark:hover:bg-white/1 px-5 py-3 rounded-2xl transition"
-        onClick={openPost}>
-
+            onClick={openPost}>
             <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
-                    <div className="h-8 md:h-12 w-8 md:w-12 rounded-full transition-all duration-200" onClick={(e) => {e.stopPropagation(); openUserProfile();}}>
+                    <div className="h-8 md:h-12 w-8 md:w-12 rounded-full transition-all duration-200" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
                         <img src={post.author.avatar || "/default-avatar.png"} className="h-full w-full rounded-full object-cover" />
                     </div>
-                    <span className="font-semibold ml-1 transition-all duration-200 hover:text-blue-600" onClick={(e) => {e.stopPropagation(); openUserProfile();}}>{post.author.name}</span>
-                    <span className="text-[0.9rem] text-gray-500 transition-all duration-200 hover:text-gray-700" onClick={(e) => {e.stopPropagation(); openUserProfile();}}>
+                    <span className="font-semibold ml-1 transition-all duration-200 hover:text-blue-600" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>{post.author.name}</span>
+                    <span className="text-[0.9rem] text-gray-500 transition-all duration-200 hover:text-gray-700" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
                         @{post.author.username}
                     </span>
                     <p className="absolute left-195 text-[0.9rem] font-semibold text-blue-500 flex items-center gap-1.5">
@@ -146,7 +152,8 @@ export default function PostCard({ post }: PostCardProps) {
                             </button>
                             {isOwner && (
                                 <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-black/3 dark:hover:bg-white/5"
-                                    onClick={() => {
+                                    onClick={(e) => {
+                                        e.stopPropagation();
                                         setMenuOpen(false);
                                         setShowDeleteModal(true);
                                     }}>
@@ -156,7 +163,8 @@ export default function PostCard({ post }: PostCardProps) {
                             )}
                             {!isOwner && (
                                 <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-black/3 dark:hover:bg-white/5"
-                                    onClick={() => {
+                                    onClick={(e) => {
+                                        e.stopPropagation();
                                         setMenuOpen(false);
                                         setShowReportModal(true);
                                     }}>
@@ -164,7 +172,6 @@ export default function PostCard({ post }: PostCardProps) {
                                     Report post
                                 </button>
                             )}
-
                         </div>
                     )}
                 </div>
@@ -176,7 +183,7 @@ export default function PostCard({ post }: PostCardProps) {
 
             <div className="flex justify-between text-gray-500">
                 <div className="flex items-center justify-between w-2/3">
-                    <p className="flex gap-1 items-center cursor-pointer hover:text-blue-500" onClick={() => setShowComments(prev => !prev)}>
+                    <p className="flex gap-1 items-center cursor-pointer hover:text-blue-500">
                         <MessageCircle className="h-4.5 md:h-5 hover:text-blue-500" />
                         {post.commentsCount || 0}
                     </p>
@@ -184,7 +191,7 @@ export default function PostCard({ post }: PostCardProps) {
                     <p className="flex gap-1 items-center">
                         <Repeat className="h-4.5 md:h-5 hover:text-blue-500" />0
                     </p>
-                    <p className="flex gap-1 items-center" onClick={handleLike}>
+                    <p className="flex gap-1 items-center" onClick={(e) => { e.stopPropagation(); handleLike() }}>
                         <Heart className={`h-4.5 md:h-5 cursor-pointer transition-transform duration-300 hover:text-blue-500 ${isLiked ? "text-blue-500" : ""} ${likeAnimating ? "scale-135" : "scale-100"}`} fill={isLiked ? "currentColor" : "none"} />
                         {post.likes.length}
                     </p>
@@ -193,7 +200,8 @@ export default function PostCard({ post }: PostCardProps) {
                     <p className="text-[0.85rem]">{timeAgo(post.createdAt)}</p>
                 </div>
             </div>
-            <PostDelete
+
+            <DeleteWarning
                 open={showDeleteModal}
                 content={post.content}
                 onClose={() => setShowDeleteModal(false)}
@@ -201,14 +209,12 @@ export default function PostCard({ post }: PostCardProps) {
                     handleDelete();
                     setShowDeleteModal(false);
                 }} />
+
             <ReportPost
                 open={showReportModal}
                 onClose={() => setShowReportModal(false)}
                 onSubmit={handleReport}
             />
-            {showComments && (
-                <CommentsSection postId={post._id} />
-            )}
         </div>
     );
 }

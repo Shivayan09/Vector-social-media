@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 
 export const googleAuthCallback = async (req, res) => {
+    const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
     try {
         const user = req.user;
         const token = jwt.sign(
@@ -15,14 +16,12 @@ export const googleAuthCallback = async (req, res) => {
             path: "/",
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
-        const FRONTEND_URL = process.env.FRONTEND_URL;
         if (!user.isProfileComplete) {
             return res.redirect(`${FRONTEND_URL}/auth/profile?register=google`);
         }
         res.redirect(`${FRONTEND_URL}/main?login=google`);
     } catch (err) {
         console.error(err);
-        const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
         res.redirect(`${FRONTEND_URL}/auth/login?error=google`);
     }
 };

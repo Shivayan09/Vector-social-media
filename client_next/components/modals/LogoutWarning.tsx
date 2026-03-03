@@ -28,7 +28,7 @@ export default function LogoutWarning({
   };
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50" onClick={handleClose}>
       <div
         className={`bg-white border border-white/20 dark:bg-black rounded-xl p-6 w-[90%] max-w-sm transition-all duration-200 ${visible ? "scale-100 opacity-100" : "scale-95 opacity-0"}`}>
         <div className="flex justify-between items-center mb-4">

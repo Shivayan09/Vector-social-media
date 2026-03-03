@@ -34,14 +34,10 @@ export default function NotificationPanel() {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
 
-  // ---------------- FETCH ----------------
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const { data } = await axios.get(
-        `${BACKEND_URL}/api/notifications`,
-        { withCredentials: true }
-      );
+      const { data } = await axios.get(`${BACKEND_URL}/api/notifications`, { withCredentials: true });
       setNotifications(data);
     } catch (err: any) {
       toast.error(
@@ -52,18 +48,12 @@ export default function NotificationPanel() {
     }
   };
 
-  // ---------------- DELETE SINGLE ----------------
   const deleteSingle = async (id: string) => {
     try {
-      await axios.delete(
-        `${BACKEND_URL}/api/notifications/${id}`,
-        { withCredentials: true }
-      );
-
+      await axios.delete(`${BACKEND_URL}/api/notifications/${id}`, { withCredentials: true });
       setNotifications(prev =>
         prev.filter(n => n._id !== id)
       );
-
       toast.success("Notification deleted");
     } catch (err: any) {
       toast.error(
@@ -72,21 +62,13 @@ export default function NotificationPanel() {
     }
   };
 
-  // ---------------- BULK DELETE ----------------
   const deleteSelected = async () => {
     if (selected.length === 0) return;
-
     try {
-      await axios.post(
-        `${BACKEND_URL}/api/notifications/bulk-delete`,
-        { ids: selected },
-        { withCredentials: true }
-      );
-
+      await axios.post(`${BACKEND_URL}/api/notifications/bulk-delete`, { ids: selected }, { withCredentials: true });
       setNotifications(prev =>
         prev.filter(n => !selected.includes(n._id))
       );
-
       setSelected([]);
       setSelectMode(false);
 
@@ -98,18 +80,12 @@ export default function NotificationPanel() {
     }
   };
 
-  // ---------------- DELETE ALL ----------------
   const deleteAll = async () => {
     try {
-      await axios.delete(
-        `${BACKEND_URL}/api/notifications/all`,
-        { withCredentials: true }
-      );
-
+      await axios.delete(`${BACKEND_URL}/api/notifications/all`, { withCredentials: true });
       setNotifications([]);
       setSelected([]);
       setSelectMode(false);
-
       toast.success("All notifications cleared");
     } catch (err: any) {
       toast.error(
@@ -118,30 +94,16 @@ export default function NotificationPanel() {
     }
   };
 
-  // ---------------- MARK ALL AS READ ----------------
   const markAllAsRead = async () => {
     try {
       const unread = notifications.filter(n => !n.isRead);
-
-      await Promise.all(
-        unread.map(n =>
-          axios.put(
-            `${BACKEND_URL}/api/notifications/${n._id}/read`,
-            {},
-            { withCredentials: true }
-          )
-        )
-      );
-
-      setNotifications(prev =>
-        prev.map(n => ({ ...n, isRead: true }))
-      );
+      await Promise.all(unread.map(n => axios.put(`${BACKEND_URL}/api/notifications/${n._id}/read`, {}, { withCredentials: true })));
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
     } catch (err) {
       console.error(err);
     }
   };
 
-  // ---------------- EFFECTS ----------------
   useEffect(() => {
     if (userData) {
       fetchNotifications();
@@ -154,7 +116,9 @@ export default function NotificationPanel() {
     }
   }, [notifications.length]);
 
-  if (!userData) return null;
+  if (!userData) {
+    return null;
+  }
 
   return (
     <div className="w-full mt-5">
@@ -194,37 +158,22 @@ export default function NotificationPanel() {
       ) : (
         <div className="flex flex-col gap-2">
           {notifications.map(n => (
-            <div
-              key={n._id}
-              className={`flex items-center gap-3 p-4 rounded-xl transition ${
-                !n.isRead
-                  ? "bg-blue-50 dark:bg-blue-900/20"
-                  : "bg-white dark:bg-black"
-              }`}
-            >
+            <div key={n._id} className={`flex items-center gap-3 p-4 rounded-xl transition ${!n.isRead ? "bg-blue-50 dark:bg-blue-900/20" : "bg-white dark:bg-black"}`}>
               {selectMode && (
                 <input type="checkbox" className="h-4 w-4 cursor-pointer" checked={selected.includes(n._id)}
-                  onChange={() => {
-                    setSelected(prev =>
-                      prev.includes(n._id)
-                        ? prev.filter(id => id !== n._id)
-                        : [...prev, n._id]
-                    );}}/>
-              )}
+                  onChange={() => {setSelected(prev => prev.includes(n._id) ? prev.filter(id => id !== n._id) : [...prev, n._id])}} />)}
               <div
                 onClick={() => {
                   if (!selectMode) {
                     if (n.post?._id) {
                       router.push(`/main/post/${n.post._id}`);
                     } else {
-                      router.push(
-                        `/main/user/${n.sender.username}`
-                      );
+                      router.push(`/main/user/${n.sender.username}`);
                     }
                   }
                 }}
                 className="flex gap-3 flex-1 cursor-pointer hover:bg-black/5 dark:hover:bg-white/10 p-2 rounded-lg">
-                <img src={ n.sender.avatar || "/default-avatar.png" } className="h-10 w-10 rounded-full object-cover"/>
+                <img src={n.sender.avatar || "/default-avatar.png"} className="h-10 w-10 rounded-full object-cover" />
                 <div className="text-sm">
                   <p>
                     <span className="font-semibold">
@@ -239,21 +188,19 @@ export default function NotificationPanel() {
                   </p>
 
                   <p className="text-xs text-gray-500 mt-1">
-                    {new Date(
-                      n.createdAt
-                    ).toLocaleString()}
+                    {new Date(n.createdAt).toLocaleString()}
                   </p>
                 </div>
                 {!selectMode && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteSingle(n._id);
-                  }}
-                  className="text-gray-400 ml-auto">
-                  <Trash2 className="h-5 cursor-pointer"/>
-                </button>
-              )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteSingle(n._id);
+                    }}
+                    className="text-gray-400 ml-auto">
+                    <Trash2 className="h-5 cursor-pointer" />
+                  </button>
+                )}
               </div>
             </div>
           ))}

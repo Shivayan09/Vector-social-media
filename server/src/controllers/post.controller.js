@@ -125,14 +125,6 @@ export const getSinglePost = async (req, res) => {
   }
 };
 
-
 export const getTopPostsOfWeek = async (req, res) => {
-    try {
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        const posts = await Post.find({ createdAt: { $gte: weekAgo } }).populate("author", "username avatar").sort({ likes: -1 }).limit(3);
-        res.json(posts);
-    } catch (err) {
-        res.status(500).json({ message: "Failed to fetch top posts" });
-    }
+  res.json({ ok: true })
 };

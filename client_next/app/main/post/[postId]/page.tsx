@@ -8,42 +8,42 @@ import CommentsSection from "@/components/feed/CommentsSection";
 import Navbar from "@/components/Navbar";
 
 export default function PostPage() {
-    const { postId } = useParams();
-    const [post, setPost] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+  const { postId } = useParams();
+  const [post, setPost] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
-    useEffect(() => {
-        const fetchPost = async () => {
-            try {
-                const { data } = await axios.get(
-                    `${BACKEND_URL}/api/posts/${postId}`,
-                    { withCredentials: true }
-                );
-                setPost(data);
-            } catch (err) {
-                console.error("Failed to fetch post");
-            } finally {
-                setLoading(false);
-            }
-        };
+  useEffect(() => {
+    const fetchPost = async () => {
+      try {
+        const { data } = await axios.get(
+          `${BACKEND_URL}/api/posts/${postId}`,
+          { withCredentials: true }
+        );
+        setPost(data);
+      } catch {
+        console.error("Failed to fetch post");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-        if (postId) fetchPost();
-    }, [postId]);
+    if (postId) fetchPost();
+  }, [postId]);
 
-    if (loading) return <p className="p-10">Loading...</p>;
-    if (!post) return <p className="p-10">Post not found</p>;
+  if (loading) return <p className="p-10">Loading...</p>;
+  if (!post) return <p className="p-10">Post not found</p>;
 
-    return (
-        <div className="overflow-y-auto h-screen">
-            <Navbar />
-            <div className="px-5 md:px-10">
-                <PostCard post={post} />
-                <div className="mt-6">
-                    <CommentsSection postId={post._id} />
-                </div>
-            </div>
+  return (
+    <div className="overflow-y-auto h-screen">
+      <Navbar />
+      <div className="px-5 md:px-10">
+        <PostCard post={post} setPost={setPost} />
+        <div className="mt-6">
+          <CommentsSection postId={post._id} />
         </div>
-    );
+      </div>
+    </div>
+  );
 }

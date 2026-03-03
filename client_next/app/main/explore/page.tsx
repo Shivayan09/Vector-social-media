@@ -5,6 +5,7 @@ import axios from "axios";
 import { ExternalLink, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
 
 type User = {
   _id: string;
@@ -27,14 +28,13 @@ export default function Explore() {
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-  // Fetch top posts
   useEffect(() => {
     const fetchTopPosts = async () => {
       try {
-        const { data } = await axios.get(
-          `${BACKEND_URL}/api/posts/top-week`
-        );
+        const { data } = await axios.get(`${BACKEND_URL}/api/posts/top-week`, {withCredentials: true});
         setTopPosts(data);
+      } catch (error: any) {
+        toast.error(error.message)
       } finally {
         setLoading(false);
       }
@@ -42,7 +42,6 @@ export default function Explore() {
     fetchTopPosts();
   }, []);
 
-  // Debounced user search
   useEffect(() => {
     const delay = setTimeout(async () => {
       if (!query.trim()) {
