@@ -34,7 +34,7 @@ export default function ConfirmModal({
   return createPortal(
     <div
       onClick={onClose}
-      className={`fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 transition-opacity duration-200 ${
+      className={`fixed inset-0 z-9999 flex items-center justify-center bg-black/40 transition-opacity duration-200 ${
         open ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
     >
