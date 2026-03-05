@@ -101,7 +101,7 @@ export default function Explore() {
           </div>
 
           {open && (
-            <div className="absolute w-full mt-2 bg-white dark:bg-black border rounded-xl shadow-lg max-h-75 overflow-y-auto z-50">
+            <div className="absolute w-full mt-2 bg-white border rounded-xl shadow-lg max-h-75 overflow-y-auto z-50">
               {searching ? (
                 <p className="p-4 text-sm opacity-50">
                   Searching...

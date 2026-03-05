@@ -123,7 +123,7 @@ export default function NotificationPanel() {
   return (
     <div className="w-full mt-5">
 
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-3 md:gap-0">
         <p className="font-semibold text-lg text-white">Notifications</p>
         <div className="flex gap-2">
           {selectMode && selected.length > 0 && (
@@ -132,7 +132,7 @@ export default function NotificationPanel() {
             </button>
           )}
           {notifications.length > 0 && (
-            <button onClick={deleteAll} className="h-9 text-sm cursor-pointer w-25 py-1 bg-blue-600 text-white rounded-md">
+            <button onClick={deleteAll} className="h-9 text-sm cursor-pointer w-[50%] md:w-25 py-1 bg-blue-600 text-white rounded-md">
               Clear All
             </button>
           )}
@@ -142,7 +142,7 @@ export default function NotificationPanel() {
               setSelectMode(prev => !prev);
               setSelected([]);
             }}
-            className="h-9 text-sm cursor-pointer w-25 rounded-md bg-blue-600 text-white">
+            className="h-9 text-sm cursor-pointer w-[50%] md:w-25 rounded-md bg-blue-600 text-white">
             {selectMode ? "Cancel" : "Select"}
           </button>
           )}

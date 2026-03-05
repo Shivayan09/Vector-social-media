@@ -55,7 +55,7 @@ export default function Sidebar() {
 
   return (
     <>
-      <button onClick={() => setOpen((prev) => !prev)} className="fixed top-7.5 left-6 z-50 md:hidden p-2 rounded-lg dark:bg-black" aria-label="Toggle menu">
+      <button onClick={() => setOpen((prev) => !prev)} className="fixed top-7.5 left-6 z-50 md:hidden p-2 rounded-lg" aria-label="Toggle menu">
         {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
       </button>
 
@@ -63,7 +63,7 @@ export default function Sidebar() {
         <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={() => setOpen(false)}/>
       )}
 
-      <aside className={`fixed md:static top-0 left-0 z-50 h-screen text-white w-50 md:w-55 border-r border-black/5 dark:border-white/10 shadow-lg flex flex-col gap-5 px-1 py-8 font-serif text-[1.1rem] backdrop-blur-3xl dark:bg-black transform transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
+      <aside className={`fixed md:static top-0 left-0 z-50 h-screen text-white w-50 md:w-55 border-r border-black/5 shadow-lg flex flex-col gap-5 px-1 py-8 font-serif text-[1.1rem] backdrop-blur-3xl transform transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
         <div className="flex w-full ml-5 mb-5">
           <div className="flex flex-col justify-center ml-3">
             <p className="font-semibold text-[1.1rem]">Hello there</p>
@@ -150,7 +150,7 @@ function SidebarItem({ icon, label, href, active, onClick}: SidebarItemProps) {
   if (onClick) {
     return (
       <button onClick={onClick} className="flex gap-2 cursor-pointer transition-all duration-200 p-2 rounded-lg w-full md:pl-7 hover:bg-black/10 dark:hover:bg-blue-400/20">
-        <span className="h-4 md:h-6 text-black/50 dark:text-white/50">
+        <span className="h-4 md:h-6 text-stone-300 dark:text-white/50">
           {icon}
         </span>
         {label}
@@ -160,7 +160,7 @@ function SidebarItem({ icon, label, href, active, onClick}: SidebarItemProps) {
 
   return (
     <Link href={href!} className={`flex gap-2 cursor-pointer transition-all duration-200 p-2 rounded-lg w-full md:pl-7 ${active ? "bg-blue-500 text-white" : "hover:bg-black/10 dark:hover:bg-blue-400/20 dark:hover:text-white/70"}`}>
-      <span className={`h-4 md:h-6 ${active ? "text-white" : "text-black/50 dark:text-white/50"}`}>
+      <span className={`h-4 md:h-6 ${active ? "text-white" : "text-stone-300 dark:text-white/50"}`}>
         {icon}
       </span>
       {label}

@@ -8,6 +8,7 @@ import FollowButton from "@/components/ui/FollowButton";
 import FollowersDisplay from "./FollowersDisplay";
 import FollowingDisplay from "./FollowingDisplay";
 import { useAppContext } from "@/context/AppContext";
+import axios from "axios";
 
 type ProfileLayoutProps = {
   user: any;
@@ -15,7 +16,7 @@ type ProfileLayoutProps = {
 };
 
 export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps) {
-  const [activeTab, setActiveTab] = useState< "posts" | "followers" | "following">("posts");
+  const [activeTab, setActiveTab] = useState<"posts" | "followers" | "following">("posts");
 
   const router = useRouter();
   const { userData } = useAppContext();
@@ -28,10 +29,23 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
   const [followingCount] = useState(user.following?.length || 0);
   const [following, setFollowing] = useState(isFollowing ?? false);
 
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
+
+  const startChat = async () => {
+    try {
+      const { data } = await axios.post(`${BACKEND_URL}/api/conversation`, { receiverId: user._id }, { withCredentials: true });
+
+      router.push(`/main/chat/${data._id}`);
+
+    } catch (error) {
+      console.error("Failed to start chat", error);
+    }
+  };
+
   return (
     <div className="px-7 py-5 h-screen overflow-y-auto">
       <div className="flex flex-col md:flex-row items-start gap-6 mb-5 md:mb-7">
-        <img src={user.avatar || "/default-avatar.png"} className="h-28 w-28 rounded-full object-cover border mx-auto md:mx-0"/>
+        <img src={user.avatar || "/default-avatar.png"} className="h-28 w-28 rounded-full object-cover border mx-auto md:mx-0" />
 
         <div className="flex flex-col gap-2 w-full">
           <div className="w-full flex justify-between items-start gap-3 md:gap-0">
@@ -56,6 +70,9 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
                     );
                   }}
                 />
+                <button onClick={startChat} className="bg-blue-500 h-9 w-30 ml-2 text-white rounded-md cursor-pointer">
+                  Chat
+                </button>
               </div>
             )}
           </div>
@@ -79,7 +96,7 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
         </div>
       </div>
 
-      <div className="flex justify-between md:justify-center md:gap-50 backdrop-blur-3xl pt-3 rounded-lg border-b-2 border-black/10 dark:border-white/10 mb-6">
+      <div className="flex justify-between md:justify-center md:gap-50 border-b-2 border-white/50 mb-6">
         {["posts", "followers", "following"].map((tab) => (
           <button
             key={tab}

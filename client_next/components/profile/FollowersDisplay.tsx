@@ -27,7 +27,7 @@ export default function FollowersDisplay({ userId, emptyText }: Props) {
         fetchFollowers();
     }, [userId]);
 
-    if (loading) return <p className="text-center mt-6">Loading...</p>;
+    if (loading) return <p className="text-center mt-6 text-white">Loading...</p>;
 
     if (users.length === 0) {
         return <p className="text-center text-gray-500 mt-6">{emptyText}</p>;

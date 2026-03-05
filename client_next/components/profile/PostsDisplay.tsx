@@ -32,7 +32,7 @@ export default function PostsDisplay({ userId, emptyText }: PostsDisplayProps) {
     }
     if (posts.length === 0) {
         return (
-            <p className="text-gray-500 text-center mt-3">
+            <p className="text-white text-center mt-3">
                 {emptyText ?? "No posts yet!"}
             </p>
         );

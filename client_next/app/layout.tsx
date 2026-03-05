@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "next-themes";
 import ToastProvider from "@/components/ToastProvider";
 import Providers from "@/components/Providers";
 
@@ -28,12 +27,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-[url('/vector-home-bg.jpg')] bg-cover bg-center bg-no-repeat`}>
-        <ThemeProvider attribute="class" enableSystem defaultTheme="system">
-          <Providers>
-            <ToastProvider />
-            {children}
-          </Providers>
-        </ThemeProvider>
+        <Providers>
+          <ToastProvider />
+          {children}
+        </Providers>
       </body>
     </html>
   );
