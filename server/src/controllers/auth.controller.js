@@ -83,19 +83,19 @@ export const profileSetup = async (req, res) => {
         }
         const { username, bio, description } = req.body;
         if (!username) {
-            return res.status(400).json({
+            return res.json({
                 success: false,
                 message: "Please enter a username!",
             });
         }
         if (!bio) {
-            return res.status(400).json({
+            return res.json({
                 success: false,
                 message: "Please enter a bio!",
             });
         }
         if (!description) {
-            return res.status(400).json({
+            return res.json({
                 success: false,
                 message: "Please enter a description!",
             });
@@ -108,14 +108,14 @@ export const profileSetup = async (req, res) => {
             });
         }
         if (user.isProfileComplete) {
-            return res.status(400).json({
+            return res.json({
                 success: false,
                 message: "Profile already completed!",
             });
         }
         const existingUsername = await User.findOne({ username });
         if (existingUsername) {
-            return res.status(409).json({
+            return res.json({
                 success: false,
                 message: "Username already taken!",
             });
