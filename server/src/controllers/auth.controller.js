@@ -3,8 +3,6 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import validator from 'validator';
 
-import { registerValidator } from "../validator/user.validator.js";
-
 export const register = async (req, res) => {
     const { name, surname, phoneNumber, email, password } = req.body;
     if (!name) {
@@ -52,7 +50,7 @@ export const register = async (req, res) => {
             })
         }
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = await User.create({ name, surname, phoneNumber, email, password: hashedPassword, signupstep: 1, isProfileComplete: false });
+        const user = await User.create({ name, surname, phoneNumber, email, password: hashedPassword, signupStep: 1, isProfileComplete: false });
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
         res.cookie("token", token, {
             httpOnly: true,
