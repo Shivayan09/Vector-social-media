@@ -94,7 +94,7 @@ export default function Explore() {
         </p>
 
         <div className="relative mt-5" ref={wrapperRef}>
-          <div className="flex items-center px-2 gap-2 bg-white/30 rounded-full h-10">
+          <div className="flex items-center px-2 gap-2 bg-white/30 dark:bg-black/30 rounded-full h-10">
             <Search className="h-5" />
             <input type="text" placeholder="Search users" value={query} onChange={(e) => setQuery(e.target.value)} className="outline-0 w-full h-full bg-transparent"/>
           </div>

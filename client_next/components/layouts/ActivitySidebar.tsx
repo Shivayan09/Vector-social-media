@@ -121,7 +121,7 @@ export default function ActivitySidebar() {
           Search people you know
         </p>
 
-        <div className="flex gap-2 h-10 rounded-full items-center px-3 bg-white/30 mt-7 mb-5">
+        <div className="flex gap-2 h-10 rounded-full items-center px-3 bg-white/30 dark:bg-black/30 mt-7 mb-5">
           <Search className="h-5" />
           <input type="text" placeholder="Search users" value={query} onChange={(e) => setQuery(e.target.value)} className="outline-0 w-full h-full bg-transparent" />
         </div>
