@@ -73,24 +73,27 @@ export const toggleLike = async (req, res) => {
     }
     const userId = req.user.id;
     const index = post.likes.indexOf(userId);
+    let liked = false;
     if (index === -1) {
         post.likes.push(userId);
+        liked = true;
+        if (post.author.toString() !== userId) {
+            await Notification.create({
+                recipient: post.author,
+                sender: userId,
+                type: "like",
+                post: post._id,
+            });
+        }
     } else {
         post.likes.splice(index, 1);
+        liked = false;
     }
     await post.save();
-    if (post.author.toString() !== userId) {
-        await Notification.create({
-            recipient: post.author,
-            sender: userId,
-            type: "like",
-            post: post._id,
-        });
-    }
     res.json({
         success: true,
         likesCount: post.likes.length,
-        liked: index === -1,
+        liked,
     });
 };
 
@@ -112,13 +115,10 @@ export const getPostsByUser = async (req, res) => {
 
 export const getSinglePost = async (req, res) => {
     try {
-        const post = await Post.findById(req.params.postId)
-            .populate("author", "username name avatar");
-
+        const post = await Post.findById(req.params.postId).populate("author", "username name avatar");
         if (!post) {
             return res.status(404).json({ message: "Post not found" });
         }
-
         res.json(post);
     } catch (err) {
         res.status(500).json({ message: "Server error" });
@@ -129,7 +129,7 @@ export const getTopPostsOfWeek = async (req, res) => {
     try {
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-        const posts = await Post.find({createdAt: { $gte: oneWeekAgo }}).populate("author", "username name surname avatar").sort({ likes: -1 }).limit(10);
+        const posts = await Post.find({ createdAt: { $gte: oneWeekAgo } }).populate("author", "username name surname avatar").sort({ likes: -1 }).limit(10);
         res.status(200).json({
             success: true,
             posts

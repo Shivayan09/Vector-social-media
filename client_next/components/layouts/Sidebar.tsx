@@ -68,7 +68,7 @@ export default function Sidebar() {
         <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={() => setOpen(false)} />
       )}
 
-      <aside className={`fixed md:static top-0 left-0 z-50 h-screen text-white w-50 md:w-55 border-r border-black/5 shadow-lg flex flex-col gap-5 px-1 py-5 font-serif text-[1.1rem] backdrop-blur-3xl transform transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
+      <aside className={`fixed md:static top-0 left-0 z-50 h-screen text-white w-50 md:w-55 border-r border-black/5 shadow-lg flex flex-col gap-5 px-2 py-5 font-serif text-[1.1rem] backdrop-blur-3xl transform transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
         <div className="flex w-full">
           <div className="flex justify-center ml-3">
             <img src={userData?.avatar || "/default-avatar.png"} className="h-12 w-12 rounded-full object-cover border shrink-0"/>
@@ -125,7 +125,7 @@ export default function Sidebar() {
           active={pathname === "/main/settings"}
         />
 
-        <p className="flex mr-auto pl-2 md:pl-7 gap-2 mt-auto transition-all duration-300 hover:bg-black/10 w-full h-10 rounded-lg items-center cursor-pointer dark:hover:text-white/70" onClick={() => setLogoutOpen(true)}>
+        <p className="flex mr-auto pl-2 md:pl-5 gap-2 mt-auto transition-all duration-300 hover:bg-black/10 w-full h-10 rounded-lg items-center cursor-pointer dark:hover:text-white/70" onClick={() => setLogoutOpen(true)}>
           <LogOut className="opacity-60" />{" "}
           {isLoggedIn ? "Log out" : "Log in"}
         </p>
@@ -154,7 +154,7 @@ export default function Sidebar() {
 function SidebarItem({ icon, label, href, active, onClick }: SidebarItemProps) {
   if (onClick) {
     return (
-      <button onClick={onClick} className="flex gap-2 cursor-pointer transition-all duration-200 p-2 rounded-lg w-full md:pl-7 hover:bg-black/10 dark:hover:bg-blue-400/20">
+      <button onClick={onClick} className="flex gap-2 cursor-pointer transition-all duration-200 p-2 rounded-lg w-full md:pl-5 hover:bg-black/10 dark:hover:bg-blue-400/20">
         <span className="h-4 md:h-6 text-stone-300 dark:text-white/50">
           {icon}
         </span>
@@ -164,7 +164,7 @@ function SidebarItem({ icon, label, href, active, onClick }: SidebarItemProps) {
   }
 
   return (
-    <Link href={href!} className={`flex gap-2 cursor-pointer transition-all duration-200 p-2 rounded-lg w-full md:pl-7 ${active ? "bg-blue-500 text-white" : "hover:bg-black/10 dark:hover:bg-blue-400/20 dark:hover:text-white/70"}`}>
+    <Link href={href!} className={`flex gap-2 cursor-pointer transition-all duration-200 p-2 rounded-lg w-full md:pl-5 ${active ? "bg-blue-500 text-white" : "hover:bg-black/10 dark:hover:bg-blue-400/20 dark:hover:text-white/70"}`}>
       <span className={`h-4 md:h-6 ${active ? "text-white" : "text-stone-300 dark:text-white/50"}`}>
         {icon}
       </span>
