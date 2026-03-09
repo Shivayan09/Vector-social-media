@@ -26,13 +26,10 @@ export default function MessagesSidebar() {
     const [open, setOpen] = useState(false);
     const [users, setUsers] = useState<SuggestedUser[]>([]);
     const [loading, setLoading] = useState(true);
-
     const [query, setQuery] = useState("");
     const [results, setResults] = useState<User[]>([]);
     const [searching, setSearching] = useState(false);
-
     const wrapperRef = useRef<HTMLDivElement>(null);
-
     const { userData } = useAppContext();
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
@@ -166,7 +163,7 @@ export default function MessagesSidebar() {
                                     </div>
 
                                     <div className="flex flex-col w-30">
-                                        <p className="text-[0.9rem] truncate cursor-pointer hover:text-blue-600" onClick={() => handleClick(suggestedUser.username)}>
+                                        <p className="text-[0.9rem] text-white truncate cursor-pointer w-fit hover:text-blue-600" onClick={(e) => {e.stopPropagation(); handleClick(suggestedUser.username)}}>
                                             {suggestedUser.name}
                                         </p>
                                         <p className="opacity-50 text-[0.8rem] truncate">
