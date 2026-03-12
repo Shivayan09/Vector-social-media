@@ -5,7 +5,7 @@
 :root {
   --accent: #1f80ff;
   --accent-light: #dbeafe;
-  --accent-hover: #2563eb;
+  --accent-hover: #1f80ff;
 }
 
 @layer base {

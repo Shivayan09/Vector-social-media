@@ -73,9 +73,9 @@ export default function Home() {
       <Navbar />
 
       <section className="relative md:h-screen pt-20 md:pt-0 flex items-center px-6 overflow-hidden">
-        {/* <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[600px] rounded-full bg-blue-100/50 blur-3xl" />
-        </div> */}
+        {/* <div className="absolute inset-0 overflow-hidden hidden md:flex pointer-events-none">
+          <div className="absolute top-20 right-0 w-[700px] h-[500px] rounded-full bg-blue-300/50 blur-3xl" />
+        </div> */}  
 
         <div className="flex flex-col md:flex-row gap-10 md:gap-0 relative">
           <div className="md:px-10 text-center md:text-left w-full md:w-[50%]">
@@ -96,7 +96,7 @@ export default function Home() {
               and one-click PDF export — designed for developers and professionals.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 animate-fade-in-up stagger-4">
+            <div className="flex flex-col justify-center md:justify-start sm:flex-row gap-3 animate-fade-in-up stagger-4">
               <Link href="/builder" className="btn-primary text-sm flex justify-center py-3 px-6">
                 Create Resume →
               </Link>
