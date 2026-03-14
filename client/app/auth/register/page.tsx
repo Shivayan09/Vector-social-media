@@ -1,8 +1,10 @@
 "use client";
 
+import axios from "axios";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, KeyboardEvent, ChangeEvent } from "react";
+import { toast } from "react-toastify";
 
 export default function Register() {
 
@@ -23,6 +25,8 @@ export default function Register() {
 
     const [password, setPassword] = useState<string>("");
     const [confirmPassword, setConfirmPassword] = useState<string>("");
+
+    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
     const nextStep = () => {
         setStep((prev) => prev + 1);
@@ -57,8 +61,29 @@ export default function Register() {
 
     const otpValue = otp.join("");
 
-    const handleRegister = async () => {
-        
+    const handleRegister = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            setLoading(true);
+            const {data} = await axios.post(BACKEND_URL + '/api/auth/register', {name, surname, email, phoneNumber, password}, {withCredentials: true});
+            if(data.success) {
+                toast.success("Registered successfully");
+                router.push('/');
+                return;
+            } else {
+                toast.warn(data.message);
+            }
+        } catch(error: any) {
+            if (error.response?.data?.errors) {
+                toast.error(error.response.data.errors[0].message);
+            } else if (error.response?.data?.message) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error("Something went wrong");
+            }
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -66,7 +91,7 @@ export default function Register() {
 
             <div className="w-full md:w-[30%] p-7">
 
-                <p className="text-blue-500 text-[1.6rem]">Welcome to Vector</p>
+                <p className="text-blue-500 text-[1.5rem] font-semibold">Welcome to Vector</p>
                 <p className="text-gray-500 mt-3 mb-5">Register to dive right in</p>
 
                 <button className="flex items-center justify-center cursor-pointer transition-all duration-200 gap-2 border h-10 rounded-lg w-full bg-blue-50 hover:bg-gray-100">
@@ -80,8 +105,6 @@ export default function Register() {
                         or
                     </span>
                 </div>
-
-                {/* STEP 1 */}
 
                 {step === 1 && (
                     <>
@@ -129,16 +152,11 @@ export default function Register() {
 
                         </div>
 
-                        <button
-                            className="w-full mt-5 bg-blue-500 hover:bg-blue-600 text-white h-10 rounded-lg"
-                            onClick={nextStep}
-                        >
+                        <button className="w-full mt-5 bg-blue-500 hover:bg-blue-600 text-white h-10 rounded-lg" onClick={nextStep}>
                             Continue
                         </button>
                     </>
                 )}
-
-                {/* STEP 2 OTP */}
 
                 {step === 2 && (
                     <>
@@ -153,7 +171,7 @@ export default function Register() {
                                     type="text"
                                     value={digit}
                                     maxLength={1}
-                                    className="w-12 h-12 text-center text-lg rounded-md bg-blue-500/5 outline-none"
+                                    className="w-12 h-12 text-center text-lg font-semibold rounded-md bg-blue-500/5 outline-none"
                                     onChange={(e: ChangeEvent<HTMLInputElement>) =>
                                         handleOtpChange(e.target.value, index)
                                     }
@@ -165,25 +183,17 @@ export default function Register() {
 
                         <div className="flex gap-3 mt-6">
 
-                            <button
-                                className="w-full border h-10 rounded-lg"
-                                onClick={prevStep}
-                            >
+                            <button className="w-full border h-10 rounded-lg" onClick={prevStep}>
                                 Back
                             </button>
 
-                            <button
-                                className="w-full bg-blue-500 hover:bg-blue-600 text-white h-10 rounded-lg"
-                                onClick={nextStep}
-                            >
+                            <button className="w-full bg-blue-500 hover:bg-blue-600 text-white h-10 rounded-lg" onClick={nextStep}>
                                 Verify OTP
                             </button>
 
                         </div>
                     </>
                 )}
-
-                {/* STEP 3 PASSWORD */}
 
                 {step === 3 && (
                     <>
@@ -195,13 +205,9 @@ export default function Register() {
                                 type={showPassword ? "text" : "password"}
                                 placeholder="Enter a password"
                                 className="outline-none h-10 bg-blue-500/5 w-full rounded-md p-3 pr-10 my-2"
-                                onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-                            />
+                                onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}/>
 
-                            <span
-                                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
-                                onClick={() => setShowPassword(!showPassword)}
-                            >
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer" onClick={() => setShowPassword(!showPassword)}>
                                 {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                             </span>
 
@@ -215,8 +221,7 @@ export default function Register() {
                                 type={showConfirmPassword ? "text" : "password"}
                                 placeholder="Confirm your password"
                                 className="outline-none h-10 bg-blue-500/5 w-full rounded-md p-3 pr-10 my-2"
-                                onChange={(e: ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
-                            />
+                                onChange={(e: ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}/>
 
                             <span
                                 className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
@@ -229,23 +234,15 @@ export default function Register() {
 
                         <button
                             disabled={loading}
-                            className={`w-full mt-5 flex items-center justify-center gap-2 h-10 rounded-lg text-white transition-all duration-200 group ${
-                                loading
-                                    ? "bg-blue-400"
-                                    : "bg-blue-500 hover:bg-blue-600"
-                            }`}
-                            onClick={handleRegister}
-                        >
+                            className={`w-full mt-5 flex items-center justify-center gap-2 h-10 rounded-lg text-white transition-all duration-200 group ${loading ? "bg-blue-400" : "bg-blue-500 hover:bg-blue-600"}`}
+                            onClick={handleRegister}>
                             {loading ? "Creating.." : "Create account"}
 
                             <ArrowRight className="h-4 transition-all duration-200 group-hover:translate-x-1" />
 
                         </button>
 
-                        <button
-                            className="w-full border h-10 rounded-lg mt-3"
-                            onClick={prevStep}
-                        >
+                        <button className="w-full border h-10 rounded-lg mt-3" onClick={prevStep}>
                             Back
                         </button>
                     </>

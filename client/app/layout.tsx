@@ -5,6 +5,7 @@ import "./globals.css";
 import { ResumeProvider } from "@/context/ResumeContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { AppContextProvider } from "@/context/AppContext";
 
 export const metadata: Metadata = {
   title: "Vector - Build ATS-Friendly Resumes in Minutes",
@@ -43,7 +44,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className="antialiased bg-white text-neutral-900">
-        <ResumeProvider>{children}</ResumeProvider>
+        <AppContextProvider>
+          <ResumeProvider>{children}</ResumeProvider>
+        </AppContextProvider>
         <ToastContainer
           position="top-center"
           autoClose={2500}
