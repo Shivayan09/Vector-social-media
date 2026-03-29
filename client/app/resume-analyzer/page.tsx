@@ -3,6 +3,7 @@
 import { useState } from "react";
 import axios from "axios";
 import Navbar from "@/components/ui/Navbar";
+import { toast } from "react-toastify";
 
 export default function ResumeAnalyzer() {
     const [file, setFile] = useState<File | null>(null);
@@ -14,7 +15,15 @@ export default function ResumeAnalyzer() {
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
     const handleSubmit = async () => {
-        if (!file || !jd) return alert("Upload resume + JD");
+        if(!file) {
+            return toast.warn("Upload your resume")
+        }
+        if(!jd) {
+            return toast.warn("Write a job description")
+        }
+        if(jd.length<10) {
+            return toast.warn("Job description must be of min 10 words")
+        }
 
         const formData = new FormData();
         formData.append("resume", file);
@@ -27,10 +36,7 @@ export default function ResumeAnalyzer() {
 
             setTimeout(() => setStep(2), 1200);
 
-            const res = await axios.post(
-                `${BACKEND_URL}/api/resume/analyze`,
-                formData
-            );
+            const res = await axios.post(BACKEND_URL + "/api/resume/analyze", formData);
 
             setResult(res.data);
         } catch (err: any) {
@@ -133,7 +139,7 @@ export default function ResumeAnalyzer() {
                                     </div>
 
                                     {/* Steps */}
-                                    <div className="space-y-3 text-sm text-left">
+                                    <div className="space-y-3 text-left">
 
                                         <div className="flex items-center gap-3">
                                             <div
