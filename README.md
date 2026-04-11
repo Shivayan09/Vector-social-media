@@ -101,13 +101,29 @@ The backend exposes these main route groups:
 ### Frontend (`client_next/.env.local`)
 
 ```env
-
+NEXT_PUBLIC_BACKEND_URL = 'http://localhost:5000'
 ```
 
 ### Backend (`server/.env`)
 
 ```env
+MONGO_URI = 'create your own'
 
+JWT_SECRET = 'anytext'
+
+NODE_ENV = 'development'
+
+CLOUDINARY_CLOUD_NAME = 'create your own'
+
+CLOUDINARY_API_KEY = 'create your own'
+
+CLOUDINARY_API_SECRET = 'create your own'
+
+GOOGLE_CLIENT_ID = 'create your own'
+
+GOOGLE_CLIENT_SECRET = 'create your own'
+
+FRONTEND_URL = 'your frontend url'
 ```
 
 ## Local Development
