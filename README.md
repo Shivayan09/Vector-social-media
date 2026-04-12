@@ -6,7 +6,7 @@ Vector is a full-stack social media platform built with a Next.js frontend and a
 
 The repository is split into two main apps:
 
-- `client_next` - Next.js 16 app router frontend built with React 19, TypeScript, Tailwind CSS, `axios`, and `socket.io-client`
+- `client` - Next.js 16 app router frontend built with React 19, TypeScript, Tailwind CSS, `axios`, and `socket.io-client`
 - `server` - Express 5 backend using MongoDB with Mongoose, JWT cookie auth, Passport Google OAuth, Cloudinary image uploads, and Socket.IO
 
 ## Core Features
@@ -131,7 +131,7 @@ FRONTEND_URL = 'your frontend url'
 ### 1. Install dependencies
 
 ```bash
-cd client_next
+cd client
 npm install
 ```
 
@@ -150,7 +150,7 @@ npm run dev
 ### 3. Start the frontend
 
 ```bash
-cd client_next
+cd client
 npm run dev
 ```
 
