@@ -217,16 +217,16 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                 <div className="flex items-center justify-between w-2/3 text-gray-200 dark:text-gray-300 text-sm">
                     <p className="flex gap-1 items-center cursor-pointer hover:text-blue-500 md:w-[20%] justify-center">
                         <MessageCircle className="h-4.5 md:h-5 hover:text-blue-500" />
-                        {post.commentsCount || 0}
+                        {post.commentsCount || 0} {post.commentsCount===1 ? 'Comment' : 'Comments'}
                     </p>
 
                     <p onClick={handleShare} className="flex gap-1 items-center cursor-pointer md:w-[20%] justify-center hover:text-blue-500">
-                        <Forward className="h-4.5 md:h-5" />0
+                        <Forward className="h-4.5 md:h-5" />0 Shares
                     </p>
 
                     <p onClick={(e) => { e.stopPropagation(); handleLike() }} className="flex gap-1 items-center md:w-[20%] justify-center cursor-pointer hover:text-blue-500">
                         <Heart className={`h-4.5 md:h-5 cursor-pointer transition-transform duration-300 hover:text-blue-500 ${isLiked ? "text-blue-500" : ""} ${likeAnimating ? "scale-135" : "scale-100"}`} fill={isLiked ? "currentColor" : "none"} />
-                        {post.likes.length}
+                        {post.likes.length} {post.likes.length===1 ? 'Like' : 'Likes'}
                     </p>
                 </div>
 
