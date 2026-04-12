@@ -131,7 +131,7 @@ FRONTEND_URL = 'your frontend url'
 ### 1. Install dependencies
 
 ```bash
-cd client_next
+cd client
 npm install
 ```
 
@@ -150,7 +150,7 @@ npm run dev
 ### 3. Start the frontend
 
 ```bash
-cd client_next
+cd client
 npm run dev
 ```
 
