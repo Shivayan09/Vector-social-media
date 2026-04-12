@@ -12,7 +12,7 @@ import CommentsSection from "./CommentsSection";
 
 type PostCardProps = {
     post: any;
-    setPost?: React.Dispatch<React.SetStateAction<any>>; // ✅ added
+    setPost?: React.Dispatch<React.SetStateAction<any>>;
 };
 
 const intentIconMap: Record<string, any> = {
@@ -25,13 +25,18 @@ const intentIconMap: Record<string, any> = {
 
 export default function PostCard({ post, setPost }: PostCardProps) {
 
+    // prevent crash if author missing
+    if (!post?.author) return null;
+
     const router = useRouter();
     const { userData, posts, setPosts } = useAppContext();
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
-    const isOwner = userData?.id === post.author._id;
+
+    const isOwner = userData?.id === post?.author?._id;
     const isLiked = post.likes?.map(String).includes(String(userData?.id));
+
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
     const [likeAnimating, setLikeAnimating] = useState(false);
@@ -57,7 +62,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     };
 
     const openUserProfile = () => {
-        router.push(`/main/user/${post.author.username}`)
+        router.push(`/main/user/${post?.author?.username}`)
     }
 
     const handleLike = async () => {
@@ -149,11 +154,11 @@ export default function PostCard({ post, setPost }: PostCardProps) {
             <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                     <div className="h-8 md:h-12 w-8 md:w-12 rounded-full transition-all duration-200" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
-                        <img src={post.author.avatar || "/default-avatar.png"} className="h-full w-full rounded-full object-cover" />
+                        <img src={post?.author?.avatar || "/default-avatar.png"} className="h-full w-full rounded-full object-cover" />
                     </div>
-                    <span className="font-semibold ml-1 transition-all duration-200 text-white hover:text-blue-500" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>{post.author.name}</span>
+                    <span className="font-semibold ml-1 transition-all duration-200 text-white hover:text-blue-500" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>{post?.author?.name}</span>
                     <span className="text-[0.9rem] text-white/60 transition-all duration-200 hover:text-white/80" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
-                        @{post.author.username}
+                        @{post?.author?.username}
                     </span>
                     <p className="absolute left-195 text-[0.9rem] font-semibold text-blue-500 flex items-center gap-1.5">
                         Intent:
@@ -213,23 +218,18 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                     <p className="flex gap-1 items-center cursor-pointer hover:text-blue-500 md:w-[20%] justify-center">
                         <MessageCircle className="h-4.5 md:h-5 hover:text-blue-500" />
                         {post.commentsCount || 0}
-                        <span className="hidden md:inline">
-                            {post.commentsCount == 1 ? " Comment" : " Comments"}
-                        </span>
                     </p>
 
                     <p onClick={handleShare} className="flex gap-1 items-center cursor-pointer md:w-[20%] justify-center hover:text-blue-500">
                         <Forward className="h-4.5 md:h-5" />0
-                        <span className="hidden md:inline"> Shares</span>
                     </p>
+
                     <p onClick={(e) => { e.stopPropagation(); handleLike() }} className="flex gap-1 items-center md:w-[20%] justify-center cursor-pointer hover:text-blue-500">
                         <Heart className={`h-4.5 md:h-5 cursor-pointer transition-transform duration-300 hover:text-blue-500 ${isLiked ? "text-blue-500" : ""} ${likeAnimating ? "scale-135" : "scale-100"}`} fill={isLiked ? "currentColor" : "none"} />
                         {post.likes.length}
-                        <span className="hidden md:inline">
-                            {post.likes.length == 1 ? " Like" : " Likes"}
-                        </span>
                     </p>
                 </div>
+
                 <div>
                     <p className="text-[0.85rem]">{timeAgo(post.createdAt)}</p>
                 </div>

@@ -5,9 +5,16 @@ type PostListProps = {
 };
 
 export default function PostList({ posts }: PostListProps) {
+    const safePosts =
+        posts?.filter(
+            (post) => post?._id && post?.author && post?.author?._id
+        ) || [];
+
     return (
         <div className="flex flex-col gap-3">
-            {posts .filter(post => post && post._id).map((post) => (<PostCard key={post._id} post={post} />))}
+            {safePosts.map((post) => (
+                <PostCard key={post._id} post={post} />
+            ))}
         </div>
     );
 }

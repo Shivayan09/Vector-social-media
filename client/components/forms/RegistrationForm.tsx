@@ -114,17 +114,6 @@ export default function RegistrationForm() {
             Register to start posting right away!
           </p>
 
-          <button className="border bg-white dark:text-black w-full rounded-md h-10 flex items-center justify-center gap-2 my-3 cursor-pointer" onClick={() => { window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/google`; }} >
-            <img src="/Google.png" alt="" className="h-5" />
-            Continue with Google
-          </button>
-
-          <div className="flex items-center gap-3 mt-5 mb-4">
-            <div className="flex-1 h-px bg-white/20"></div>
-            <span className="text-sm text-white/70">or</span>
-            <div className="flex-1 h-px bg-white/20"></div>
-          </div>
-
           <div className="flex flex-col md:flex-row gap-2 md:gap-5">
             <div className="w-full">
               <p className="font-semibold text-white">First Name</p>
@@ -177,7 +166,7 @@ export default function RegistrationForm() {
             </span>
           </div>
 
-          <Button className="w-full mt-5 cursor-pointer bg-blue-500 hover:bg-blue-600" onClick={nextStep}>
+          <Button className="w-full text-white mt-5 cursor-pointer bg-blue-500 hover:bg-blue-600" onClick={nextStep}>
             Continue
           </Button>
         </>
@@ -210,7 +199,7 @@ export default function RegistrationForm() {
 
           <p className="font-semibold text-white">Set a bio</p>
 
-          <textarea placeholder="Enter your bio (30 words max)" className="w-90 outline-0 px-3 py-2 rounded-md mt-2 h-12 bg-white/30 resize-none" onChange={(e) => setBio(e.target.value)} />
+          <textarea placeholder="Enter your bio (30 words max)" className="w-full md:w-90 outline-0 px-3 py-2 rounded-md mt-2 h-12 bg-white/30 resize-none" onChange={(e) => setBio(e.target.value)} />
 
           <p className="font-semibold mt-3 text-white">
             Set a description
