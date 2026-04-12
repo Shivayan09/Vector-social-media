@@ -102,6 +102,7 @@ The backend exposes these main route groups:
 
 ```env
 NEXT_PUBLIC_BACKEND_URL = 'http://localhost:5000'
+NEXT_PUBLIC_GOOGLE_CLIENT_ID = 'create your own (same as the backend Google Client ID)'
 ```
 
 ### Backend (`server/.env`)
