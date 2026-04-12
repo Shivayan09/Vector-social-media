@@ -1,8 +1,7 @@
 import express from 'express';
 import { getMe, login, logout, register } from '../controllers/auth.controller.js';
 import authMiddleware from '../middlewares/auth.middleware.js';
-import passport from '../config/passport.js';
-import { googleAuthCallback } from '../controllers/googleAuth.controller.js';
+import { googleAuth } from '../controllers/googleAuth.controller.js';
 
 const authRouter = express.Router()
 
@@ -13,7 +12,6 @@ authRouter.post('/login', login)
 authRouter.post('/logout', logout)
 
 //google auth
-authRouter.get("/google", passport.authenticate("google", {scope: ["profile", "email"], session: false}));
-authRouter.get("/google/callback", passport.authenticate("google", {session: false, failureRedirect: "/auth/login"}), googleAuthCallback);
+authRouter.post("/google", googleAuth);
 
 export default authRouter
