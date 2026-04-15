@@ -57,7 +57,7 @@ The repository is split into two main apps:
 
 ```text
 .
-|-- client_next/
+|-- client/
 |   |-- app/                # Next.js routes
 |   |-- components/         # UI, feed, profile, forms, layout, modals
 |   |-- context/            # Global auth + post state
@@ -98,7 +98,7 @@ The backend exposes these main route groups:
 
 ## Environment Variables
 
-### Frontend (`client_next/.env.local`)
+### Frontend (`client/.env.local`)
 
 ```env
 NEXT_PUBLIC_BACKEND_URL = 'http://localhost:5000'
@@ -163,9 +163,8 @@ Frontend runs on `http://localhost:3000` and the backend runs on `http://localho
 - Google OAuth redirects users back to the frontend after authentication.
 - Avatar uploads are sent to Cloudinary after being accepted by Multer.
 - The repo currently does not include automated tests.
-- There is an older placeholder README inside `client_next`, but this root README is the project-level overview for the full stack app.
+- Detailed setup instructions are available in `client/README.md` and `server/README.md`.
 
 ## Status
 
 This codebase represents a working social platform foundation with authentication, social graph features, content posting, notifications, and real-time chat. It is a strong base for continuing work on moderation, richer media support, password recovery, deployment hardening, and test coverage.
-=======
