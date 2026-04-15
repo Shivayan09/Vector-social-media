@@ -124,6 +124,16 @@ export default function MessagesSidebar() {
                     <UserPlus className="h-5 text-blue-500" />
                     Suggestions
                 </p>
+                <div className="mt-4 flex items-center gap-2 bg-white/10 px-3 py-2 rounded-md">
+                    <Search className="h-4 w-4 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Search users..."
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        className="bg-transparent outline-none text-sm text-white placeholder-gray-400 w-full"
+                    />
+                </div>
 
                 <div className="mt-5 flex flex-col gap-2 w-fit min-h-[75vh] max-h-[60vh] overflow-y-auto hide-scrollbar pr-1">
                     {loading ? (
@@ -163,7 +173,7 @@ export default function MessagesSidebar() {
                                     </div>
 
                                     <div className="flex flex-col w-30">
-                                        <p className="text-[0.9rem] text-white truncate cursor-pointer w-fit hover:text-blue-600" onClick={(e) => {e.stopPropagation(); handleClick(suggestedUser.username)}}>
+                                        <p className="text-[0.9rem] text-white truncate cursor-pointer w-fit hover:text-blue-600" onClick={(e) => { e.stopPropagation(); handleClick(suggestedUser.username) }}>
                                             {suggestedUser.name}
                                         </p>
                                         <p className="opacity-50 text-[0.8rem] truncate">
@@ -172,7 +182,7 @@ export default function MessagesSidebar() {
                                     </div>
 
                                     <button onClick={() => startChat(suggestedUser._id)} className="mt-1 cursor-pointer">
-                                        <Send className="text-white opacity-60"/>
+                                        <Send className="text-white opacity-60" />
                                     </button>
                                 </div>
                             );
