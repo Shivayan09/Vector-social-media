@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vector Frontend
 
-## Getting Started
+This is the Next.js client for Vector, a social platform with posts, comments, follows, notifications, profiles, and real-time chat.
 
-First, run the development server:
+## What This App Does
+
+- Handles sign up, login, and Google sign-in
+- Keeps track of auth and profile state in a shared context
+- Shows the main feed, explore page, activity page, profile pages, and chat screens
+- Connects to the backend API with cookie-based authentication
+- Uses Socket.IO for live messaging and message updates
+
+## Tech Stack
+
+- Next.js 16
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- Axios
+- Socket.IO client
+- React Toastify
+- next-themes
+- lucide-react
+
+## Project Structure
+
+- `app/` - route pages and layouts
+- `components/` - UI, feed, forms, layouts, modals, and profile components
+- `context/` - global auth and post state
+- `socket/` - client Socket.IO setup
+- `public/` - static images and assets
+
+## Setup
+
+1. Install dependencies:
+
+```bash
+cd client
+npm install
+```
+
+2. Create `client/.env.local`:
+
+```env
+NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
+```
+
+3. Start the dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Available Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `npm run dev` - start development server
+- `npm run build` - create production build
+- `npm run start` - run the production build
+- `npm run lint` - run ESLint
 
-## Learn More
+## Notes
 
-To learn more about Next.js, take a look at the following resources:
+- The app expects the backend to be running on the URL in `NEXT_PUBLIC_BACKEND_URL`.
+- Auth requests use `withCredentials: true`, so cookies must be enabled.
+- The same Google client ID must be configured on both the frontend and backend.
+- The authenticated experience lives under `app/main`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Contribution Tip
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+For a first contribution, a small UI polish, documentation fix, or loading/error state improvement is a good fit.
