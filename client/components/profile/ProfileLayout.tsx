@@ -104,8 +104,8 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
           </p>
 
           <div className="flex justify-center gap-6 font-semibold mt-2 text-white">
-            <span>{followersCount} Followers</span>
-            <span>{followingCount} Following</span>
+            <span>{user.followersCount} Followers</span>
+            <span>{user.followingCount} Following</span>
           </div>
         </div>
       </div>
