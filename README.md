@@ -127,6 +127,25 @@ GOOGLE_CLIENT_SECRET = 'create your own'
 FRONTEND_URL = 'your frontend url'
 ```
 
+## ⚠️ Notes for Contributors
+
+### Google OAuth Setup
+
+If `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are not provided, the backend may crash during startup.
+
+This project now safely skips Google OAuth initialization if these variables are missing.
+
+You can run the project locally without setting up Google OAuth.
+
+---
+
+### MongoDB Setup
+
+If `MONGO_URI` is not provided, the backend will skip database connection.
+
+This allows contributors to run the project without configuring MongoDB initially, although database-dependent features will not work.
+
+
 ## Local Development
 
 ### 1. Install dependencies
