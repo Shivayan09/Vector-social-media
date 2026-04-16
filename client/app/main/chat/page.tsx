@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useAppContext } from "@/context/AppContext";
-import { ArrowRight, ChartArea, MessageSquare, Send } from "lucide-react";
+import { ArrowRight, ChartArea, MessageSquare, Send, Trash2 } from "lucide-react";
 import MessagesSidebar from "@/components/layouts/MessagesSidebar";
 
 export default function ChatListPage() {
@@ -25,6 +25,19 @@ export default function ChatListPage() {
             fetchConversations();
         }
     }, [userData]);
+
+    const deleteChat = async (e: React.MouseEvent, conversationId: string) => {
+        e.stopPropagation();
+        
+        if (!window.confirm("Are you sure you want to delete this chat?")) return;
+
+        try {
+            await axios.delete(`${BACKEND_URL}/api/conversation/${conversationId}`, { withCredentials: true });
+            setConversations((prev) => prev.filter((convo) => convo._id !== conversationId));
+        } catch (error) {
+            console.error("Failed to delete chat", error);
+        }
+    };
 
     return (
         <div className="flex w-full h-screen">
@@ -57,6 +70,7 @@ export default function ChatListPage() {
                                 </p>
                             </div>
                             <ArrowRight className="ml-auto opacity-70"/>
+                            <Trash2 onClick={(e) => deleteChat(e, convo._id)} className="ml-2 text-red-500 opacity-70 hover:opacity-100 hover:scale-110 transition-transform" size={20} />
                         </div>
                     );
                 })}

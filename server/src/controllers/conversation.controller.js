@@ -44,3 +44,20 @@ export const getUserConversations = async (req, res) => {
     });
   }
 };
+
+export const deleteConversation = async (req, res) => {
+    try {
+        const convo = await Conversation.findOneAndDelete({
+            _id: req.params.conversationId,
+            participants: req.user._id
+        });
+
+        if (!convo) {
+            return res.status(404).json({ message: "Conversation not found or unauthorized" });
+        }
+
+        res.json({ message: "Conversation deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
