@@ -12,11 +12,14 @@ export default function Feed() {
     const [loading, setLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const observerTarget = useRef<HTMLDivElement>(null);
+    const loadingRef = useRef(false);
+    const hasMoreRef = useRef(true);
 
     const fetchPosts = useCallback(async (pageNum: number) => {
-        if (loading || !hasMore) return;
+        if (loadingRef.current || !hasMoreRef.current) return;
+        loadingRef.current = true;
+        setLoading(true);
         try {
-            setLoading(true);
             const res = await axios.get(
                 `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/posts?page=${pageNum}&limit=10`,
                 { withCredentials: true }
@@ -24,25 +27,27 @@ export default function Feed() {
             if (pageNum === 1) {
                 setPosts(res.data.posts || []);
             } else {
-                setPosts(prev => [...prev, ...res.data.posts]);
+                setPosts(prev => [...prev, ...(res.data.posts || [])]);
             }
+            hasMoreRef.current = res.data.hasMore;
             setHasMore(res.data.hasMore);
         } catch (error) {
             console.error("Failed to fetch posts", error);
             if (pageNum === 1) setPosts([]);
         } finally {
+            loadingRef.current = false;
             setLoading(false);
         }
-    }, [loading, hasMore, setPosts]);
+    }, [setPosts]);
 
     useEffect(() => {
         fetchPosts(1);
-    }, []);
+    }, [fetchPosts]);
 
     useEffect(() => {
         const observer = new IntersectionObserver(
             entries => {
-                if (entries[0].isIntersecting && hasMore && !loading) {
+                if (entries[0].isIntersecting && hasMoreRef.current && !loadingRef.current) {
                     setPage(prev => prev + 1);
                 }
             },
@@ -50,13 +55,11 @@ export default function Feed() {
         );
         if (observerTarget.current) observer.observe(observerTarget.current);
         return () => observer.disconnect();
-    }, [hasMore, loading]);
+    }, []);
 
     useEffect(() => {
-        if (page > 1) {
-            fetchPosts(page);
-        }
-    }, [page]);
+        if (page > 1) fetchPosts(page);
+    }, [page, fetchPosts]);
 
     return (
         <div className="hide-scrollbar w-full px-5 md:px-10 pb-10">
