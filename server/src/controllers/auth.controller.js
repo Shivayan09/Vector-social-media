@@ -3,6 +3,28 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import validator from 'validator';
 import crypto from 'crypto';
+import nodemailer from 'nodemailer';
+
+const sendResetEmail = async (email, token) => {
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.EMAIL,
+            pass: process.env.EMAIL_PASS,
+        },
+    });
+
+    const resetLink = `http://localhost:3000/reset-password/${token}`;
+
+    const mailOptions = {
+        from: process.env.EMAIL,
+        to: email,
+        subject: 'Password Reset',
+        html: `<p>You requested a password reset. Click <a href="${resetLink}">here</a> to reset your password.</p>`,
+    };
+
+    await transporter.sendMail(mailOptions);
+};
 
 export const register = async (req, res) => {
     try {
@@ -237,10 +259,11 @@ export const forgotPassword = async (req, res) => {
         user.resetTokenExpiry = resetTokenExpiry;
         await user.save({ validateBeforeSave: false });
 
+        await sendResetEmail(user.email, resetToken);
+
         return res.status(200).json({
             success: true,
-            message: "Token generated successfully",
-            resetToken
+            message: "Password reset email sent successfully",
         });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
