@@ -24,7 +24,6 @@ import CommentsSection from "./CommentsSection";
 
 type PostCardProps = {
   post: any;
-  setPost?: React.Dispatch<React.SetStateAction<any>>;
 };
 
 const intentIconMap: Record<string, any> = {
@@ -41,7 +40,6 @@ export default function PostCard({ post }: PostCardProps) {
   const router = useRouter();
   const { userData, setPosts } = useAppContext();
 
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -55,10 +53,10 @@ export default function PostCard({ post }: PostCardProps) {
     const diff = Math.floor(
       (Date.now() - new Date(dateString).getTime()) / 1000,
     );
-    if (diff < 60) return `${diff}s`;
-    if (diff < 3600) return `${Math.floor(diff / 60)}m`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
-    return `${Math.floor(diff / 86400)}d`;
+    if (diff < 60) return `${diff}s ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return `${Math.floor(diff / 86400)}d ago`;
   };
 
   const openPost = () => router.push(`/main/post/${post._id}`);
@@ -76,9 +74,6 @@ export default function PostCard({ post }: PostCardProps) {
           p._id === post._id ? { ...p, likes: updatedLikes } : p,
         ),
       );
-
-      // optional API (ignore if 404)
-      // await axios.put(`${BACKEND_URL}/api/posts/${post._id}/like`);
     } catch {
       toast.error("Failed to like post");
     }
@@ -104,7 +99,7 @@ export default function PostCard({ post }: PostCardProps) {
 
   return (
     <div
-      className="w-full max-w-2xl mx-auto px-3 sm:px-5 py-3 rounded-2xl bg-black/10 backdrop-blur-xl border border-white/10 hover:shadow-lg transition cursor-pointer"
+      className="w-full px-3 sm:px-5 py-3 rounded-2xl bg-black/10 backdrop-blur-xl border border-white/10 hover:shadow-lg transition cursor-pointer"
       onClick={openPost}
     >
       {/* HEADER */}
@@ -133,7 +128,7 @@ export default function PostCard({ post }: PostCardProps) {
               const Icon = intentIconMap[post.intent];
               return Icon ? <Icon size={14} /> : null;
             })()}
-            <span>{post.intent}</span>
+            <span className="capitalize">{post.intent}</span>
           </div>
         </div>
 
@@ -156,6 +151,7 @@ export default function PostCard({ post }: PostCardProps) {
               >
                 Share
               </button>
+
               {isOwner ? (
                 <button
                   className="w-full px-3 py-2 text-red-500"
@@ -187,31 +183,41 @@ export default function PostCard({ post }: PostCardProps) {
         {post.content}
       </p>
 
-      {/* ACTIONS */}
-      <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-3 border-t border-white/10 pt-3 text-white text-sm">
-        <div className="flex justify-between sm:justify-start w-full gap-6">
-          <div className="flex items-center gap-1">
-            <MessageCircle size={16} />
-            {post.commentsCount || 0}
-          </div>
+      {/* ACTIONS (FIXED) */}
+      <div className="flex flex-col sm:flex-row sm:justify-between gap-3 text-white border-t border-white/20 pt-3 text-sm">
+        <div className="flex justify-around sm:justify-start gap-4 sm:gap-6 w-full">
+          <p className="flex items-center gap-1 cursor-pointer hover:text-blue-500">
+            <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+            {post.commentsCount || 0}{" "}
+            {post.commentsCount === 1 ? "Comment" : "Comments"}
+          </p>
 
-          <div onClick={handleShare} className="cursor-pointer">
-            <Forward size={16} />
-          </div>
+          <p
+            onClick={handleShare}
+            className="flex items-center gap-1 cursor-pointer hover:text-blue-500"
+          >
+            <Forward className="h-4 w-4 sm:h-5 sm:w-5" />0 Shares
+          </p>
 
-          <div
+          <p
             onClick={(e) => {
               e.stopPropagation();
               handleLike();
             }}
-            className="flex items-center gap-1 cursor-pointer"
+            className="flex items-center gap-1 cursor-pointer hover:text-blue-500"
           >
-            <Heart size={16} fill={isLiked ? "white" : "none"} />
-            {post.likes?.length || 0}
-          </div>
+            <Heart
+              className={`h-4 w-4 sm:h-5 sm:w-5 ${
+                isLiked ? "text-blue-500" : ""
+              }`}
+              fill={isLiked ? "currentColor" : "none"}
+            />
+            {post.likes?.length || 0}{" "}
+            {post.likes?.length === 1 ? "Like" : "Likes"}
+          </p>
         </div>
 
-        <span className="text-xs text-white/60">{timeAgo(post.createdAt)}</span>
+        <p className="text-xs sm:text-sm">{timeAgo(post.createdAt)}</p>
       </div>
 
       <PostDelete
