@@ -18,9 +18,26 @@ export default function ChatListPage() {
 
     useEffect(() => {
         const fetchConversations = async () => {
-            const { data } = await axios.get(`${BACKEND_URL}/api/conversation`, { withCredentials: true });
-            setConversations(data);
+            const { data: allConvos } = await axios.get(
+                `${BACKEND_URL}/api/conversation`,
+                { withCredentials: true }
+            );
+
+            // For each conversation, check if it has messages.
+            // Run all checks in parallel, then keep only the non-empty ones.
+            const results = await Promise.all(
+                allConvos.map(async (convo: any) => {
+                    const { data: messages } = await axios.get(
+                        `${BACKEND_URL}/api/messages/${convo._id}`,
+                        { withCredentials: true }
+                    );
+                    return messages.length > 0 ? convo : null;
+                })
+            );
+
+            setConversations(results.filter(Boolean));
         };
+
         if (userData?.id) {
             fetchConversations();
         }
