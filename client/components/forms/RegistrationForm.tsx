@@ -33,60 +33,58 @@ export default function RegistrationForm() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) {
-      return;
-    }
+    if (!file) return;
     setAvatarFile(file);
     setPreview(URL.createObjectURL(file));
   };
 
   const nextStep = () => {
-    if (!name.trim()) {
-      return toast.warn("Enter first name");
-    }
-    if (!surname.trim()) {
-      return toast.warn("Enter last name");
-    }
-    if (!email.trim()) {
-      return toast.warn("Enter email");
-    }
-    if (!phoneNumber.trim()) {
-      return toast.warn("Enter phone number");
-    }
-    if (!password.trim()) {
-      return toast.warn("Enter password");
-    }
-    if (password.length < 6) {
-      return toast.warn("Password too short");
-    }
-    if (password !== confirmPassword) {
+    if (!name.trim()) return toast.warn("Enter first name");
+    if (!surname.trim()) return toast.warn("Enter last name");
+    if (!email.trim()) return toast.warn("Enter email");
+    if (!phoneNumber.trim()) return toast.warn("Enter phone number");
+    if (!password.trim()) return toast.warn("Enter password");
+    if (password.length < 6) return toast.warn("Password too short");
+    if (password !== confirmPassword)
       return toast.warn("Passwords do not match");
-    }
     setStep(2);
   };
 
   const handleSubmit = async () => {
-    if (!username.trim()) {
-      return toast.warn("Enter username");
-    }
-    if (!bio.trim()) {
-      return toast.warn("Enter bio");
-    }
-    if (!description.trim()) {
-      return toast.warn("Enter description");
-    }
+    if (!username.trim()) return toast.warn("Enter username");
+    if (!bio.trim()) return toast.warn("Enter bio");
+    if (!description.trim()) return toast.warn("Enter description");
+
     try {
       setLoading(true);
-      const { data } = await axios.post(BACKEND_URL + "/api/auth/register", { name, surname, email, phoneNumber, password, username, bio, description }, { withCredentials: true });
+      const { data } = await axios.post(
+        BACKEND_URL + "/api/auth/register",
+        {
+          name,
+          surname,
+          email,
+          phoneNumber,
+          password,
+          username,
+          bio,
+          description,
+        },
+        { withCredentials: true },
+      );
+
       if (!data.success) {
         toast.warn(data.message);
         return;
       }
+
       if (avatarFile) {
         const formData = new FormData();
         formData.append("avatar", avatarFile);
-        await axios.post(BACKEND_URL + "/api/users/avatar", formData, { withCredentials: true });
+        await axios.post(BACKEND_URL + "/api/users/avatar", formData, {
+          withCredentials: true,
+        });
       }
+
       await refreshAuth();
       toast.success("Account created successfully!");
       router.replace("/main");
@@ -99,11 +97,14 @@ export default function RegistrationForm() {
 
   return (
     <div className="border border-black/10 dark:border-white/10 backdrop-blur-3xl rounded-lg px-5 md:px-10 py-6 w-80 md:w-fit">
-
+      {/* Progress Bar */}
       <div className="w-full h-0.75 bg-white/10 rounded-full mb-5">
-        <div className={`h-full bg-blue-500 transition-all duration-300 ${step === 1 ? "w-1/2" : "w-full"}`} />
+        <div
+          className={`h-full bg-blue-500 transition-all duration-300 ${step === 1 ? "w-1/2" : "w-full"}`}
+        />
       </div>
 
+      {/* STEP 1 */}
       {step === 1 && (
         <>
           <p className="font-semibold text-[1rem] md:text-[1.2rem] text-white">
@@ -114,108 +115,133 @@ export default function RegistrationForm() {
             Register to start posting right away!
           </p>
 
+          {/* Inputs */}
           <div className="flex flex-col md:flex-row gap-2 md:gap-5">
-            <div className="w-full">
-              <p className="font-semibold text-white">First Name</p>
-              <input type="text" placeholder="demo" className="outline-none h-10 bg-white/30 w-full rounded-md p-3 my-2 text-[0.95rem]" onChange={(e) => setName(e.target.value)} />
-            </div>
-
-            <div className="w-full">
-              <p className="font-semibold text-white">Last Name</p>
-              <input type="text" placeholder="user" className="outline-none h-10 bg-white/30 w-full rounded-md p-3 my-2 text-[0.95rem]" onChange={(e) => setSurname(e.target.value)} />
-            </div>
+            <input
+              placeholder="First Name"
+              className="input"
+              onChange={(e) => setName(e.target.value)}
+            />
+            <input
+              placeholder="Last Name"
+              className="input"
+              onChange={(e) => setSurname(e.target.value)}
+            />
           </div>
 
-          <div className="flex flex-col md:flex-row gap-2 md:gap-5">
-            <div className="w-full">
-              <p className="font-semibold text-white">Email</p>
-              <input type="email" placeholder="demo@gmail.com" className="outline-none h-10 bg-white/30 w-full rounded-md p-3 my-2 text-[0.95rem]" onChange={(e) => setEmail(e.target.value)} />
-            </div>
-
-            <div className="w-full">
-              <p className="font-semibold text-white">Phone number</p>
-              <input type="tel" placeholder="+00 00000 00000" className="outline-none h-10 bg-white/30 w-full rounded-md p-3 my-2 text-[0.95rem]" onChange={(e) => setPhone(e.target.value)} />
-            </div>
+          <div className="flex flex-col md:flex-row gap-2 md:gap-5 mt-2">
+            <input
+              placeholder="Email"
+              className="input"
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <input
+              placeholder="Phone Number"
+              className="input"
+              onChange={(e) => setPhone(e.target.value)}
+            />
           </div>
 
-          <p className="font-semibold text-white mt-2">
-            Set a password
-          </p>
-
-          <div className="relative">
-            <input type={showPassword ? "text" : "password"} placeholder="Enter a password" className="outline-none h-10 bg-white/30 w-full rounded-md p-3 my-2 pr-10" onChange={(e) => setPassword(e.target.value)} />
-
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-white/60" onClick={() => setShowPassword(!showPassword)}>
+          {/* Password */}
+          <div className="relative mt-2">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              className="input pr-10"
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <span
+              onClick={() => setShowPassword(!showPassword)}
+              className="eye"
+            >
               {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
             </span>
           </div>
 
-          <p className="font-semibold text-white">
-            Confirm your password
-          </p>
-
           <div className="relative">
-            <input type={showConfirmPassword ? "text" : "password"} placeholder="Confirm your password" className="outline-none h-10 bg-white/30 w-full rounded-md p-3 my-2 pr-10" onChange={(e) => setConfirmPassword(e.target.value)} />
-
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-white/60" onClick={() => setShowConfirmPassword(!showConfirmPassword)} >
-              {showConfirmPassword ? (
-                <Eye size={18} />
-              ) : (
-                <EyeOff size={18} />
-              )}
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              placeholder="Confirm Password"
+              className="input pr-10"
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+            <span
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="eye"
+            >
+              {showConfirmPassword ? <Eye size={18} /> : <EyeOff size={18} />}
             </span>
           </div>
 
-          <Button className="w-full text-white mt-5 cursor-pointer bg-blue-500 hover:bg-blue-600" onClick={nextStep}>
+          <Button
+            className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white"
+            onClick={nextStep}
+          >
             Continue
+          </Button>
+
+          {/* 🔥 LOGIN BUTTON ADDED */}
+          <Button
+            variant="ghost"
+            className="w-full mt-2 text-sm text-blue-400 hover:underline"
+            onClick={() => router.push("/login")}
+          >
+            Already have an account? Login
           </Button>
         </>
       )}
 
+      {/* STEP 2 */}
       {step === 2 && (
         <>
-          <p className="font-bold text-center text-[1.2rem] text-white mb-4">
+          <p className="font-bold text-center text-white mb-4">
             Set up your profile
           </p>
 
+          {/* Avatar */}
           <div className="flex justify-center my-5">
-            <div onClick={() => fileRef.current?.click()} className="h-28 w-28 relative group flex items-center justify-center border border-black/10 rounded-full outline-2 outline-neutral-200 bg-white/10 transition-all duration-200 hover:outline-4 cursor-pointer overflow-hidden" >
+            <div onClick={() => fileRef.current?.click()} className="avatar">
               {preview ? (
-                <img src={preview} className="h-full w-full object-cover rounded-full" />
+                <img src={preview} className="avatar-img" />
               ) : (
-                <Plus className="h-10 w-10 opacity-50" />
+                <Plus />
               )}
             </div>
           </div>
 
-          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+          <input ref={fileRef} type="file" hidden onChange={handleFileChange} />
 
-          <p className="font-semibold text-white">Set a username</p>
+          <input
+            placeholder="Username"
+            className="input"
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          <textarea
+            placeholder="Bio"
+            className="input mt-2"
+            onChange={(e) => setBio(e.target.value)}
+          />
+          <textarea
+            placeholder="Description"
+            className="input mt-2"
+            onChange={(e) => setDescription(e.target.value)}
+          />
 
-          <div className="my-3 bg-white/30 flex items-center px-3 h-10 rounded-lg gap-2">
-            <p>@</p>
-            <input placeholder="demouser09" className="h-full w-full outline-none bg-transparent" onChange={(e) => setUsername(e.target.value)} />
-          </div>
-
-          <p className="font-semibold text-white">Set a bio</p>
-
-          <textarea placeholder="Enter your bio (30 words max)" className="w-full md:w-90 outline-0 px-3 py-2 rounded-md mt-2 h-12 bg-white/30 resize-none" onChange={(e) => setBio(e.target.value)} />
-
-          <p className="font-semibold mt-3 text-white">
-            Set a description
-          </p>
-
-          <textarea placeholder="Enter your bio (200 words max)" className="w-full outline-0 px-3 py-2 rounded-md mt-2 h-24 bg-white/30 resize-none" onChange={(e) => setDescription(e.target.value)} />
-
-          <div className="flex justify-between gap-2 mt-4">
-            <Button className="bg-white/80 text-black hover:bg-white" onClick={() => setStep(1)}>
-              Back
-            </Button>
-
-            <Button disabled={loading} className="bg-blue-500 hover:bg-blue-600 text-white" onClick={handleSubmit}>
+          <div className="flex gap-2 mt-4">
+            <Button onClick={() => setStep(1)}>Back</Button>
+            <Button onClick={handleSubmit} disabled={loading}>
               {loading ? "Creating..." : "Create account"}
             </Button>
           </div>
+
+          {/* 🔥 LOGIN BUTTON ADDED */}
+          <Button
+            variant="ghost"
+            className="w-full mt-2 text-sm text-blue-400 hover:underline"
+            onClick={() => router.push("/login")}
+          >
+            Back to Login
+          </Button>
         </>
       )}
     </div>
