@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useAppContext } from "@/context/AppContext";
-import { ArrowRight, ChartArea, MessageSquare, Send } from "lucide-react";
+import { ArrowRight, Trash2 } from "lucide-react";
 import MessagesSidebar from "@/components/layouts/MessagesSidebar";
+import ConfirmModal from "@/components/modals/DeleteWarning";
+import { toast } from "react-toastify";
 
 export default function ChatListPage() {
 
@@ -13,6 +15,8 @@ export default function ChatListPage() {
     const router = useRouter();
 
     const [conversations, setConversations] = useState<any[]>([]);
+    const [chatToDelete, setChatToDelete] = useState<any>(null);
+    const [hasMessages, setHasMessages] = useState(false);
 
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
@@ -25,6 +29,30 @@ export default function ChatListPage() {
             fetchConversations();
         }
     }, [userData]);
+
+    const handleDeleteClick = async (e: React.MouseEvent, convo: any) => {
+        e.stopPropagation();
+        try {
+            const { data } = await axios.get(`${BACKEND_URL}/api/messages/${convo._id}`, { withCredentials: true });
+            setHasMessages(data.length > 0);
+        } catch {
+            setHasMessages(false);
+        }
+        setChatToDelete(convo);
+    };
+
+    const confirmDeleteChat = async () => {
+        if (!chatToDelete) return;
+        try {
+            await axios.delete(`${BACKEND_URL}/api/conversation/${chatToDelete._id}`, { withCredentials: true });
+            setConversations((prev) => prev.filter((c: any) => c._id !== chatToDelete._id));
+            toast.success("Chat deleted successfully");
+        } catch (error) {
+            console.error("Failed to delete chat", error);
+        } finally {
+            setChatToDelete(null);
+        }
+    };
 
     return (
         <div className="flex w-full h-screen">
@@ -57,12 +85,31 @@ export default function ChatListPage() {
                                 </p>
                             </div>
                             <ArrowRight className="ml-auto opacity-70"/>
+                            <Trash2
+                                onClick={(e) => handleDeleteClick(e, convo)}
+                                className="ml-2 text-red-500 opacity-70 hover:opacity-100 hover:scale-110 transition-transform"
+                                size={20}
+                            />
                         </div>
                     );
                 })}
             </div>
 
         </div>
+
+        <ConfirmModal
+            open={!!chatToDelete}
+            onClose={() => setChatToDelete(null)}
+            onConfirm={confirmDeleteChat}
+            title="Delete this chat?"
+            description={
+                hasMessages
+                    ? "Are you sure you want to delete this chat? All the chats till now would be deleted"
+                    : "Are you sure you want to delete this chat?"
+            }
+            confirmText="Delete"
+        />
+
         <MessagesSidebar/>
         </div>
     );
