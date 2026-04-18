@@ -32,11 +32,20 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
   const router = useRouter();
 
-  const formatTime = (date: string) => {
-    return new Date(date).toLocaleTimeString([], {
+  const formatDateTime = (date: string) => {
+    const messageDate = new Date(date);
+    
+    const dateString = messageDate.toLocaleDateString([], {
+      month: "short",
+      day: "numeric",
+    });
+    
+    const timeString = messageDate.toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
     });
+
+    return `${dateString}, ${timeString}`;
   };
 
   // SOCKET LISTENERS
@@ -203,7 +212,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
                 <p className="whitespace-pre-wrap wrap-break-word">
                   {m.content}
                   <span className="ml-2 text-[10px] opacity-70 relative top-0.5">
-                    {formatTime(m.createdAt)}
+                    {formatDateTime(m.createdAt)}
                   </span>
                 </p>
 
