@@ -42,12 +42,9 @@ export default function ChatListPage() {
             setFilteredConversations(validConvos);
         };
 
-        if (userData?.id) {
-            fetchConversations();
-        }
+        if (userData?.id) fetchConversations();
     }, [userData]);
 
-    // 🔍 Search filter logic
     useEffect(() => {
         const filtered = conversations.filter((convo) => {
             const otherUser = convo.participants.find(
@@ -69,6 +66,7 @@ export default function ChatListPage() {
 
     const handleDeleteClick = async (e: React.MouseEvent, convo: any) => {
         e.stopPropagation();
+
         try {
             const { data } = await axios.get(
                 `${BACKEND_URL}/api/messages/${convo._id}`,
@@ -78,19 +76,27 @@ export default function ChatListPage() {
         } catch {
             setHasMessages(false);
         }
+
         setChatToDelete(convo);
     };
 
     const confirmDeleteChat = async () => {
         if (!chatToDelete) return;
+
         try {
             await axios.delete(
                 `${BACKEND_URL}/api/conversation/${chatToDelete._id}`,
                 { withCredentials: true }
             );
+
             setConversations((prev) =>
-                prev.filter((c: any) => c._id !== chatToDelete._id)
+                prev.filter((c) => c._id !== chatToDelete._id)
             );
+
+            setFilteredConversations((prev) =>
+                prev.filter((c) => c._id !== chatToDelete._id)
+            );
+
             toast.success("Chat deleted successfully");
         } catch (error) {
             console.error("Failed to delete chat", error);
@@ -101,26 +107,22 @@ export default function ChatListPage() {
 
     return (
         <div className="flex w-full h-screen">
-            {/* MAIN CONTENT */}
             <div className="flex-1 h-screen overflow-y-auto hide-scrollbar">
 
-                {/* 🔍 SEARCH BAR (TOP) */}
                 <div className="p-4 sticky top-0 z-10 bg-white/15 dark:bg-black/25 backdrop-blur-md">
                     <input
                         type="text"
                         placeholder="Search chats..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full p-2 rounded-lg outline-none bg-black/20 text-white placeholder-gray-300"
+                        className="w-full p-2 rounded-lg outline-none bg-black/20 text-white"
                     />
                 </div>
 
-                {/* TITLE */}
                 <h1 className="text-xl font-bold px-5 pt-3 text-white">
                     Your chats
                 </h1>
 
-                {/* CHAT LIST */}
                 <div className="flex flex-col p-5 gap-2">
                     {filteredConversations.map((convo) => {
                         const otherUser = convo.participants.find(
@@ -147,8 +149,7 @@ export default function ChatListPage() {
                                     <p className="font-semibold">
                                         {otherUser?.name}
                                     </p>
-
-                                    <p className="text-sm text-gray-500">
+                                    <p className="text-sm text-gray-400">
                                         @{otherUser?.username}
                                     </p>
                                 </div>
@@ -168,7 +169,6 @@ export default function ChatListPage() {
                 </div>
             </div>
 
-            {/* MODAL */}
             <ConfirmModal
                 open={!!chatToDelete}
                 onClose={() => setChatToDelete(null)}
