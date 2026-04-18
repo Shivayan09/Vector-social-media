@@ -38,6 +38,7 @@ export const sendMessage = async (req, res) => {
       conversation: conversationId,
       sender: req.user._id,
       content,
+      isRead: false,
     });
 
     const populated = await message.populate(
@@ -74,6 +75,41 @@ export const sendMessage = async (req, res) => {
 
   } catch (error) {
     console.error("SEND MESSAGE ERROR:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getUnreadCount = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    const unreadCount = await Message.countDocuments({
+      conversation: conversationId,
+      sender: { $ne: req.user._id },
+      isRead: false,
+    });
+
+    res.json({ unreadCount });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const markConversationAsRead = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    await Message.updateMany(
+      {
+        conversation: conversationId,
+        sender: { $ne: req.user._id },
+        isRead: false,
+      },
+      { isRead: true }
+    );
+
+    res.json({ message: "Messages marked as read" });
+  } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
