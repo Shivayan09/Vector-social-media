@@ -42,6 +42,8 @@ type AppContextType = {
   setPosts: React.Dispatch<React.SetStateAction<Post[]>>;
 
   loading: boolean;
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+
   refreshAuth: () => Promise<void>;
 };
 
@@ -56,7 +58,10 @@ export function AppContextProvider({
 }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  // 🔥 IMPORTANT: default false rakho (warna hamesha loader dikhega)
+  const [loading, setLoading] = useState(false);
+
   const [posts, setPosts] = useState<Post[]>([]);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -69,6 +74,8 @@ export function AppContextProvider({
     }
 
     try {
+      setLoading(true); // ✅ loader start
+
       const { data } = await axios.get<{ user: User }>(
         `${BACKEND_URL}/api/auth/me`,
         { withCredentials: true }
@@ -79,15 +86,13 @@ export function AppContextProvider({
     } catch {
       setIsLoggedIn(false);
       setUserData(null);
+    } finally {
+      setLoading(false); // ✅ loader stop
     }
   };
 
   useEffect(() => {
-    const init = async () => {
-      await refreshAuth();
-      setLoading(false);
-    };
-    init();
+    refreshAuth();
   }, []);
 
   return (
@@ -101,6 +106,7 @@ export function AppContextProvider({
         posts,
         setPosts,
         loading,
+        setLoading,
         refreshAuth,
       }}
     >
