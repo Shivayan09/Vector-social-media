@@ -35,14 +35,15 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
   const formatDateTime = (date: string) => {
     const messageDate = new Date(date);
     
-    const dateString = messageDate.toLocaleDateString([], {
+    const dateString = messageDate.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
     });
     
-    const timeString = messageDate.toLocaleTimeString([], {
+    const timeString = messageDate.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
+      hour12: true,
     });
 
     return `${dateString}, ${timeString}`;
