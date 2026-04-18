@@ -83,10 +83,20 @@ export const getUnreadCount = async (req, res) => {
   try {
     const { conversationId } = req.params;
 
+    // Verify user is a participant in this conversation
+    const conversation = await Conversation.findOne({
+      _id: conversationId,
+      participants: req.user._id,
+    });
+
+    if (!conversation) {
+      return res.status(403).json({ message: "Not a participant in this conversation" });
+    }
+
     const unreadCount = await Message.countDocuments({
       conversation: conversationId,
       sender: { $ne: req.user._id },
-      isRead: false,
+      isRead: { $ne: true },
     });
 
     res.json({ unreadCount });
@@ -99,13 +109,23 @@ export const markConversationAsRead = async (req, res) => {
   try {
     const { conversationId } = req.params;
 
+    // Verify user is a participant in this conversation
+    const conversation = await Conversation.findOne({
+      _id: conversationId,
+      participants: req.user._id,
+    });
+
+    if (!conversation) {
+      return res.status(403).json({ message: "Not a participant in this conversation" });
+    }
+
     await Message.updateMany(
       {
         conversation: conversationId,
         sender: { $ne: req.user._id },
-        isRead: false,
+        isRead: { $ne: true },
       },
-      { isRead: true }
+      { $set: { isRead: true } }
     );
 
     res.json({ message: "Messages marked as read" });
