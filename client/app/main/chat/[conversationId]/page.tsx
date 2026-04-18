@@ -98,6 +98,13 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
       );
 
       setMessages(msgRes.data);
+
+      // Mark all messages in conversation as read
+      await axios.patch(
+        `${BACKEND_URL}/api/messages/${conversationId}/read-all`,
+        {},
+        { withCredentials: true }
+      ).catch(err => console.error("Failed to mark as read:", err));
     };
 
     if (userData?.id) {
