@@ -17,6 +17,7 @@ export default function ChatListPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [chatToDelete, setChatToDelete] = useState<any>(null);
     const [hasMessages, setHasMessages] = useState(false);
+    const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
 
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
@@ -37,6 +38,25 @@ export default function ChatListPage() {
                 })
             );
 
+            setConversations(results.filter(Boolean));
+
+            // Fetch unread counts for all conversations in parallel
+            const nonEmptyConversations = results.filter(Boolean);
+            const unreadCountEntries = await Promise.all(
+                nonEmptyConversations.map(async (convo: any) => {
+                    try {
+                        const { data } = await axios.get(
+                            `${BACKEND_URL}/api/messages/${convo._id}/unread-count`,
+                            { withCredentials: true }
+                        );
+                        return [convo._id, data.unreadCount] as const;
+                    } catch (error) {
+                        return [convo._id, 0] as const;
+                    }
+                })
+            );
+            const counts = Object.fromEntries(unreadCountEntries) as Record<string, number>;
+            setUnreadCounts(counts);
             const validConvos = results.filter(Boolean);
             setConversations(validConvos);
             setFilteredConversations(validConvos);
@@ -164,6 +184,20 @@ export default function ChatListPage() {
                                     size={20}
                                 />
                             </div>
+                            {unreadCounts[convo._id] > 0 && (
+                                <div className="ml-auto mr-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                                    {unreadCounts[convo._id]}
+                                </div>
+                            )}
+                            <ArrowRight className="ml-auto opacity-70"/>
+                            <Trash2
+                                onClick={(e) => handleDeleteClick(e, convo)}
+                                className="ml-2 text-red-500 opacity-70 hover:opacity-100 hover:scale-110 transition-transform"
+                                size={20}
+                            />
+                        </div>
+                    );
+                })}
                         );
                     })}
                 </div>

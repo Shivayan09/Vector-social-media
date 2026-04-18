@@ -98,6 +98,17 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
       );
 
       setMessages(msgRes.data);
+
+      // Mark all messages as read
+      try {
+        await axios.patch(
+          `${BACKEND_URL}/api/messages/${conversationId}/read-all`,
+          {},
+          { withCredentials: true }
+        );
+      } catch (error) {
+        // Silently handle error to not interrupt chat load
+      }
     };
 
     if (userData?.id) {
