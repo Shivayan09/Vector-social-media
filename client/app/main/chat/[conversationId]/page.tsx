@@ -33,9 +33,36 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
   const router = useRouter();
 
   const formatTime = (date: string) => {
-    return new Date(date).toLocaleTimeString([], {
+    return new Date(date).toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const getDateString = (date: string) => {
+    const messageDate = new Date(date);
+    const today = new Date();
+    
+    const isToday = 
+      messageDate.getDate() === today.getDate() &&
+      messageDate.getMonth() === today.getMonth() &&
+      messageDate.getFullYear() === today.getFullYear();
+
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const isYesterday =
+      messageDate.getDate() === yesterday.getDate() &&
+      messageDate.getMonth() === yesterday.getMonth() &&
+      messageDate.getFullYear() === yesterday.getFullYear();
+
+    if (isToday) return "Today";
+    if (isYesterday) return "Yesterday";
+    
+    return messageDate.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: messageDate.getFullYear() !== today.getFullYear() ? "numeric" : undefined,
     });
   };
 
@@ -182,44 +209,57 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
 
       <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
 
-        {messages.map((m) => {
+        {messages.map((m, index) => {
 
           const isMe = m.sender._id === userData?.id;
+          const showDateSeparator = 
+            index === 0 || 
+            getDateString(m.createdAt) !== getDateString(messages[index - 1].createdAt);
 
           return (
-            <div key={m._id}
-              className={`flex ${
-                isMe ? "justify-end" : "justify-start"
-              }`} >
-
-              <div
-                className={`max-w-[70%] px-4 py-2 rounded-md relative ${
-                  isMe
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-200 text-black"
-                }`}
-              >
-
-                {isMe && (
-                  <Trash2
-                    size={14}
-                    className="absolute -top-2 -right-2 cursor-pointer opacity-70 hover:opacity-100"
-                    onClick={() => {
-                      setSelectedMessage(m);
-                      setWarningOpen(true);
-                    }}
-                  />
-                )}
-
-                <p className="whitespace-pre-wrap wrap-break-word">
-                  {m.content}
-                  <span className="ml-2 text-[10px] opacity-70 relative top-0.5">
-                    {formatTime(m.createdAt)}
+            <div key={m._id}>
+              {showDateSeparator && (
+                <div className="flex justify-center my-3">
+                  <span className="text-xs text-gray-400 bg-gray-800/50 px-3 py-1 rounded-full">
+                    {getDateString(m.createdAt)}
                   </span>
-                </p>
+                </div>
+              )}
+              
+              <div
+                className={`flex ${
+                  isMe ? "justify-end" : "justify-start"
+                }`} >
+
+                <div
+                  className={`max-w-[70%] px-4 py-2 rounded-md relative ${
+                    isMe
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-200 text-black"
+                  }`}
+                >
+
+                  {isMe && (
+                    <Trash2
+                      size={14}
+                      className="absolute -top-2 -right-2 cursor-pointer opacity-70 hover:opacity-100"
+                      onClick={() => {
+                        setSelectedMessage(m);
+                        setWarningOpen(true);
+                      }}
+                    />
+                  )}
+
+                  <p className="whitespace-pre-wrap wrap-break-word">
+                    {m.content}
+                    <span className="ml-2 text-[10px] opacity-70 relative top-0.5">
+                      {formatTime(m.createdAt)}
+                    </span>
+                  </p>
+
+                </div>
 
               </div>
-
             </div>
           );
         })}
