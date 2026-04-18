@@ -38,6 +38,7 @@ export const sendMessage = async (req, res) => {
       conversation: conversationId,
       sender: req.user._id,
       content,
+      isRead: false,
     });
 
     const populated = await message.populate(
@@ -96,6 +97,31 @@ export const deleteMessage = async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error("DELETE MESSAGE ERROR:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const markConversationAsRead = async (req, res) => {
+  try {
+    const result = await Message.updateMany(
+      { conversation: req.params.conversationId, isRead: false },
+      { isRead: true }
+    );
+    res.json({ success: true, updated: result.modifiedCount });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getUnreadCount = async (req, res) => {
+  try {
+    const count = await Message.countDocuments({
+      conversation: req.params.conversationId,
+      isRead: false,
+      sender: { $ne: req.user._id },
+    });
+    res.json({ unreadCount: count });
+  } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
