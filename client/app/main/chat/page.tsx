@@ -42,19 +42,22 @@ export default function ChatListPage() {
 
             setConversations(results.filter(Boolean));
 
-            // Fetch unread counts for all conversations
-            const counts: Record<string, number> = {};
-            for (const convo of results.filter(Boolean)) {
-                try {
-                    const { data } = await axios.get(
-                        `${BACKEND_URL}/api/messages/${convo._id}/unread-count`,
-                        { withCredentials: true }
-                    );
-                    counts[convo._id] = data.unreadCount;
-                } catch (error) {
-                    counts[convo._id] = 0;
-                }
-            }
+            // Fetch unread counts for all conversations in parallel
+            const nonEmptyConversations = results.filter(Boolean);
+            const unreadCountEntries = await Promise.all(
+                nonEmptyConversations.map(async (convo: any) => {
+                    try {
+                        const { data } = await axios.get(
+                            `${BACKEND_URL}/api/messages/${convo._id}/unread-count`,
+                            { withCredentials: true }
+                        );
+                        return [convo._id, data.unreadCount] as const;
+                    } catch (error) {
+                        return [convo._id, 0] as const;
+                    }
+                })
+            );
+            const counts = Object.fromEntries(unreadCountEntries) as Record<string, number>;
             setUnreadCounts(counts);
         };
 
