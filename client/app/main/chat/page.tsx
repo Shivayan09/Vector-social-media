@@ -17,6 +17,7 @@ export default function ChatListPage() {
     const [conversations, setConversations] = useState<any[]>([]);
     const [chatToDelete, setChatToDelete] = useState<any>(null);
     const [hasMessages, setHasMessages] = useState(false);
+    const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
 
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
@@ -27,14 +28,18 @@ export default function ChatListPage() {
                 { withCredentials: true }
             );
 
-            // For each conversation, check if it has messages.
-            // Run all checks in parallel, then keep only the non-empty ones.
+            // For each conversation, check if it has messages and get unread count.
             const results = await Promise.all(
                 allConvos.map(async (convo: any) => {
                     const { data: messages } = await axios.get(
                         `${BACKEND_URL}/api/messages/${convo._id}`,
                         { withCredentials: true }
                     );
+                    const { data: unread } = await axios.get(
+                        `${BACKEND_URL}/api/messages/${convo._id}/unread-count`,
+                        { withCredentials: true }
+                    );
+                    setUnreadCounts((prev) => ({ ...prev, [convo._id]: unread.unreadCount }));
                     return messages.length > 0 ? convo : null;
                 })
             );
@@ -92,7 +97,7 @@ export default function ChatListPage() {
 
                             <img src={otherUser?.avatar || "/default-avatar.png"} className="h-12 w-12 rounded-full object-cover"/>
 
-                            <div>
+                            <div className="flex-1">
                                 <p className="font-semibold">
                                     {otherUser?.name}
                                 </p>
@@ -101,7 +106,14 @@ export default function ChatListPage() {
                                     @{otherUser?.username}
                                 </p>
                             </div>
-                            <ArrowRight className="ml-auto opacity-70"/>
+                            
+                            {unreadCounts[convo._id] > 0 && (
+                                <span className="h-5 min-w-5 px-1.5 text-xs bg-red-500 text-white rounded-full flex items-center justify-center font-semibold">
+                                    {unreadCounts[convo._id]}
+                                </span>
+                            )}
+                            
+                            <ArrowRight className="opacity-70"/>
                             <Trash2
                                 onClick={(e) => handleDeleteClick(e, convo)}
                                 className="ml-2 text-red-500 opacity-70 hover:opacity-100 hover:scale-110 transition-transform"
