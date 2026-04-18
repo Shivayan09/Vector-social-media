@@ -5,16 +5,16 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useAppContext } from "@/context/AppContext";
 import { ArrowRight, Trash2 } from "lucide-react";
-import MessagesSidebar from "@/components/layouts/MessagesSidebar";
 import ConfirmModal from "@/components/modals/DeleteWarning";
 import { toast } from "react-toastify";
 
 export default function ChatListPage() {
-
     const { userData } = useAppContext();
     const router = useRouter();
 
     const [conversations, setConversations] = useState<any[]>([]);
+    const [filteredConversations, setFilteredConversations] = useState<any[]>([]);
+    const [searchTerm, setSearchTerm] = useState("");
     const [chatToDelete, setChatToDelete] = useState<any>(null);
     const [hasMessages, setHasMessages] = useState(false);
 
@@ -27,8 +27,6 @@ export default function ChatListPage() {
                 { withCredentials: true }
             );
 
-            // For each conversation, check if it has messages.
-            // Run all checks in parallel, then keep only the non-empty ones.
             const results = await Promise.all(
                 allConvos.map(async (convo: any) => {
                     const { data: messages } = await axios.get(
@@ -39,30 +37,66 @@ export default function ChatListPage() {
                 })
             );
 
-            setConversations(results.filter(Boolean));
+            const validConvos = results.filter(Boolean);
+            setConversations(validConvos);
+            setFilteredConversations(validConvos);
         };
 
-        if (userData?.id) {
-            fetchConversations();
-        }
+        if (userData?.id) fetchConversations();
     }, [userData]);
+
+    useEffect(() => {
+        const filtered = conversations.filter((convo) => {
+            const otherUser = convo.participants.find(
+                (p: any) => p._id !== userData?.id
+            );
+
+            return (
+                otherUser?.name
+                    ?.toLowerCase()
+                    .includes(searchTerm.toLowerCase()) ||
+                otherUser?.username
+                    ?.toLowerCase()
+                    .includes(searchTerm.toLowerCase())
+            );
+        });
+
+        setFilteredConversations(filtered);
+    }, [searchTerm, conversations, userData]);
 
     const handleDeleteClick = async (e: React.MouseEvent, convo: any) => {
         e.stopPropagation();
+
         try {
-            const { data } = await axios.get(`${BACKEND_URL}/api/messages/${convo._id}`, { withCredentials: true });
+            const { data } = await axios.get(
+                `${BACKEND_URL}/api/messages/${convo._id}`,
+                { withCredentials: true }
+            );
             setHasMessages(data.length > 0);
         } catch {
             setHasMessages(false);
         }
+
         setChatToDelete(convo);
     };
 
     const confirmDeleteChat = async () => {
         if (!chatToDelete) return;
+
         try {
-            await axios.delete(`${BACKEND_URL}/api/conversation/${chatToDelete._id}`, { withCredentials: true });
-            setConversations((prev) => prev.filter((c: any) => c._id !== chatToDelete._id));
+            await axios.delete(
+                `${BACKEND_URL}/api/conversation/${chatToDelete._id}`,
+                { withCredentials: true }
+            );
+
+            setConversations((prev) =>
+                prev.filter((c) => c._id !== chatToDelete._id)
+            );
+
+            setFilteredConversations((prev) =>
+                prev.filter((c) => c._id !== chatToDelete._id)
+            );
+
             toast.success("Chat deleted successfully");
         } catch (error) {
             console.error("Failed to delete chat", error);
@@ -75,59 +109,78 @@ export default function ChatListPage() {
         <div className="flex w-full h-screen">
             <div className="flex-1 h-screen overflow-y-auto hide-scrollbar">
 
-            <h1 className="text-xl font-bold p-4 bg-white/15 dark:bg-black/25 text-white text-center md:text-left">
-                Your chats
-            </h1>
+                <div className="p-4 sticky top-0 z-10 bg-white/15 dark:bg-black/25 backdrop-blur-md">
+                    <input
+                        type="text"
+                        placeholder="Search chats..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full p-2 rounded-lg outline-none bg-black/20 text-white"
+                    />
+                </div>
 
-            <div className="flex flex-col p-5 gap-2">
-                {conversations.map((convo) => {
+                <h1 className="text-xl font-bold px-5 pt-3 text-white">
+                    Your chats
+                </h1>
 
-                    const otherUser = convo.participants.find(
-                        (p: any) => p._id !== userData?.id
-                    );
+                <div className="flex flex-col p-5 gap-2">
+                    {filteredConversations.map((convo) => {
+                        const otherUser = convo.participants.find(
+                            (p: any) => p._id !== userData?.id
+                        );
 
-                    return (
-                        <div key={convo._id} onClick={() => router.push(`/main/chat/${convo._id}`)}
-                            className="flex items-center gap-3 p-4 rounded-lg cursor-pointer bg-black/10 hover:bg-black/15 hover:shadow-lg text-white transition-all duration-200">
+                        return (
+                            <div
+                                key={convo._id}
+                                onClick={() =>
+                                    router.push(`/main/chat/${convo._id}`)
+                                }
+                                className="flex items-center gap-3 p-4 rounded-lg cursor-pointer bg-black/10 hover:bg-black/15 hover:shadow-lg text-white transition-all duration-200"
+                            >
+                                <img
+                                    src={
+                                        otherUser?.avatar ||
+                                        "/default-avatar.png"
+                                    }
+                                    className="h-12 w-12 rounded-full object-cover"
+                                />
 
-                            <img src={otherUser?.avatar || "/default-avatar.png"} className="h-12 w-12 rounded-full object-cover"/>
+                                <div>
+                                    <p className="font-semibold">
+                                        {otherUser?.name}
+                                    </p>
+                                    <p className="text-sm text-gray-400">
+                                        @{otherUser?.username}
+                                    </p>
+                                </div>
 
-                            <div>
-                                <p className="font-semibold">
-                                    {otherUser?.name}
-                                </p>
+                                <ArrowRight className="ml-auto opacity-70" />
 
-                                <p className="text-sm text-gray-500">
-                                    @{otherUser?.username}
-                                </p>
+                                <Trash2
+                                    onClick={(e) =>
+                                        handleDeleteClick(e, convo)
+                                    }
+                                    className="ml-2 text-red-500 opacity-70 hover:opacity-100 hover:scale-110 transition-transform"
+                                    size={20}
+                                />
                             </div>
-                            <ArrowRight className="ml-auto opacity-70"/>
-                            <Trash2
-                                onClick={(e) => handleDeleteClick(e, convo)}
-                                className="ml-2 text-red-500 opacity-70 hover:opacity-100 hover:scale-110 transition-transform"
-                                size={20}
-                            />
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
             </div>
 
-        </div>
-
-        <ConfirmModal
-            open={!!chatToDelete}
-            onClose={() => setChatToDelete(null)}
-            onConfirm={confirmDeleteChat}
-            title="Delete this chat?"
-            description={
-                hasMessages
-                    ? "Are you sure you want to delete this chat? All the chats till now would be deleted"
-                    : "Are you sure you want to delete this chat?"
-            }
-            confirmText="Delete"
-        />
-
-        <MessagesSidebar/>
+            <ConfirmModal
+                open={!!chatToDelete}
+                onClose={() => setChatToDelete(null)}
+                onConfirm={confirmDeleteChat}
+                title="Delete this chat?"
+                description={
+                    hasMessages
+                        ? "Are you sure you want to delete this chat? All the chats till now would be deleted"
+                        : "Are you sure you want to delete this chat?"
+                }
+                confirmText="Delete"
+            />
         </div>
     );
 }
