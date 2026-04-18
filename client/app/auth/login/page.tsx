@@ -1,11 +1,16 @@
 "use client";
 
 import LoginForm from "@/components/forms/LoginForm";
+import { useAppContext } from "@/context/AppContext"; // ✅ add
 
 export default function Login() {
-    return (
-        <div className="flex items-center justify-center h-screen">
-            <LoginForm/>
-        </div>
-    );
+  const { setLoading } = useAppContext(); // ✅ add
+
+  return (
+    <div className="flex flex-col items-center justify-center h-screen gap-4">
+      <LoginForm />
+
+      
+    </div>
+  );
 }

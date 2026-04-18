@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ToastProvider from "@/components/ToastProvider";
 import Providers from "@/components/Providers";
+import GlobalLoader from "@/components/GlobalLoader";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,8 +27,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-[url('/vector-home-bg.jpg')] dark:bg-[url('/vector-home-bg-dark.png')] bg-cover bg-center bg-no-repeat`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-[url('/vector-home-bg.jpg')] dark:bg-[url('/vector-home-bg-dark.png')] bg-cover bg-center bg-no-repeat`}
+      >
         <Providers>
+          <GlobalLoader /> {/* ✅ Global loader */}
           <ToastProvider />
           {children}
         </Providers>
