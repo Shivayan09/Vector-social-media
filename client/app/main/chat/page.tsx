@@ -17,6 +17,7 @@ export default function ChatListPage() {
     const [conversations, setConversations] = useState<any[]>([]);
     const [chatToDelete, setChatToDelete] = useState<any>(null);
     const [hasMessages, setHasMessages] = useState(false);
+    const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
 
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
@@ -40,6 +41,21 @@ export default function ChatListPage() {
             );
 
             setConversations(results.filter(Boolean));
+
+            // Fetch unread counts for all conversations
+            const counts: Record<string, number> = {};
+            for (const convo of results.filter(Boolean)) {
+                try {
+                    const { data } = await axios.get(
+                        `${BACKEND_URL}/api/messages/${convo._id}/unread-count`,
+                        { withCredentials: true }
+                    );
+                    counts[convo._id] = data.unreadCount;
+                } catch (error) {
+                    counts[convo._id] = 0;
+                }
+            }
+            setUnreadCounts(counts);
         };
 
         if (userData?.id) {
@@ -101,6 +117,11 @@ export default function ChatListPage() {
                                     @{otherUser?.username}
                                 </p>
                             </div>
+                            {unreadCounts[convo._id] > 0 && (
+                                <div className="ml-auto mr-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                                    {unreadCounts[convo._id]}
+                                </div>
+                            )}
                             <ArrowRight className="ml-auto opacity-70"/>
                             <Trash2
                                 onClick={(e) => handleDeleteClick(e, convo)}
