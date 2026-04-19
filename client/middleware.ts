@@ -1,23 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
+import { jwtVerify } from "jose";
 
-export function middleware(request: NextRequest) {
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || "fallback-secret-key"
+);
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Define protected routes
-  const protectedRoutes = ["/main"];
+  // Protect /main routes
+  if (pathname.startsWith("/main")) {
+    const token = request.cookies.get("token")?.value;
 
-  // Check if current path is a protected route
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
-  );
+    if (!token) {
+      return NextResponse.redirect(new URL("/auth/login", request.url));
+    }
 
-  if (isProtectedRoute) {
-    // Check for authentication token (stored in cookies)
-    const hasAuthToken = request.cookies.has("token") || 
-                         request.cookies.has("authToken");
-
-    if (!hasAuthToken) {
-      // Redirect to login
+    try {
+      // Validate JWT signature and expiry
+      await jwtVerify(token, JWT_SECRET);
+      return NextResponse.next();
+    } catch (error) {
+      // Invalid or expired token
       return NextResponse.redirect(new URL("/auth/login", request.url));
     }
   }
