@@ -5,7 +5,7 @@ import axios from "axios";
 import { socket } from "@/socket/socket";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
+import { Trash2, ArrowLeft } from "lucide-react";
 import ConfirmModal from "@/components/modals/DeleteWarning";
 
 type Params = {
@@ -196,7 +196,15 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
     <div className="flex flex-col h-screen">
 
       <div className="bg-white/15 px-14 md:px-5 py-2 flex items-center">
-        <img src={otherUser?.avatar || "/default-avatar.png"} className="h-12 w-12 rounded-full object-cover border"/>
+        <button
+          onClick={() => router.push("/main/chat")}
+          className="hover:bg-white/20 p-2 rounded-full transition-colors"
+          title="Back to chat list"
+        >
+          <ArrowLeft size={24} className="text-white" />
+        </button>
+
+        <img src={otherUser?.avatar || "/default-avatar.png"} className="h-12 w-12 rounded-full object-cover border ml-3"/>
 
         <p
           onClick={() =>
