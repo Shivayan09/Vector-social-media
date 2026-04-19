@@ -12,6 +12,11 @@ interface Post {
     likes?: string[];
 }
 
+const EXPLORE_TOPICS = [
+    { name: "Ask", icon: Lightbulb, width: "w-[47%]" },
+    { name: "Build", icon: Trophy, width: "w-[47%]" },
+];
+
 export default function ExploreSidebar() {
     const [open, setOpen] = useState(false);
     const [trendingPosts, setTrendingPosts] = useState<Post[]>([]);
@@ -51,18 +56,12 @@ export default function ExploreSidebar() {
                 <div className="p-2 pb-3 mb-3 border-b">
                 <p className="flex items-center gap-1 font-semibold"> <Compass className="h-5 text-blue-500"/> Explore topics</p>
                 <div className="flex justify-between mt-5">
-                    <div className="box h-20 border w-[47%] rounded-md flex items-center justify-center gap-1 bg-black/5 dark:bg-white/5 transition-all duration-300 dark:hover:scale-102 dark:hover:border-white cursor-pointer hover:shadow-md">
-                        <Lightbulb className="h-5"/>
-                        <p className="text-[0.9rem]">Science</p>
-                    </div>
-                    <div className="box h-20 border w-[47%] rounded-md flex items-center justify-center gap-1 bg-black/5 dark:bg-white/5 transition-all duration-300 dark:hover:scale-102 dark:hover:border-white cursor-pointer hover:shadow-md">
-                        <Trophy className="h-4"/>
-                        <p className="text-[0.9rem]">Sports</p>
-                    </div>
-                </div>
-                <div className="h-25 border w-full rounded-md mt-3.5 flex items-center justify-center gap-1 bg-black/5 dark:bg-white/5 transition-all duration-300 dark:hover:scale-102 dark:hover:border-white cursor-pointer hover:shadow-md">
-                    <Shuffle className="h-5 opacity-65"/>
-                    <p>Random</p>
+                    {EXPLORE_TOPICS.map((topic) => (
+                        <div key={topic.name} className={`box h-20 border ${topic.width} rounded-md flex items-center justify-center gap-1 bg-black/5 dark:bg-white/5 transition-all duration-300 dark:hover:scale-102 dark:hover:border-white cursor-pointer hover:shadow-md`}>
+                            <topic.icon className="h-5"/>
+                            <p className="text-[0.9rem]">{topic.name}</p>
+                        </div>
+                    ))}
                 </div>
             </div>
 
