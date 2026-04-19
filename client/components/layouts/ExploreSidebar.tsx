@@ -3,6 +3,7 @@
 import { Button } from "../ui/button";
 import { Compass, Heart, Lightbulb, Shuffle, TrendingUp, Trophy, UserPlus, X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 
 interface Post {
@@ -13,11 +14,12 @@ interface Post {
 }
 
 const EXPLORE_TOPICS = [
-    { name: "Ask", icon: Lightbulb, width: "w-[47%]" },
-    { name: "Build", icon: Trophy, width: "w-[47%]" },
+    { name: "Ask", intent: "ask", icon: Lightbulb, width: "w-[47%]" },
+    { name: "Build", intent: "build", icon: Trophy, width: "w-[47%]" },
 ];
 
 export default function ExploreSidebar() {
+    const router = useRouter();
     const [open, setOpen] = useState(false);
     const [trendingPosts, setTrendingPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
@@ -38,6 +40,16 @@ export default function ExploreSidebar() {
         fetchTrendingPosts();
     }, []);
 
+    const handleTopicClick = (intent: string) => {
+        router.push(`/main/explore?intent=${intent}`);
+        setOpen(false);
+    };
+
+    const handleSeeMore = () => {
+        router.push("/main/explore");
+        setOpen(false);
+    };
+
     return (
         <>
             <button onClick={() => setOpen(true)} className="fixed top-4 right-4 z-50 lg:hidden p-2 rounded-full bg-blue-500 text-white shadow-lg" aria-label="Open follow suggestions">
@@ -57,7 +69,10 @@ export default function ExploreSidebar() {
                 <p className="flex items-center gap-1 font-semibold"> <Compass className="h-5 text-blue-500"/> Explore topics</p>
                 <div className="flex justify-between mt-5">
                     {EXPLORE_TOPICS.map((topic) => (
-                        <div key={topic.name} className={`box h-20 border ${topic.width} rounded-md flex items-center justify-center gap-1 bg-black/5 dark:bg-white/5 transition-all duration-300 dark:hover:scale-102 dark:hover:border-white cursor-pointer hover:shadow-md`}>
+                        <div 
+                            key={topic.name} 
+                            onClick={() => handleTopicClick(topic.intent)}
+                            className={`box h-20 border ${topic.width} rounded-md flex items-center justify-center gap-1 bg-black/5 dark:bg-white/5 transition-all duration-300 dark:hover:scale-102 dark:hover:border-white cursor-pointer hover:shadow-md`}>
                             <topic.icon className="h-5"/>
                             <p className="text-[0.9rem]">{topic.name}</p>
                         </div>
@@ -92,7 +107,11 @@ export default function ExploreSidebar() {
                         ))
                     )}
                 </div>
-                <Button className="mt-5 w-full bg-blue-500 hover:bg-blue-600 text-white cursor-pointer">See more</Button>
+                <Button 
+                    onClick={handleSeeMore}
+                    className="mt-5 w-full bg-blue-500 hover:bg-blue-600 text-white cursor-pointer">
+                    See more
+                </Button>
             </div>
         </>
     );
