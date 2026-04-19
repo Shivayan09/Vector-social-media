@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAppContext } from "@/context/AppContext";
+import GlobalLoader from "./GlobalLoader";
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const router = useRouter();
@@ -17,7 +18,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     }, [loading, isLoggedIn, router]);
 
     if (loading || !isLoggedIn) {
-        return <p>Loading...</p>;
+        return <GlobalLoader/>
     }
 
     return <>{children}</>;
