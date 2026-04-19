@@ -23,6 +23,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
   const [text, setText] = useState("");
   const [receiverId, setReceiverId] = useState<string | null>(null);
   const [otherUser, setOtherUser] = useState<any>(null);
+  const [isSending, setIsSending] = useState(false);
 
   const [warningOpen, setWarningOpen] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<any>(null);
@@ -152,20 +153,28 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
   // SEND MESSAGE
   const sendMessage = async () => {
 
-    if (!text.trim() || !receiverId) return;
+    if (!text.trim() || !receiverId || isSending) return;
 
-    const { data } = await axios.post(
-      `${BACKEND_URL}/api/messages`,
-      { conversationId, content: text },
-      { withCredentials: true }
-    );
+    setIsSending(true);
 
-    setMessages((prev) => {
-      if (prev.some((m) => m._id === data._id)) return prev;
-      return [...prev, data];
-    });
+    try {
+      const { data } = await axios.post(
+        `${BACKEND_URL}/api/messages`,
+        { conversationId, content: text },
+        { withCredentials: true }
+      );
 
-    setText("");
+      setMessages((prev) => {
+        if (prev.some((m) => m._id === data._id)) return prev;
+        return [...prev, data];
+      });
+
+      setText("");
+    } catch (error) {
+      console.error("Failed to send message:", error);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   // DELETE MESSAGE
@@ -281,17 +290,26 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
+            if (e.key === "Enter" && !e.shiftKey && !isSending) {
               e.preventDefault();
               sendMessage();
             }
           }}
-          className="flex-1 border px-3 py-2 rounded-md text-white bg-black/10"
+          disabled={isSending}
+          className="flex-1 border px-3 py-2 rounded-md text-white bg-black/10 disabled:opacity-50"
           placeholder="Type a message..."
         />
 
-        <button onClick={sendMessage} className="bg-blue-500 text-white px-5 rounded-md cursor-pointer">
-          Send
+        <button 
+          onClick={sendMessage} 
+          disabled={isSending}
+          className={`text-white px-5 rounded-md transition-all ${
+            isSending 
+              ? "bg-blue-400 cursor-not-allowed opacity-60" 
+              : "bg-blue-500 cursor-pointer hover:bg-blue-600"
+          }`}
+        >
+          {isSending ? "Sending..." : "Send"}
         </button>
 
       </div>
