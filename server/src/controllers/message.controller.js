@@ -34,6 +34,20 @@ export const sendMessage = async (req, res) => {
       return res.status(404).json({ message: "Conversation not found" });
     }
 
+    // Check for duplicate message within last 2 seconds
+    const recentMessage = await Message.findOne({
+      conversation: conversationId,
+      sender: req.user._id,
+      content: content.trim(),
+      createdAt: {
+        $gte: new Date(Date.now() - 2000),
+      },
+    });
+
+    if (recentMessage) {
+      return res.json(await recentMessage.populate("sender", "username name avatar"));
+    }
+
     const message = await Message.create({
       conversation: conversationId,
       sender: req.user._id,
