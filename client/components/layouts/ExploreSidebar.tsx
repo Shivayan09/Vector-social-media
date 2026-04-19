@@ -46,7 +46,7 @@ export default function ExploreSidebar() {
     };
 
     const handleSeeMore = () => {
-        router.push("/main/explore");
+        router.push("/main");
         setOpen(false);
     };
 
