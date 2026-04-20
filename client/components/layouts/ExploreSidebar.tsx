@@ -2,10 +2,53 @@
 
 import { Button } from "../ui/button";
 import { Compass, Heart, Lightbulb, Shuffle, TrendingUp, Trophy, UserPlus, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import axios from "axios";
+
+interface Post {
+    _id: string;
+    content: string;
+    author?: { avatar?: string; username?: string };
+    likes?: string[];
+}
+
+const EXPLORE_TOPICS = [
+    { name: "Ask", intent: "ask", icon: Lightbulb, width: "w-[47%]" },
+    { name: "Build", intent: "build", icon: Trophy, width: "w-[47%]" },
+];
 
 export default function ExploreSidebar() {
+    const router = useRouter();
     const [open, setOpen] = useState(false);
+    const [trendingPosts, setTrendingPosts] = useState<Post[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchTrendingPosts = async () => {
+            try {
+                const response = await axios.get(
+                    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/posts/top-week`
+                );
+                setTrendingPosts(response.data.posts || []);
+            } catch (error) {
+                console.error("Failed to fetch trending posts:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchTrendingPosts();
+    }, []);
+
+    const handleTopicClick = (intent: string) => {
+        router.push(`/main/explore?intent=${intent}`);
+        setOpen(false);
+    };
+
+    const handleSeeMore = () => {
+        router.push("/main");
+        setOpen(false);
+    };
 
     return (
         <>
@@ -25,45 +68,50 @@ export default function ExploreSidebar() {
                 <div className="p-2 pb-3 mb-3 border-b">
                 <p className="flex items-center gap-1 font-semibold"> <Compass className="h-5 text-blue-500"/> Explore topics</p>
                 <div className="flex justify-between mt-5">
-                    <div className="box h-20 border w-[47%] rounded-md flex items-center justify-center gap-1 bg-black/5 dark:bg-white/5 transition-all duration-300 dark:hover:scale-102 dark:hover:border-white cursor-pointer hover:shadow-md">
-                        <Lightbulb className="h-5"/>
-                        <p className="text-[0.9rem]">Science</p>
-                    </div>
-                    <div className="box h-20 border w-[47%] rounded-md flex items-center justify-center gap-1 bg-black/5 dark:bg-white/5 transition-all duration-300 dark:hover:scale-102 dark:hover:border-white cursor-pointer hover:shadow-md">
-                        <Trophy className="h-4"/>
-                        <p className="text-[0.9rem]">Sports</p>
-                    </div>
-                </div>
-                <div className="h-25 border w-full rounded-md mt-3.5 flex items-center justify-center gap-1 bg-black/5 dark:bg-white/5 transition-all duration-300 dark:hover:scale-102 dark:hover:border-white cursor-pointer hover:shadow-md">
-                    <Shuffle className="h-5 opacity-65"/>
-                    <p>Random</p>
+                    {EXPLORE_TOPICS.map((topic) => (
+                        <div 
+                            key={topic.name} 
+                            onClick={() => handleTopicClick(topic.intent)}
+                            className={`box h-20 border ${topic.width} rounded-md flex items-center justify-center gap-1 bg-black/5 dark:bg-white/5 transition-all duration-300 dark:hover:scale-102 dark:hover:border-white cursor-pointer hover:shadow-md`}>
+                            <topic.icon className="h-5"/>
+                            <p className="text-[0.9rem]">{topic.name}</p>
+                        </div>
+                    ))}
                 </div>
             </div>
 
                 <div>
                     <p className="flex items-center gap-2 font-semibold"> <TrendingUp className="h-5 text-blue-500"/> Trending topics</p>
-                    <div className="box mt-5 flex">
-                        <div className="h-12 w-12 bg-black/5 rounded-md mr-4 overflow-clip"><img src="/cse.jpg" alt="" className="h-full w-full object-cover"/></div>
-                        <div className="w-40 text-[0.95rem]">Artificial Intelligence and Machine Learning</div>
-                        <p className="flex items-center gap-0.5 text-[0.8rem] ml-1"> <Heart className="text-blue-400 h-full mt-auto" fill="currentColor"/> 120</p>
-                    </div>
-                    <div className="box my-5 flex">
-                        <div className="h-12 w-12 bg-black/5 rounded-md mr-4 overflow-clip"><img src="/political.avif" alt="" className="h-full w-full object-cover"/></div>
-                        <div className="w-40 text-[0.95rem]">Political instability over the world</div>
-                        <p className="flex items-center gap-0.5 text-[0.8rem] ml-1"> <Heart className="text-blue-400 h-full mt-auto" fill="currentColor"/> 356</p>
-                    </div>
-                    <div className="box my-5 flex">
-                        <div className="h-12 w-12 bg-black/5 rounded-md mr-4 overflow-clip"><img src="/tech.png" alt="" className="h-full w-full object-cover object-right  "/></div>
-                        <div className="w-40 text-[0.95rem]">Rising prices of RAM over the world</div>
-                        <p className="flex items-center gap-0.5 text-[0.8rem] ml-1"> <Heart className="text-blue-400 h-full mt-auto" fill="currentColor"/> 142</p>
-                    </div>
-                    <div className="box mt-5 flex">
-                        <div className="h-12 w-12 bg-black/5 rounded-md mr-4 overflow-clip"><img src="/kohli2.jpg" alt="" className="h-full w-full object-cover"/></div>
-                        <div className="w-40 text-[0.95rem]">Virat Kohli back at number 1 spot in ODIs</div>
-                        <p className="flex items-center gap-0.5 text-[0.8rem] ml-1"> <Heart className="text-blue-400 h-full mt-auto" fill="currentColor"/> 180</p>
-                    </div>
+                    {loading ? (
+                        <div className="flex items-center gap-2">
+                            <div className="h-12 w-12 bg-black/5 rounded-md mr-4 overflow-clip"><img src="/cse.jpg" alt="" className="h-full w-full object-cover"/></div>
+                            <div className="w-40 text-[0.95rem]">Artificial Intelligence and Machine Learning</div>
+                            <p className="flex items-center gap-0.5 text-[0.8rem] ml-1"> <Heart className="text-blue-400 h-full mt-auto" fill="currentColor"/> 120</p>
+                        </div>
+                    ) : (
+                        trendingPosts.map(post => (
+                            <div key={post._id} className="box mt-5 flex">
+                                <div className="h-12 w-12 bg-black/5 rounded-md mr-4 overflow-clip">
+                                    <img 
+                                        src={post.author?.avatar || "/default-avatar.png"} 
+                                        alt={post.author?.username} 
+                                        className="h-full w-full object-cover"
+                                    />
+                                </div>
+                                <div className="w-40 text-[0.95rem]">{post.content}</div>
+                                <p className="flex items-center gap-0.5 text-[0.8rem] ml-1">
+                                    <Heart className="text-blue-400 h-full mt-auto" fill="currentColor"/>
+                                    {post.likes?.length || 0}
+                                </p>
+                            </div>
+                        ))
+                    )}
                 </div>
-                <Button className="mt-5 w-full bg-blue-500 hover:bg-blue-600 text-white cursor-pointer">See more</Button>
+                <Button 
+                    onClick={handleSeeMore}
+                    className="mt-5 w-full bg-blue-500 hover:bg-blue-600 text-white cursor-pointer">
+                    See more
+                </Button>
             </div>
         </>
     );
