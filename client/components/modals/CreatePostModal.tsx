@@ -57,9 +57,9 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
 
     return (
         <>
-            <div onClick={handleClose} className={`fixed inset-0 z-60 bg-black/40 transition-opacity duration-200 ${visible ? "opacity-100" : "opacity-0"}`} />
+            <div onClick={handleClose} className={`fixed inset-0 z-60 bg-black/60 transition-opacity duration-200 ${visible ? "opacity-100" : "opacity-0"}`} />
 
-            <div className={`fixed z-60 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] md:w-[40vw] bg-white dark:bg-blue-950 border dark:border-white/20 rounded-lg shadow-xl p-6 transition-all duration-200 ${visible ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}>
+            <div className={`neo-shell fixed z-60 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] md:w-[40vw] p-6 transition-all duration-200 ${visible ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}>
                 <div className="flex justify-between items-center">
                     <p className="text-[1.2rem] font-semibold">Create a post</p>
                     <button onClick={handleClose} className="cursor-pointer">
@@ -69,7 +69,7 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
 
                 <div className="mt-5 mb-3 flex items-center gap-3">
                     <p>Select your intent :</p>
-                    <select value={intent} onChange={(e) => setIntent(e.target.value)} className="border border-black/20 cursor-pointer px-5 rounded-md py-1 bg-white dark:bg-blue-950 outline-none">
+                    <select value={intent} onChange={(e) => setIntent(e.target.value)} className="neo-select cursor-pointer px-5 py-1 outline-none">
                         <option value="" disabled>Choose</option>
                         <option value="ask">Ask</option>
                         <option value="build">Build</option>
@@ -79,14 +79,14 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                     </select>
                 </div>
 
-                <textarea placeholder="What's on your mind?" value={content} onChange={(e) => setContent(e.target.value)} className="w-full h-32 resize-none border border-black/10 dark:border-white/10 rounded-lg p-3 outline-none" />
+                <textarea placeholder="What's on your mind?" value={content} onChange={(e) => setContent(e.target.value)} className="neo-textarea w-full h-32 p-3 outline-none" />
 
                 <div className="flex justify-between gap-3 mt-4">
                     <Button variant="outline" onClick={handleClose} className="cursor-pointer w-[47%]">
                         Discard
                     </Button>
 
-                    <Button disabled={loading || !intent || !content.trim()} onClick={handlePost} className={`cursor-pointer w-[47%] ${loading ? "bg-blue-400 dark:bg-gray-100" : "bg-blue-500 dark:text-white hover:bg-blue-600"}`}>
+                    <Button disabled={loading || !intent || !content.trim()} onClick={handlePost} className="cursor-pointer w-[47%] text-white">
                         {loading ? "Posting..." : "Post"}
                     </Button>
                 </div>

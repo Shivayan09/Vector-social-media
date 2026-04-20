@@ -107,7 +107,7 @@ export default function MessagesSidebar() {
 
     return (
         <>
-            <button onClick={() => setOpen(true)} className="fixed top-4 right-4 z-50 lg:hidden p-2 rounded-full bg-blue-500 text-white shadow-lg">
+            <button onClick={() => setOpen(true)} className="fixed top-4 right-4 z-50 lg:hidden neo-button px-3 py-2 rounded-full">
                 <UserPlus />
             </button>
 
@@ -115,7 +115,7 @@ export default function MessagesSidebar() {
                 <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" onClick={() => setOpen(false)} />
             )}
 
-            <div ref={wrapperRef} className={`h-screen md:min-h-screen md:h-fit w-fit px-7 p-5 backdrop-blur-xl fixed lg:static top-0 right-0 z-50 transform transition-transform duration-300 ${open ? "translate-x-0" : "translate-x-full"} lg:translate-x-0`}>
+            <div ref={wrapperRef} className={`neo-sidebar-shell h-screen md:min-h-screen md:h-fit w-fit px-7 p-5 fixed lg:static top-0 right-0 z-50 transform transition-transform duration-300 ${open ? "translate-x-0" : "translate-x-full"} lg:translate-x-0`}>
                 <button onClick={() => setOpen(false)} className="absolute top-4 right-4 lg:hidden">
                     <X />
                 </button>
@@ -124,7 +124,7 @@ export default function MessagesSidebar() {
                     <UserPlus className="h-5 text-blue-500" />
                     Suggestions
                 </p>
-                <div className="mt-4 flex items-center gap-2 bg-white/10 px-3 py-2 rounded-md">
+                <div className="mt-4 flex items-center gap-2 neo-panel-soft px-3 py-2 rounded-md">
                     <Search className="h-4 w-4 text-gray-400" />
                     <input
                         type="text"
@@ -148,7 +148,7 @@ export default function MessagesSidebar() {
                                 const isFollowing = userData?.following?.includes(user._id.toString()) ?? false;
                                 return (
                                     <div key={user._id} className="flex items-center gap-2">
-                                        <div className="h-12 w-12 rounded-full overflow-hidden">
+                                        <div className="h-12 w-12 rounded-full overflow-hidden border border-blue-200/15">
                                             <img src={user.avatar || "/default-avatar.png"} alt={user.name} className="h-full w-full object-cover" />
                                         </div>
                                         <div className="flex flex-col w-30">
@@ -167,8 +167,8 @@ export default function MessagesSidebar() {
                         filteredUsers.map((suggestedUser) => {
                             const isFollowing = userData?.following?.includes(suggestedUser._id.toString()) ?? false;
                             return (
-                                <div onClick={() => startChat(suggestedUser._id)} key={suggestedUser._id} className="flex items-center gap-2 hover:bg-black/10 cursor-pointer p-3 rounded-md">
-                                    <div className="h-10 w-10 rounded-full overflow-hidden">
+                                <div onClick={() => startChat(suggestedUser._id)} key={suggestedUser._id} className="neo-panel-soft flex items-center gap-2 cursor-pointer p-3 rounded-md hover:translate-x-[-2px] hover:translate-y-[-2px]">
+                                    <div className="h-10 w-10 rounded-full overflow-hidden border border-blue-200/15">
                                         <img src={suggestedUser.avatar || "/default-avatar.png"} alt={suggestedUser.name} className="h-full w-full object-cover" />
                                     </div>
 

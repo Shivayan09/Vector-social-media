@@ -67,12 +67,12 @@ export default function ProfileForm() {
 
 
     return (
-        <div className="flex flex-col items-center justify-center mx-auto border border-black/10 backdrop-blur-3xl rounded-2xl w-[90vw] md:w-[40vw] px-10 py-5">
+        <div className="neo-shell flex flex-col items-center justify-center mx-auto rounded-2xl w-[90vw] md:w-[40vw] px-10 py-5">
             <p className="font-bold text-center text-[1.8rem] text-white">Set up your profile</p>
 
             <div>
                 <div className="flex items-center gap-10 my-5">
-                    <div onClick={() => fileRef.current?.click()} className="h-25 md:h-35 w-25 md:w-35 relative group flex items-center justify-center border border-black/10 rounded-full mx-auto outline-2 outline-neutral-200 bg-white/10 transition-all duration-200 hover:outline-4 cursor-pointer overflow-hidden">
+                    <div onClick={() => fileRef.current?.click()} className="h-25 md:h-35 w-25 md:w-35 relative group flex items-center justify-center neo-panel-soft rounded-full mx-auto outline-2 outline-blue-200/30 transition-all duration-200 hover:outline-4 cursor-pointer overflow-hidden">
                         {preview ? (
                             <img src={preview} alt="pfp preview" className="h-full w-full object-cover rounded-full" />
                         ) : (
@@ -80,10 +80,10 @@ export default function ProfileForm() {
                         )}
                     </div>
                     <div className="flex flex-col md:flex-row gap-5">
-                        <Button className="h-10 cursor-pointer bg-blue-500 text-white hover:bg-blue-600" onClick={() => fileRef.current?.click()}>
+                        <Button className="h-10 cursor-pointer text-white" onClick={() => fileRef.current?.click()}>
                             Upload picture
                         </Button>
-                        <Button className="h-10 cursor-pointer bg-black/70 dark:bg-white dark:hover:bg-white/70">
+                        <Button className="h-10 cursor-pointer neo-button-secondary text-white">
                             Discard picture
                         </Button>
                     </div>
@@ -100,18 +100,18 @@ export default function ProfileForm() {
 
             <div className="w-full">
                 <p className="font-semibold text-left text-white">Set a username</p>
-                <div className="my-3 border-black/10 dark:border-white/10 bg-white/30 flex items-center px-3 h-10 rounded-lg gap-2">
+                <div className="my-3 neo-input flex items-center px-3 h-10 rounded-lg gap-2">
                     <p>@</p>
                     <input type="text" placeholder="demouser09" className="h-full w-full outline-none"
                         onChange={(e) => setUsername(e.target.value)} />
                 </div>
                 <p className="font-semibold text-white">Set a bio</p>
-                <textarea placeholder="Enter your bio (30 words max)" className="w-full outline-0 px-3 py-1 rounded-md mt-2 h-10 bg-white/30"
+                <textarea placeholder="Enter your bio (30 words max)" className="neo-textarea w-full px-3 py-1 rounded-md mt-2 h-10"
                     onChange={(e) => setBio(e.target.value)} />
                 <p className="font-semibold mt-3 text-white">Set a description</p>
-                <textarea placeholder="Enter your bio (200 words max)" className="w-full outline-0 px-3 py-1 rounded-md mt-2 h-20 bg-white/30"
+                <textarea placeholder="Enter your bio (200 words max)" className="neo-textarea w-full px-3 py-1 rounded-md mt-2 h-20"
                     onChange={(e) => setDescription(e.target.value)} />
-                <Button disabled={loading} className={`h-10 mt-2 w-full ${loading ? 'cursor-not-allowed bg-blue-400' : 'cursor-pointer bg-blue-500 hover:bg-blue-600'}`} onClick={handleSubmit}>
+                <Button disabled={loading} className="h-10 mt-2 w-full cursor-pointer text-white" onClick={handleSubmit}>
                     {loading ? 'Setting your profile..' : 'Continue'}
                 </Button>
             </div>

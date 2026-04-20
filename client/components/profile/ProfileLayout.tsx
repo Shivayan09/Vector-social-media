@@ -62,7 +62,7 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
                 <h1 className="text-xl md:text-2xl font-bold text-white">
                   {user.name} {user.surname}
                 </h1>
-                <p className="text-gray-300 text-shadow-lg">@{user.username}</p>
+                <p className="text-blue-200">@{user.username}</p>
               </div>
 
               {isSelfProfile ? (
@@ -97,9 +97,9 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
         </div>
 
         <div className="mt-5 flex flex-col gap-2">
-          <p className="text-sm text-white text-shadow-lg">{user.bio}</p>
+          <p className="text-sm text-white">{user.bio}</p>
 
-          <p className="text-sm opacity-80 text-white text-shadow-lg">
+          <p className="text-sm opacity-80 text-white">
             {user.description}
           </p>
 
@@ -118,7 +118,7 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
             className={`relative pb-2 font-semibold capitalize transition cursor-pointer whitespace-nowrap ${
               activeTab === tab
                 ? "text-blue-500 dark:text-blue-300"
-                : "text-white text-shadow-lg dark:hover:text-white"
+                : "text-white dark:hover:text-white"
             }`}
           >
             {tab}

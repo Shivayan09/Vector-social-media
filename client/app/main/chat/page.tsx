@@ -128,7 +128,7 @@ export default function ChatListPage() {
         <div className="flex w-full h-screen">
             <div className="flex-1 h-screen overflow-y-auto hide-scrollbar">
 
-                <div className="p-4 sticky top-0 z-10 bg-white/15 dark:bg-black/25 backdrop-blur-md">
+                <div className="neo-panel-soft p-4 sticky top-0 z-10">
                     <input
                         type="text"
                         placeholder="Search chats..."
@@ -154,7 +154,7 @@ export default function ChatListPage() {
                                 onClick={() =>
                                     router.push(`/main/chat/${convo._id}`)
                                 }
-                                className="flex items-center gap-3 p-4 rounded-lg cursor-pointer bg-black/10 hover:bg-black/15 hover:shadow-lg text-white transition-all duration-200"
+                                className="neo-panel-soft flex items-center gap-3 p-4 rounded-lg cursor-pointer text-white transition-all duration-200 hover:translate-x-[-2px] hover:translate-y-[-2px]"
                             >
                                 <img
                                     src={

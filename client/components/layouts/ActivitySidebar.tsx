@@ -104,7 +104,7 @@ export default function ActivitySidebar() {
 
   return (
     <>
-      <button onClick={() => setOpen(true)} className="fixed top-4 right-4 z-50 lg:hidden p-2 rounded-full bg-blue-500 text-white shadow-lg">
+      <button onClick={() => setOpen(true)} className="fixed top-4 right-4 z-50 lg:hidden neo-button px-3 py-2 rounded-full">
         <UserPlus />
       </button>
 
@@ -112,7 +112,7 @@ export default function ActivitySidebar() {
         <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" onClick={() => setOpen(false)} />
       )}
 
-      <div ref={wrapperRef} className={`h-screen md:min-h-screen md:h-fit w-fit p-5 backdrop-blur-xl fixed lg:static top-0 right-0 z-50 transform transition-transform duration-300 ${open ? "translate-x-0" : "translate-x-full"} lg:translate-x-0`}>
+      <div ref={wrapperRef} className={`neo-sidebar-shell h-screen md:min-h-screen md:h-fit w-fit p-5 fixed lg:static top-0 right-0 z-50 transform transition-transform duration-300 ${open ? "translate-x-0" : "translate-x-full"} lg:translate-x-0`}>
         <button onClick={() => setOpen(false)} className="absolute top-4 right-4 lg:hidden">
           <X />
         </button>
@@ -121,7 +121,7 @@ export default function ActivitySidebar() {
           Search people you know
         </p>
 
-        <div className="flex gap-2 h-10 rounded-full items-center px-3 bg-white/30 dark:bg-black/30 mt-7 mb-5">
+        <div className="flex gap-2 h-10 rounded-full items-center px-3 neo-panel-soft mt-7 mb-5">
           <Search className="h-5" />
           <input type="text" placeholder="Search users" value={query} onChange={(e) => setQuery(e.target.value)} className="outline-0 w-full h-full bg-transparent" />
         </div>
@@ -144,7 +144,7 @@ export default function ActivitySidebar() {
                 const isFollowing = userData?.following?.includes(user._id.toString()) ?? false;
                 return (
                   <div key={user._id} className="flex items-center gap-2">
-                    <div className="h-12 w-12 rounded-full overflow-hidden">
+                    <div className="h-12 w-12 rounded-full overflow-hidden border border-blue-200/15">
                       <img src={user.avatar || "/default-avatar.png"} alt={user.name} className="h-full w-full object-cover" />
                     </div>
                     <div className="flex flex-col w-30">
@@ -168,7 +168,7 @@ export default function ActivitySidebar() {
               const isFollowing = userData?.following?.includes(suggestedUser._id.toString()) ?? false;
               return (
                 <div key={suggestedUser._id} className="flex items-center gap-2">
-                  <div className="h-12 w-12 rounded-full overflow-hidden">
+                  <div className="h-12 w-12 rounded-full overflow-hidden border border-blue-200/15">
                     <img src={suggestedUser.avatar || "/default-avatar.png"} alt={suggestedUser.name} className="h-full w-full object-cover" />
                   </div>
 

@@ -27,9 +27,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-[url('/vector-home-bg.jpg')] dark:bg-[url('/vector-home-bg-dark.png')] bg-cover bg-center bg-no-repeat`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} neo-app-bg min-h-screen`}>
         <Providers>
           <GlobalLoader /> {/* ✅ Global loader */}
           <ToastProvider />

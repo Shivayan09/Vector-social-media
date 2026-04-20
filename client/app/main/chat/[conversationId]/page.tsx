@@ -204,7 +204,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
   return (
     <div className="flex flex-col h-screen">
 
-      <div className="bg-white/15 px-14 md:px-5 py-2 flex items-center">
+      <div className="neo-panel-soft px-14 md:px-5 py-2 flex items-center">
         <button
           onClick={() => router.push("/main/chat")}
           className="hover:bg-white/20 p-2 rounded-full transition-colors"
@@ -237,7 +237,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
             <div key={m._id}>
               {showDateSeparator && (
                 <div className="flex justify-center my-3">
-                  <span className="text-xs text-gray-400 bg-gray-800/50 px-3 py-1 rounded-full">
+                  <span className="text-xs text-blue-100 bg-blue-950/50 px-3 py-1 rounded-full border border-blue-200/15">
                     {getDateString(m.createdAt)}
                   </span>
                 </div>
@@ -252,7 +252,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
                   className={`max-w-[70%] px-4 py-2 rounded-md relative ${
                     isMe
                       ? "bg-blue-500 text-white"
-                      : "bg-gray-200 text-black"
+                      : "bg-blue-200 text-blue-950"
                   }`}
                 >
 
@@ -284,7 +284,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
         <div ref={bottomRef} />
       </div>
 
-      <div className="border-t px-7 pb-6 pt-4 flex gap-2 backdrop-blur-3xl">
+      <div className="neo-panel-soft border-t px-7 pb-6 pt-4 flex gap-2">
 
         <input
           value={text}
@@ -296,14 +296,14 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
             }
           }}
           disabled={isSending}
-          className="flex-1 border px-3 py-2 rounded-md text-white bg-black/10 disabled:opacity-50"
+          className="neo-input flex-1 px-3 py-2 rounded-md text-white disabled:opacity-50"
           placeholder="Type a message..."
         />
 
         <button 
           onClick={sendMessage} 
           disabled={isSending}
-          className={`text-white px-5 rounded-md transition-all ${
+          className={`neo-button px-5 rounded-md text-white transition-all ${
             isSending 
               ? "bg-blue-400 cursor-not-allowed opacity-60" 
               : "bg-blue-500 cursor-pointer hover:bg-blue-600"

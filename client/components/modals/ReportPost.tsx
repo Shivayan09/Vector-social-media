@@ -54,14 +54,14 @@ export default function ReportPost({ open, onClose, onSubmit }: ReportPostProps)
 
   return createPortal(
     <div
-      className={`fixed inset-0 z-9999 flex items-center justify-center bg-black/40 transition-opacity duration-200 ${
+      className={`fixed inset-0 z-9999 flex items-center justify-center bg-black/60 transition-opacity duration-200 ${
         visible ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
       onClick={closeModal}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`w-[90%] max-w-md rounded-xl bg-white dark:bg-blue-950 border p-5 shadow-lg transform transition-all duration-200 ${
+        className={`neo-shell w-[90%] max-w-md p-5 transform transition-all duration-200 ${
           visible ? "scale-100 translate-y-0" : "scale-95 translate-y-2"
         }`}
       >
@@ -76,7 +76,7 @@ export default function ReportPost({ open, onClose, onSubmit }: ReportPostProps)
         <select
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          className="w-full mb-3 text-[0.95rem] rounded-md border px-3 py-2 bg-transparent dark:bg-blue-950"
+          className="neo-select w-full mb-3 text-[0.95rem] rounded-md px-3 py-2"
         >
           <option value="">Select a reason</option>
           {REPORT_REASONS.map((r) => (
@@ -91,13 +91,13 @@ export default function ReportPost({ open, onClose, onSubmit }: ReportPostProps)
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={3}
-          className="w-full rounded-md border px-3 py-2 mb-4 resize-none"
+          className="neo-textarea w-full rounded-md px-3 py-2 mb-4"
         />
 
         <div className="flex justify-end gap-3 w-full">
           <button
             onClick={closeModal}
-            className="w-1/2 py-1.5 rounded-md border text-sm hover:bg-black/5"
+            className="neo-button-secondary w-1/2 py-1.5 rounded-md text-sm"
           >
             Cancel
           </button>
@@ -105,11 +105,7 @@ export default function ReportPost({ open, onClose, onSubmit }: ReportPostProps)
           <button
             disabled={!reason}
             onClick={handleSubmit}
-            className={`w-1/2 py-1.5 rounded-md cursor-pointer text-white ${
-              reason
-                ? "bg-blue-500 hover:bg-blue-600"
-                : "bg-blue-300 cursor-not-allowed"
-            }`}
+            className="neo-button w-1/2 py-1.5 rounded-md cursor-pointer text-white"
           >
             Submit report
           </button>

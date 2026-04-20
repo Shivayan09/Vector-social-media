@@ -4,14 +4,14 @@ import { Button } from "../ui/button";
 
 export default function HomeSidebar() {
     return (
-        <div className="hidden md:flex bg-white dark:bg-black border-black/5 w-90 h-screen flex-col py-7 px-3 font-serif">
+        <div className="hidden md:flex neo-sidebar-shell w-90 h-screen flex-col py-7 px-3 font-serif">
 
             <div className="flex flex-col border-b">
                 <p className="flex gap-2 items-center font-semibold"><TrendingUp className="text-blue-500" /> Top trends this week</p>
-                <div className="h-30 border mt-3 rounded-lg bg-black/5 dark:bg-white/5 dark:shadow-white dark:hover:shadow-xs cursor-pointer transition-all duration-300 hover:shadow-sm overflow-clip">
+                <div className="h-30 mt-3 rounded-lg bg-blue-950/40 cursor-pointer transition-all duration-300 hover:translate-x-[-2px] hover:translate-y-[-2px] overflow-clip border-3 border-blue-200/20 shadow-[6px_6px_0_0_rgba(15,23,42,0.85)]">
                     <img src="/kohli2.jpg" alt="" className="h-full w-full object-cover object-top" />
                 </div>
-                <div className="h-30 border my-3 rounded-lg bg-black/5 dark:bg-white/5 dark:shadow-white dark:hover:shadow-xs cursor-pointer transition-all duration-300 hover:shadow-sm overflow-clip">
+                <div className="h-30 my-3 rounded-lg bg-blue-950/40 cursor-pointer transition-all duration-300 hover:translate-x-[-2px] hover:translate-y-[-2px] overflow-clip border-3 border-blue-200/20 shadow-[6px_6px_0_0_rgba(15,23,42,0.85)]">
                     <img src="/cse.jpg" alt="" className="h-full w-full object-cover" />
                 </div>
                 <p className="text-right text-[0.9rem] mr-1 text-blue-500 cursor-pointer hover:text-blue-600">See more</p>
@@ -21,40 +21,40 @@ export default function HomeSidebar() {
 
             <div className="mt-5 flex flex-col gap-5">
                 <div className="box flex items-center gap-2">
-                    <div className="h-12 w-12 rounded-full bg-black/5 dark:bg-white/5 overflow-hidden">
+                    <div className="h-12 w-12 rounded-full bg-blue-950/40 overflow-hidden border border-blue-200/15">
                         <img src="/Jensen.png" alt="" className="h-full w-full object-contain" />
                     </div>
                     <div className="flex flex-col w-35">
                         <p className="text-[0.9rem]">Jensen Huang</p>
                         <p className="opacity-50 text-[0.8rem]">CEO and Founder, Nvidia</p>
                     </div>
-                    <Button className="h-8 cursor-pointer bg-blue-500 hover:bg-blue-600 text-white">
+                    <Button className="h-8 cursor-pointer text-white">
                         Follow
                     </Button>
                 </div>
 
                 <div className="box flex items-center gap-2">
-                    <div className="h-12 w-12 rounded-full bg-black/5 dark:bg-white/5 overflow-hidden">
+                    <div className="h-12 w-12 rounded-full bg-blue-950/40 overflow-hidden border border-blue-200/15">
                         <img src="/Elon.png" alt="" className="h-full w-full object-contain" />
                     </div>
                     <div className="flex flex-col w-35">
                         <p className="text-[0.9rem]">Elon Musk</p>
                         <p className="opacity-50 text-[0.8rem]">CEO and Founder, Tesla & SpaceX</p>
                     </div>
-                    <Button className="h-8 cursor-pointer bg-blue-500 hover:bg-blue-600 text-white">
+                    <Button className="h-8 cursor-pointer text-white">
                         Follow
                     </Button>
                 </div>
 
                 <div className="box flex items-center gap-2">
-                    <div className="h-12 w-12 rounded-full bg-black/5 dark:bg-white/5 overflow-hidden">
+                    <div className="h-12 w-12 rounded-full bg-blue-950/40 overflow-hidden border border-blue-200/15">
                         <img src="/Mark.png" alt="" className="h-full w-full object-cover" />
                     </div>
                     <div className="flex flex-col w-35">
                         <p className="text-[0.9rem]">Mark Zuck</p>
                         <p className="opacity-50 text-[0.8rem]">CEO and Founder, Facebook</p>
                     </div>
-                    <Button className="h-8 cursor-pointer bg-blue-500 hover:bg-blue-600 text-white">
+                    <Button className="h-8 cursor-pointer text-white">
                         Follow
                     </Button>
                 </div>

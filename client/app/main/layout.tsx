@@ -8,7 +8,7 @@ export default function AppLayout({
 }) {
   return (
     <AuthGuard>
-      <div className="flex min-h-screen bg-[url('/vector-home-bg-light.png')] dark:bg-[url('/vector-home-bg-dark.png')] bg-cover bg-center bg-no-repeat">
+      <div className="flex min-h-screen neo-app-bg">
         <Sidebar />
         <main className="flex-1">
           {children}

@@ -34,13 +34,13 @@ export default function ConfirmModal({
   return createPortal(
     <div
       onClick={onClose}
-      className={`fixed inset-0 z-9999 flex items-center justify-center bg-black/40 transition-opacity duration-200 ${
+      className={`fixed inset-0 z-9999 flex items-center justify-center bg-black/60 transition-opacity duration-200 ${
         open ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`w-[90%] max-w-md rounded-xl bg-white dark:bg-blue-950 p-5 shadow-lg transform transition-all duration-200 ${
+        className={`neo-shell w-[90%] max-w-md p-5 transform transition-all duration-200 ${
           open
             ? "scale-100 translate-y-0 opacity-100"
             : "scale-95 translate-y-2 opacity-0"
@@ -57,16 +57,16 @@ export default function ConfirmModal({
         </p>
 
         {content && (
-          <div className="border rounded-md p-3 text-sm max-h-30 overflow-y-auto bg-gray-50 dark:bg-blue-900 my-5">
+          <div className="neo-panel-soft rounded-md p-3 text-sm max-h-30 overflow-y-auto my-5">
             {content}
           </div>
         )}
 
         <div className="flex justify-end gap-3 w-full">
-          <button onClick={onClose} className="w-[50%] py-1.5 rounded-md border cursor-pointer hover:bg-black/5">
+          <button onClick={onClose} className="neo-button-secondary w-[50%] py-1.5 rounded-md cursor-pointer">
             Cancel
           </button>
-          <button onClick={onConfirm} className="w-[50%] cursor-pointer py-1.5 rounded-md bg-blue-500 text-white hover:bg-blue-600">
+          <button onClick={onConfirm} className="neo-button w-[50%] cursor-pointer py-1.5 rounded-md text-white">
             {confirmText}
           </button>
         </div>

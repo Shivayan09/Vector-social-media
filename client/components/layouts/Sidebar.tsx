@@ -76,7 +76,7 @@ export default function Sidebar() {
     <>
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className={`fixed z-50 md:hidden p-2 rounded-lg ${isMain ? "top-7.5 left-6" : "top-4 left-3"
+        className={`fixed z-50 md:hidden neo-button px-3 py-2 ${isMain ? "top-7.5 left-6" : "top-4 left-3"
           }`}
         aria-label="Toggle menu"
       >
@@ -87,7 +87,7 @@ export default function Sidebar() {
         <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={() => setOpen(false)} />
       )}
 
-      <aside className={`fixed md:static top-0 left-0 z-50 h-screen text-white w-50 md:w-55 border-r border-black/5 shadow-lg flex flex-col gap-5 px-2 py-5 font-serif text-[1.1rem] backdrop-blur-3xl transform transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
+      <aside className={`neo-sidebar-shell fixed md:static top-0 left-0 z-50 h-screen text-white w-50 md:w-55 flex flex-col gap-5 px-2 py-5 font-serif text-[1.1rem] transform transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
         <div className="flex w-full">
           <div className="flex justify-center ml-3">
             <img
@@ -156,7 +156,7 @@ export default function Sidebar() {
         />
 
         <p
-          className="flex mr-auto pl-2 md:pl-5 gap-2 mt-auto transition-all duration-300 hover:bg-black/10 w-full h-10 rounded-lg items-center cursor-pointer dark:hover:text-white/70"
+          className="flex mr-auto pl-2 md:pl-5 gap-2 mt-auto transition-all duration-300 hover:bg-blue-400/15 w-full h-10 rounded-lg items-center cursor-pointer dark:hover:text-white/70"
           onClick={() => setLogoutOpen(true)}
         >
           <LogOut className="opacity-60" />
@@ -187,7 +187,7 @@ export default function Sidebar() {
 function SidebarItem({ icon, label, href, active, onClick, unreadCount = 0 }: SidebarItemProps) {
   if (onClick) {
     return (
-      <button onClick={onClick} className="flex gap-2 cursor-pointer transition-all duration-200 p-2 rounded-lg w-full md:pl-5 hover:bg-black/10 dark:hover:bg-blue-400/20">
+      <button onClick={onClick} className="flex gap-2 cursor-pointer transition-all duration-200 p-2 rounded-lg w-full md:pl-5 hover:bg-blue-400/15 dark:hover:bg-blue-400/20">
         <span className="h-4 md:h-6 text-stone-300 dark:text-white/50">
           {icon}
         </span>
@@ -200,8 +200,8 @@ function SidebarItem({ icon, label, href, active, onClick, unreadCount = 0 }: Si
     <Link
       href={href!}
       className={`relative flex gap-2 cursor-pointer transition-all duration-200 p-2 rounded-lg w-full md:pl-5 ${active
-        ? "bg-blue-500 text-white"
-        : "hover:bg-black/10 dark:hover:bg-blue-400/20 dark:hover:text-white/70"
+        ? "bg-blue-500 text-white border border-blue-200/40 shadow-[4px_4px_0_0_rgba(15,23,42,0.9)]"
+        : "hover:bg-blue-400/15 dark:hover:bg-blue-400/20 dark:hover:text-white/70"
         }`}>
       <span className={`h-4 md:h-6 ${active ? "text-white" : "text-stone-300 dark:text-white/50"}`}>
         {icon}

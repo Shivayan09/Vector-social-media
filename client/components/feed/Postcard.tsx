@@ -149,7 +149,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     };
 
     return (
-        <div className="border overflow-clip relative border-black/10 bg-black/10 backdrop-blur-3xl cursor-pointer hover:shadow-lg px-5 py-3 rounded-2xl transition"
+        <div className="neo-card overflow-clip relative cursor-pointer px-5 py-3 transition"
             onClick={openPost}>
             <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
@@ -171,19 +171,19 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                 </div>
 
                 <div ref={menuRef} className="relative">
-                    <button onClick={(e) => { e.stopPropagation(); setMenuOpen(prev => !prev); }} className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10">
+                    <button onClick={(e) => { e.stopPropagation(); setMenuOpen(prev => !prev); }} className="p-1 rounded-full hover:bg-blue-400/15 dark:hover:bg-blue-400/20">
                         <MoreHorizontal size={20} className="text-white cursor-pointer mt-0.5" />
                     </button>
 
                     {menuOpen && (
-                        <div className="absolute overflow-clip top-0 right-0 w-30 bg-white border border-black/10 rounded-md shadow-lg z-50">
-                            <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-blue-500 transition-all duration-300 hover:bg-black/3 dark:hover:bg-white/5"
+                        <div className="neo-panel-soft absolute overflow-clip top-0 right-0 w-30 z-50">
+                            <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-blue-200 transition-all duration-300 hover:bg-blue-400/15"
                                 onClick={handleShare}>
                                 <Share2 size={14} />
                                 Share post
                             </button>
                             {isOwner && (
-                                <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-black/3 dark:hover:bg-white/5"
+                                <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-300 hover:bg-blue-400/15"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setMenuOpen(false);
@@ -194,7 +194,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                                 </button>
                             )}
                             {!isOwner && (
-                                <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-black/3 dark:hover:bg-white/5"
+                                <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-300 hover:bg-blue-400/15"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setMenuOpen(false);
@@ -209,22 +209,22 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                 </div>
             </div>
 
-            <p className="mt-2 mb-5 p-1 text-[0.9rem] md:text-[1.1rem] text-gray-100">
+            <p className="mt-2 mb-5 p-1 text-[0.9rem] md:text-[1.1rem] text-blue-50">
                 {post.content}
             </p>
 
-            <div className="flex justify-between text-white border-t border-white/20 dark:border-white/10 pt-3">
-                <div className="flex items-center justify-between w-2/3 text-gray-200 dark:text-gray-300 text-sm">
-                    <p className="flex gap-1 items-center cursor-pointer hover:text-blue-500 md:w-[20%] justify-center">
+            <div className="flex justify-between text-white border-t border-blue-200/20 pt-3">
+                <div className="flex items-center justify-between w-2/3 text-blue-100 text-sm">
+                    <p className="flex gap-1 items-center cursor-pointer hover:text-blue-300 md:w-[20%] justify-center">
                         <MessageCircle className="h-4.5 md:h-5 hover:text-blue-500" />
                         {post.commentsCount || 0} {post.commentsCount===1 ? 'Comment' : 'Comments'}
                     </p>
 
-                    <p onClick={handleShare} className="flex gap-1 items-center cursor-pointer md:w-[20%] justify-center hover:text-blue-500">
+                    <p onClick={handleShare} className="flex gap-1 items-center cursor-pointer md:w-[20%] justify-center hover:text-blue-300">
                         <Forward className="h-4.5 md:h-5" />0 Shares
                     </p>
 
-                    <p onClick={(e) => { e.stopPropagation(); handleLike() }} className="flex gap-1 items-center md:w-[20%] justify-center cursor-pointer hover:text-blue-500">
+                    <p onClick={(e) => { e.stopPropagation(); handleLike() }} className="flex gap-1 items-center md:w-[20%] justify-center cursor-pointer hover:text-blue-300">
                         <Heart className={`h-4.5 md:h-5 cursor-pointer transition-transform duration-300 hover:text-blue-500 ${isLiked ? "text-blue-500" : ""} ${likeAnimating ? "scale-135" : "scale-100"}`} fill={isLiked ? "currentColor" : "none"} />
                         {post.likes.length} {post.likes.length===1 ? 'Like' : 'Likes'}
                     </p>

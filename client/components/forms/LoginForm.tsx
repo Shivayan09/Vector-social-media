@@ -70,7 +70,7 @@ export default function LoginForm() {
     };
 
     return (
-        <div className="border border-black/10 dark:border-white/10 backdrop-blur-3xl rounded-lg px-10 py-5 w-80 md:w-90">
+        <div className="neo-shell px-10 py-8 w-80 md:w-96">
             <p className="font-semibold text-[1rem] md:text-[1.2rem] text-white">
                 Welcome back!
             </p>
@@ -88,8 +88,8 @@ export default function LoginForm() {
                 />
 
             <div className="relative flex items-center justify-center mt-5">
-                <div className="absolute w-full h-px bg-white/20"></div>
-                <span className="relative px-3 text-md text-white/70 backdrop-blur-3xl">
+                <div className="absolute w-full h-px neo-divider"></div>
+                <span className="relative px-3 text-md text-blue-100">
                     or
                 </span>
             </div>
@@ -98,7 +98,7 @@ export default function LoginForm() {
             <input
                 type="text"
                 placeholder="demousername09"
-                className="outline-none h-10 bg-white/30 dark:border-white/10 w-full rounded-md p-3 my-3"
+                className="neo-input h-10 my-3"
                 onChange={(e) => setUsername(e.target.value)}
             />
 
@@ -108,7 +108,7 @@ export default function LoginForm() {
                 <input
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
-                    className="outline-none h-10 bg-white/30 dark:border-white/10 w-full rounded-md p-3 my-3 pr-10"
+                    className="neo-input h-10 my-3 pr-10"
                     onChange={(e) => setPassword(e.target.value)}
                 />
 
@@ -125,7 +125,7 @@ export default function LoginForm() {
                     Forgot your password?
                 </p>
                 <span
-                    className="text-blue-800 underline cursor-pointer"
+                    className="text-blue-200 underline cursor-pointer"
                     onClick={() => router.push("/auth/forgot-password")}
                 >
                     Click here
@@ -134,11 +134,7 @@ export default function LoginForm() {
 
             <Button
                 disabled={loading}
-                className={`w-full mt-5 cursor-pointer dark:text-white ${
-                    loading
-                        ? "bg-blue-400"
-                        : "bg-blue-500 hover:bg-blue-600"
-                }`}
+                className="w-full mt-5 cursor-pointer text-white"
                 onClick={handleLogin}
             >
                 {loading ? "Logging in" : "Log in"}
@@ -149,7 +145,7 @@ export default function LoginForm() {
                     Don't have an account?
                 </p>
                 <span
-                    className=" font-semibold underline cursor-pointer mt-1 text-white"
+                    className="font-semibold underline cursor-pointer mt-1 text-blue-100"
                     onClick={() => router.push("/auth/register")}
                 >
                     Register

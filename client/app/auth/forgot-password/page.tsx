@@ -47,7 +47,7 @@ export default function ForgotPasswordPage() {
 
     return (
         <div className="flex items-center justify-center h-screen">
-            <div className="border border-black/10 dark:border-white/10 backdrop-blur-3xl rounded-lg px-10 py-5 w-80 md:w-90">
+            <div className="neo-shell px-10 py-5 w-80 md:w-90">
                 <p className="font-semibold text-[1rem] md:text-[1.2rem] text-white">
                     Forgot Password
                 </p>
@@ -59,16 +59,14 @@ export default function ForgotPasswordPage() {
                 <input
                     type="email"
                     placeholder="you@example.com"
-                    className="outline-none h-10 bg-white/30 dark:border-white/10 w-full rounded-md p-3 my-3"
+                    className="neo-input h-10 my-3"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                 />
 
                 <Button
                     disabled={loading}
-                    className={`w-full mt-2 cursor-pointer dark:text-white ${
-                        loading ? "bg-blue-400" : "bg-blue-500 hover:bg-blue-600"
-                    }`}
+                    className="w-full mt-2 cursor-pointer text-white"
                     onClick={handleSubmit}
                 >
                     {loading ? "Sending..." : "Send Reset Link"}

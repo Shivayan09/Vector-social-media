@@ -81,15 +81,15 @@ export default function CommentsSection({ postId }: { postId: string }) {
     };
 
     if (loading) {
-        return <p className="text-sm text-gray-500">Loading comments...</p>;
+        return <p className="text-sm text-blue-200">Loading comments...</p>;
     }
 
     return (
-        <div className="mt-3 border-t pt-3 px-3 md:px-5 backdrop-blur-3xl rounded-b-xl">
+        <div className="neo-panel-soft mt-3 border-t-0 pt-3 px-3 md:px-5 rounded-b-xl">
             {userData && (
                 <div className="flex gap-2 my-4">
-                    <textarea value={text} onChange={(e) => setText(e.target.value)} onKeyDown={handleKeyDown} placeholder="Write a comment... (Shift+Enter for new line)" className="flex-1 bg-white/30 rounded-md px-3 py-2 outline-none resize-none" rows={1} />
-                    <button disabled={!text.trim() || buttonLoading} onClick={handlePost} className="w-20 md:w-25 h-9 md:h-10 cursor-pointer bg-blue-500 text-white rounded-md disabled:opacity-50">
+                    <textarea value={text} onChange={(e) => setText(e.target.value)} onKeyDown={handleKeyDown} placeholder="Write a comment... (Shift+Enter for new line)" className="neo-textarea flex-1 px-3 py-2" rows={1} />
+                    <button disabled={!text.trim() || buttonLoading} onClick={handlePost} className="neo-button w-20 md:w-25 h-9 md:h-10 cursor-pointer text-white rounded-md disabled:opacity-50">
                         Post
                     </button>
                 </div>
@@ -114,7 +114,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
 
                                 <div className="flex items-center gap-2">
                                     <p
-                                        className="text-[0.9rem] font-semibold text-white cursor-pointer"
+                                        className="text-[0.9rem] font-semibold text-blue-100 cursor-pointer"
                                         onClick={() =>
                                             router.push(`/main/user/${c.author?.username}`)
                                         }
@@ -125,7 +125,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
                                     {isOwner && (
                                         <Trash2
                                             size={16}
-                                            className="text-white/70 cursor-pointer ml-auto"
+                                            className="text-blue-200 cursor-pointer ml-auto"
                                             onClick={() => {
                                                 setSelectedComment(c);
                                                 setShowDeleteModal(true);
@@ -134,11 +134,11 @@ export default function CommentsSection({ postId }: { postId: string }) {
                                     )}
                                 </div>
 
-                                <p className="text-[0.9rem] text-gray-300 wrap-break-word">
+                                <p className="text-[0.9rem] text-blue-100 wrap-break-word">
                                     {c?.content}
                                 </p>
 
-                                <p className="text-[0.75rem] text-gray-500 mt-1">
+                                <p className="text-[0.75rem] text-blue-200 mt-1">
                                     {timeAgo(c.createdAt)}
                                 </p>
 

@@ -14,8 +14,8 @@ interface Post {
 }
 
 const EXPLORE_TOPICS = [
-    { name: "Ask", intent: "ask", icon: Lightbulb, width: "w-[47%]" },
-    { name: "Build", intent: "build", icon: Trophy, width: "w-[47%]" },
+    { name: "Ask", intent: "ask", icon: Lightbulb },
+    { name: "Build", intent: "build", icon: Trophy },
 ];
 
 export default function ExploreSidebar() {
@@ -52,7 +52,7 @@ export default function ExploreSidebar() {
 
     return (
         <>
-            <button onClick={() => setOpen(true)} className="fixed top-4 right-4 z-50 lg:hidden p-2 rounded-full bg-blue-500 text-white shadow-lg" aria-label="Open follow suggestions">
+            <button onClick={() => setOpen(true)} className="fixed top-4 right-4 z-50 lg:hidden neo-button p-2 rounded-full text-white" aria-label="Open follow suggestions">
                 <UserPlus />
             </button>
 
@@ -60,21 +60,22 @@ export default function ExploreSidebar() {
                 <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" onClick={() => setOpen(false)}/>
             )}
 
-            <div className={`h-screen md:min-h-screen text-white md:h-fit w-fit p-5 backdrop-blur-3xl fixed lg:static top-0 right-0 z-50 transform transition-transform duration-300 ${open ? "translate-x-0" : "translate-x-full"} lg:translate-x-0`}>
+            <div className={`neo-sidebar-shell h-screen md:min-h-screen text-white md:h-fit w-[86vw] max-w-[22rem] lg:w-[21rem] p-5 fixed lg:static top-0 right-0 z-50 transform transition-transform duration-300 ${open ? "translate-x-0" : "translate-x-full"} lg:translate-x-0`}>
                 <button onClick={() => setOpen(false)} className="absolute top-4 right-4 lg:hidden" aria-label="Close">
                     <X />
                 </button>
 
-                <div className="p-2 pb-3 mb-3 border-b">
+                <div className="p-2 pb-4 mb-4 border-b border-blue-200/20">
                 <p className="flex items-center gap-1 font-semibold"> <Compass className="h-5 text-blue-500"/> Explore topics</p>
-                <div className="flex justify-between mt-5">
+                <div className="grid grid-cols-2 gap-3 mt-4">
                     {EXPLORE_TOPICS.map((topic) => (
                         <div 
                             key={topic.name} 
                             onClick={() => handleTopicClick(topic.intent)}
-                            className={`box h-20 border ${topic.width} rounded-md flex items-center justify-center gap-1 bg-black/5 dark:bg-white/5 transition-all duration-300 dark:hover:scale-102 dark:hover:border-white cursor-pointer hover:shadow-md`}>
-                            <topic.icon className="h-5"/>
-                            <p className="text-[0.9rem]">{topic.name}</p>
+                            className="neo-panel-soft min-h-20 px-3 rounded-md flex items-center justify-center gap-2 transition-all duration-300 cursor-pointer hover:translate-x-[-2px] hover:translate-y-[-2px]"
+                        >
+                            <topic.icon className="h-5 w-5 shrink-0"/>
+                            <p className="text-sm leading-none whitespace-nowrap">{topic.name}</p>
                         </div>
                     ))}
                 </div>
@@ -83,24 +84,24 @@ export default function ExploreSidebar() {
                 <div>
                     <p className="flex items-center gap-2 font-semibold"> <TrendingUp className="h-5 text-blue-500"/> Trending topics</p>
                     {loading ? (
-                        <div className="flex items-center gap-2">
-                            <div className="h-12 w-12 bg-black/5 rounded-md mr-4 overflow-clip"><img src="/cse.jpg" alt="" className="h-full w-full object-cover"/></div>
-                            <div className="w-40 text-[0.95rem]">Artificial Intelligence and Machine Learning</div>
-                            <p className="flex items-center gap-0.5 text-[0.8rem] ml-1"> <Heart className="text-blue-400 h-full mt-auto" fill="currentColor"/> 120</p>
+                        <div className="neo-panel-soft mt-4 flex items-start gap-3 p-3">
+                            <div className="h-12 w-12 shrink-0 bg-blue-950/40 rounded-md overflow-clip border border-blue-200/15"><img src="/cse.jpg" alt="" className="h-full w-full object-cover"/></div>
+                            <div className="min-w-0 flex-1 text-[0.95rem] leading-5 break-words">Artificial Intelligence and Machine Learning</div>
+                            <p className="flex items-center gap-0.5 text-[0.8rem] shrink-0 pt-1"> <Heart className="text-blue-400 h-4 w-4" fill="currentColor"/> 120</p>
                         </div>
                     ) : (
                         trendingPosts.map(post => (
-                            <div key={post._id} className="box mt-5 flex">
-                                <div className="h-12 w-12 bg-black/5 rounded-md mr-4 overflow-clip">
+                            <div key={post._id} className="neo-panel-soft mt-4 flex items-start gap-3 p-3">
+                                <div className="h-12 w-12 shrink-0 bg-blue-950/40 rounded-md overflow-clip border border-blue-200/15">
                                     <img 
                                         src={post.author?.avatar || "/default-avatar.png"} 
                                         alt={post.author?.username} 
                                         className="h-full w-full object-cover"
                                     />
                                 </div>
-                                <div className="w-40 text-[0.95rem]">{post.content}</div>
-                                <p className="flex items-center gap-0.5 text-[0.8rem] ml-1">
-                                    <Heart className="text-blue-400 h-full mt-auto" fill="currentColor"/>
+                                <div className="min-w-0 flex-1 text-[0.95rem] leading-5 break-words line-clamp-2">{post.content}</div>
+                                <p className="flex items-center gap-0.5 text-[0.8rem] shrink-0 pt-1">
+                                    <Heart className="text-blue-400 h-4 w-4" fill="currentColor"/>
                                     {post.likes?.length || 0}
                                 </p>
                             </div>
@@ -109,7 +110,7 @@ export default function ExploreSidebar() {
                 </div>
                 <Button 
                     onClick={handleSeeMore}
-                    className="mt-5 w-full bg-blue-500 hover:bg-blue-600 text-white cursor-pointer">
+                    className="neo-button mt-5 w-full text-white cursor-pointer">
                     See more
                 </Button>
             </div>

@@ -15,7 +15,7 @@ export default function Activity() {
           Activity Panel
         </p>
 
-        <div className="flex items-center px-2 gap-2 mt-5 bg-white/30 dark:bg-black/30 rounded-full h-10">
+        <div className="neo-input flex items-center px-2 gap-2 mt-5 rounded-full h-10">
           <Search className="h-5" />
           <input
             type="text"

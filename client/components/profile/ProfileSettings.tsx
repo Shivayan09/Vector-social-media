@@ -146,11 +146,11 @@ export default function ProfileSettings() {
   };
 
   return (
-    <div className="h-screen px-5 md:px-20 py-5 md:pt-5 overflow-y-auto">
+    <div className="neo-app-bg h-screen px-5 md:px-20 py-5 md:pt-5 overflow-y-auto">
       <h1 className="text-xl md:text-2xl mb-3 font-semibold text-white text-center md:text-left">Edit Profile</h1>
 
       <div className="flex flex-col md:flex-row items-center gap-2 md:gap-6 mb-6">
-        <div className="h-22 md:h-24 w-22 md:w-24 rounded-full overflow-hidden border">
+        <div className="h-22 md:h-24 w-22 md:w-24 rounded-full overflow-hidden border-3 border-blue-200/25 shadow-[6px_6px_0_0_rgba(15,23,42,0.8)]">
           <img src={preview || avatar || "/avatar-placeholder.png"} className="h-full w-full object-cover" />
         </div>
 
@@ -158,7 +158,7 @@ export default function ProfileSettings() {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="text-blue-600 font-medium cursor-pointer"
+            className="text-blue-200 font-medium cursor-pointer"
           >
             Change photo
           </button>
@@ -169,7 +169,7 @@ export default function ProfileSettings() {
                 type="button"
                 disabled={uploadingAvatar}
                 onClick={handleAvatarUpload}
-                className="h-9 px-5 text-sm rounded-md bg-blue-500 hover:bg-blue-600 text-white cursor-pointer"
+                className="neo-button h-9 px-5 text-sm rounded-md text-white cursor-pointer"
               >
                 {uploadingAvatar ? "Uploading..." : "Set as profile pic"}
               </button>
@@ -177,7 +177,7 @@ export default function ProfileSettings() {
               <button
                 type="button"
                 onClick={handleAvatarDiscard}
-                className="h-9 px-5 rounded-md bg-white text-sm cursor-pointer"
+                className="neo-button-secondary h-9 px-5 rounded-md text-sm cursor-pointer"
               >
                 Discard
               </button>
@@ -266,9 +266,9 @@ function EditableInput({
   return (
     <div>
       <div className="flex justify-between mb-1">
-        <label className="font-medium text-shadow-lg">{label}</label>
+        <label className="font-medium">{label}</label>
         {!editable && (
-          <button onClick={onEdit} className="text-white text-shadow-lg text-sm cursor-pointer">
+          <button onClick={onEdit} className="text-blue-200 text-sm cursor-pointer">
             Edit
           </button>
         )}
@@ -278,7 +278,7 @@ function EditableInput({
         value={value}
         disabled={!editable}
         onChange={onChange}
-        className={`w-full px-3 py-2 rounded-lg text-white/80 ${editable ? "border-blue-500 outline-2 outline-white bg-black/10" : "bg-black/15 backdrop-blur-3xl cursor-not-allowed"
+        className={`neo-input w-full px-3 py-2 rounded-lg text-white/80 ${editable ? "border-blue-500 outline-2 outline-white" : "neo-shell-soft cursor-not-allowed"
           }`}
       />
     </div>
@@ -296,9 +296,9 @@ function EditableTextarea({
   return (
     <div className="md:col-span-2">
       <div className="flex justify-between mb-1">
-        <label className="font-medium text-shadow-lg">{label}</label>
+        <label className="font-medium">{label}</label>
         {!editable && (
-          <button onClick={onEdit} className="text-blue-600 text-sm cursor-pointer">
+          <button onClick={onEdit} className="text-blue-200 text-sm cursor-pointer">
             Edit
           </button>
         )}
@@ -309,7 +309,7 @@ function EditableTextarea({
         disabled={!editable}
         onChange={onChange}
         rows={3}
-        className={`w-full px-3 py-2 rounded-lg text-white/80 ${editable ? "border-blue-500 outline-2 outline-white bg-black/10" : "bg-black/15 backdrop-blur-3xl cursor-not-allowed"
+        className={`neo-textarea w-full px-3 py-2 rounded-lg text-white/80 ${editable ? "border-blue-500 outline-2 outline-white" : "neo-shell-soft cursor-not-allowed"
           }`}
       />
     </div>

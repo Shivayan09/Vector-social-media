@@ -163,7 +163,7 @@ export default function NotificationPanel({ search = "" }: Props) {
   });
 
   return (
-    <div className="w-full mt-5">
+    <div className="neo-panel w-full mt-5 p-5">
 
       <div className="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-3 md:gap-0">
         <p className="font-semibold text-lg text-white">
@@ -172,13 +172,13 @@ export default function NotificationPanel({ search = "" }: Props) {
 
         <div className="flex gap-2">
           {selectMode && selected.length > 0 && (
-            <button onClick={deleteSelected} className="h-9 text-sm w-35 cursor-pointer bg-blue-600 text-white rounded-md">
+            <button onClick={deleteSelected} className="neo-button h-9 text-sm w-35 cursor-pointer text-white rounded-md">
               Delete Selected
             </button>
           )}
 
           {notifications.length > 0 && (
-            <button onClick={() => setWarningOpen(true)} className="h-9 text-sm cursor-pointer w-[50%] md:w-25 py-1 bg-blue-600 text-white rounded-md">
+            <button onClick={() => setWarningOpen(true)} className="neo-button h-9 text-sm cursor-pointer w-[50%] md:w-25 py-1 text-white rounded-md">
               Clear All
             </button>
           )}
@@ -189,7 +189,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                 setSelectMode((prev) => !prev);
                 setSelected([]);
               }}
-              className="h-9 text-sm cursor-pointer w-[50%] md:w-25 rounded-md bg-blue-600 text-white">
+              className="neo-button h-9 text-sm cursor-pointer w-[50%] md:w-25 rounded-md text-white">
               {selectMode ? "Cancel" : "Select"}
             </button>
           )}
@@ -197,18 +197,18 @@ export default function NotificationPanel({ search = "" }: Props) {
       </div>
 
       {loading ? (
-        <p className="text-gray-500 text-sm">
+        <p className="text-blue-200 text-sm">
           Loading notifications...
         </p>
       ) : filteredNotifications.length === 0 ? (
-        <p className="text-gray-600 text-sm">
+        <p className="text-blue-200 text-sm">
           No notifications match your search.
         </p>
       ) : (
         <div className="flex flex-col gap-2">
           {filteredNotifications.map((n) => (
             <div key={n._id}
-              className={`flex items-center gap-3 p-4 rounded-xl transition ${!n.isRead ? "backdrop-blur-lg" : "backdrop-blur-3xl"
+              className={`flex items-center gap-3 p-4 rounded-xl transition ${!n.isRead ? "neo-panel-soft" : "neo-shell-soft"
                 }`}>
               {selectMode && (
                 <input type="checkbox" className="h-4 w-4 cursor-pointer"

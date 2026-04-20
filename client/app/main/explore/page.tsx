@@ -92,8 +92,8 @@ export default function Explore() {
   }, []);
 
   return (
-    <div className="flex">
-      <div className="w-full py-5 px-7">
+    <div className="flex flex-col lg:flex-row gap-5 lg:gap-6">
+      <div className="w-full py-5 px-4 md:px-7 lg:min-w-0">
         <p className="text-[1.6rem] font-semibold text-center md:text-left text-white">
           Explore
         </p>
@@ -104,7 +104,7 @@ export default function Explore() {
 
         {/* SEARCH */}
         <div className="relative mt-5" ref={wrapperRef}>
-          <div className="flex items-center px-2 gap-2 bg-white/30 dark:bg-black/30 rounded-full h-10">
+          <div className="neo-input flex items-center px-2 gap-2 rounded-full h-10">
             <Search className="h-5" />
             <input
               type="text"
@@ -116,7 +116,7 @@ export default function Explore() {
           </div>
 
           {open && (
-            <div className="absolute w-full mt-2 bg-white border rounded-xl shadow-lg max-h-75 overflow-y-auto z-50">
+            <div className="neo-panel-soft absolute w-full mt-2 max-h-75 overflow-y-auto z-50">
               {searching ? (
                 <p className="p-4 text-sm opacity-50">
                   Searching...
@@ -131,13 +131,13 @@ export default function Explore() {
                   .map((user) => (
                     <div
                       key={user._id}
-                      className="flex items-center gap-3 p-3 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition"
+                      className="flex items-center gap-3 p-3 hover:bg-blue-400/15 cursor-pointer transition"
                       onClick={() => {
                         if (!user?.username) return;
                         router.push(`/main/user/${user.username}`);
                       }}
                     >
-                      <div className="h-10 w-10 rounded-full overflow-hidden bg-black/5 dark:bg-white/5">
+                      <div className="h-10 w-10 rounded-full overflow-hidden border border-blue-200/15">
                         <img
                           src={
                             user.avatar ||
@@ -170,8 +170,8 @@ export default function Explore() {
             Trending domains
           </p>
 
-          <div className="flex justify-between my-5">
-            <div className="box h-35 w-[48%] rounded-md overflow-clip relative cursor-pointer hover:shadow-md">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-5">
+            <div className="box h-35 rounded-md overflow-clip relative cursor-pointer hover:shadow-md">
               <p className="absolute z-20 bottom-0 left-0 p-2 w-full flex items-center gap-2 bg-black/30 text-white">
                 <ExternalLink className="text-blue-500" />
                 Science and technology
@@ -182,7 +182,7 @@ export default function Explore() {
               />
             </div>
 
-            <div className="box h-35 w-[48%] rounded-md overflow-clip relative cursor-pointer hover:shadow-md">
+            <div className="box h-35 rounded-md overflow-clip relative cursor-pointer hover:shadow-md">
               <p className="absolute z-20 bottom-0 left-0 p-2 w-full flex items-center gap-2 bg-black/30 text-white">
                 <ExternalLink className="text-blue-500" />
                 Sports
@@ -201,7 +201,7 @@ export default function Explore() {
             Top posts of the week
           </p>
 
-          <div className="flex flex-col gap-5 md:flex-row items-center mt-5">
+          <div className="flex flex-col gap-5 md:flex-row items-stretch md:items-stretch mt-5">
             {loading ? (
               <p className="text-gray-300">
                 Loading top posts...
@@ -217,7 +217,7 @@ export default function Explore() {
                   <div
                     onClick={() => handleClick(post)}
                     key={post._id}
-                    className="box w-[90%] md:w-[32%] h-44 border rounded-md px-5 py-4 relative cursor-pointer backdrop-blur-3xl text-white hover:bg-black/2 flex flex-col justify-between"
+                    className="neo-card w-full md:w-[32%] min-h-44 px-5 py-4 relative cursor-pointer text-white flex flex-col justify-between"
                   >
                     <p className="text-blue-300">
                       {post.likes?.length || 0} likes
@@ -233,7 +233,7 @@ export default function Explore() {
 
                     <div>
                       <p
-                        className="text-[0.9rem] w-fit hover:text-blue-500"
+                        className="text-[0.9rem] w-fit hover:text-blue-300"
                         onClick={(e) => {
                           e.stopPropagation();
                           if (!post?.author?.username)
@@ -246,7 +246,7 @@ export default function Explore() {
                         @{post?.author?.username || "unknown"}
                       </p>
 
-                      <p className="text-gray-300 text-[0.8rem]">
+                      <p className="text-blue-200 text-[0.8rem]">
                         {new Date(
                           post.createdAt
                         ).toLocaleDateString("en-GB")}
