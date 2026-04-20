@@ -135,6 +135,16 @@ export default function MessagesSidebar() {
                     />
                 </div>
 
+                <div className="flex gap-2 h-10 rounded-full items-center px-3 bg-white/30 dark:bg-black/30 mt-7 mb-5">
+                    <Search className="h-5" />
+                    <input type="text" placeholder="Search users" value={query} onChange={(e) => setQuery(e.target.value)} className="outline-0 w-full h-full bg-transparent" />
+                </div>
+
+                <div className="flex gap-2 h-10 rounded-full items-center px-3 bg-white/30 dark:bg-black/30 mt-7 mb-5">
+                    <Search className="h-5" />
+                    <input type="text" placeholder="Search users" value={query} onChange={(e) => setQuery(e.target.value)} className="outline-0 w-full h-full bg-transparent" />
+                </div>
+
                 <div className="mt-5 flex flex-col gap-2 w-fit min-h-[75vh] max-h-[60vh] overflow-y-auto hide-scrollbar pr-1">
                     {loading ? (
                         <p className="text-sm opacity-50">Loading users...</p>
@@ -147,16 +157,21 @@ export default function MessagesSidebar() {
                             results.filter((user) => user._id !== userData?.id).map((user) => {
                                 const isFollowing = userData?.following?.includes(user._id.toString()) ?? false;
                                 return (
-                                    <div key={user._id} className="flex items-center gap-2">
+                                    <div onClick={() => startChat(user._id)} key={user._id} className="flex items-center gap-2 hover:bg-black/10 cursor-pointer p-3 rounded-md">
                                         <div className="h-12 w-12 rounded-full overflow-hidden">
                                             <img src={user.avatar || "/default-avatar.png"} alt={user.name} className="h-full w-full object-cover" />
                                         </div>
                                         <div className="flex flex-col w-30">
-                                            <p className="text-[0.9rem] truncate">{user.name}</p>
+                                            <p className="text-[0.9rem] text-white truncate cursor-pointer w-fit hover:text-blue-600" onClick={(e) => {e.stopPropagation(); handleClick(user.username)}}>
+                                                {user.name}
+                                            </p>
                                             <p className="opacity-50 text-[0.8rem] truncate">
                                                 @{user.username}
                                             </p>
                                         </div>
+                                        <button onClick={(e) => {e.stopPropagation(); startChat(user._id)}} className="mt-1 cursor-pointer ml-auto">
+                                            <Send className="text-white opacity-60"/>
+                                        </button>
                                     </div>
                                 );
                             })
