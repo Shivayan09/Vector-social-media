@@ -124,7 +124,10 @@ export default function LoginForm() {
                 <p className="text-[0.9rem] text-white">
                     Forgot your password?
                 </p>
-                <span className="text-blue-800 underline cursor-pointer">
+                <span
+                    className="text-blue-800 underline cursor-pointer"
+                    onClick={() => router.push("/auth/forgot-password")}
+                >
                     Click here
                 </span>
             </div>
