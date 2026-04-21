@@ -56,7 +56,7 @@ export function AppContextProvider({
 }: {
   children: ReactNode;
 }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [userData, setUserData] = useState<User | null>(null);
 
   // 🔥 IMPORTANT: default false rakho (warna hamesha loader dikhega)
