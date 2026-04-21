@@ -17,16 +17,7 @@ const Loader = () => {
         zIndex: 9999,
       }}
     >
-      <div
-        style={{
-          width: "50px",
-          height: "50px",
-          border: "5px solid white",
-          borderTop: "5px solid transparent",
-          borderRadius: "50%",
-          animation: "spin 1s linear infinite",
-        }}
-      />
+      <div className="w-12.5 h-12.5 border-[5px] border-white border-t-transparent rounded-full animate-spin" />
     </div>
   );
 };
