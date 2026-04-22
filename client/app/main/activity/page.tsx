@@ -11,7 +11,7 @@ export default function Activity() {
   return (
     <div className="flex h-screen">
       <div className="w-full py-5 px-7 flex flex-col">
-        <p className="text-[1.4rem] font-semibold text-center md:text-left text-white">
+        <p className="text-[1.4rem] font-semibold text-center md:text-left neo-text">
           Activity Panel
         </p>
 

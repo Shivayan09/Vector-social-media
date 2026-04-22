@@ -52,7 +52,7 @@ export default function ExploreSidebar() {
 
     return (
         <>
-            <button onClick={() => setOpen(true)} className="fixed top-4 right-4 z-50 lg:hidden neo-button p-2 rounded-full text-white" aria-label="Open follow suggestions">
+            <button onClick={() => setOpen(true)} className="fixed top-4 right-4 z-50 lg:hidden neo-button p-2 rounded-full" aria-label="Open follow suggestions">
                 <UserPlus />
             </button>
 
@@ -60,7 +60,7 @@ export default function ExploreSidebar() {
                 <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" onClick={() => setOpen(false)}/>
             )}
 
-            <div className={`neo-sidebar-shell h-screen md:min-h-screen text-white md:h-fit w-[86vw] max-w-[22rem] lg:w-[21rem] p-5 fixed lg:static top-0 right-0 z-50 transform transition-transform duration-300 ${open ? "translate-x-0" : "translate-x-full"} lg:translate-x-0`}>
+            <div className={`neo-sidebar-shell h-screen md:min-h-screen neo-text md:h-fit w-[86vw] max-w-[22rem] lg:w-[21rem] p-5 fixed lg:static top-0 right-0 z-50 transform transition-transform duration-300 ${open ? "translate-x-0" : "translate-x-full"} lg:translate-x-0`}>
                 <button onClick={() => setOpen(false)} className="absolute top-4 right-4 lg:hidden" aria-label="Close">
                     <X />
                 </button>
@@ -110,7 +110,7 @@ export default function ExploreSidebar() {
                 </div>
                 <Button 
                     onClick={handleSeeMore}
-                    className="neo-button mt-5 w-full text-white cursor-pointer">
+                    className="neo-button mt-5 w-full cursor-pointer">
                     See more
                 </Button>
             </div>

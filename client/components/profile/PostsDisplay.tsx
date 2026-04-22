@@ -28,11 +28,11 @@ export default function PostsDisplay({ userId, emptyText }: PostsDisplayProps) {
         fetchPosts();
     }, [userId]);
     if (loading) {
-        return <p className="text-center text-blue-500/70">Loading posts...</p>;
+        return <p className="text-center neo-muted">Loading posts...</p>;
     }
     if (posts.length === 0) {
         return (
-            <p className="text-white text-center mt-3">
+            <p className="neo-text text-center mt-3">
                 {emptyText ?? "No posts yet!"}
             </p>
         );

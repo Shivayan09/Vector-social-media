@@ -166,19 +166,19 @@ export default function NotificationPanel({ search = "" }: Props) {
     <div className="neo-panel w-full mt-5 p-5">
 
       <div className="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-3 md:gap-0">
-        <p className="font-semibold text-lg text-white">
+        <p className="font-semibold text-lg neo-text">
           Notifications
         </p>
 
         <div className="flex gap-2">
           {selectMode && selected.length > 0 && (
-            <button onClick={deleteSelected} className="neo-button h-9 text-sm w-35 cursor-pointer text-white rounded-md">
+            <button onClick={deleteSelected} className="neo-button h-9 text-sm w-35 cursor-pointer rounded-md">
               Delete Selected
             </button>
           )}
 
           {notifications.length > 0 && (
-            <button onClick={() => setWarningOpen(true)} className="neo-button h-9 text-sm cursor-pointer w-[50%] md:w-25 py-1 text-white rounded-md">
+            <button onClick={() => setWarningOpen(true)} className="neo-button h-9 text-sm cursor-pointer w-[50%] md:w-25 py-1 rounded-md">
               Clear All
             </button>
           )}
@@ -189,7 +189,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                 setSelectMode((prev) => !prev);
                 setSelected([]);
               }}
-              className="neo-button h-9 text-sm cursor-pointer w-[50%] md:w-25 rounded-md text-white">
+              className="neo-button h-9 text-sm cursor-pointer w-[50%] md:w-25 rounded-md">
               {selectMode ? "Cancel" : "Select"}
             </button>
           )}
@@ -197,11 +197,11 @@ export default function NotificationPanel({ search = "" }: Props) {
       </div>
 
       {loading ? (
-        <p className="text-blue-200 text-sm">
+        <p className="neo-muted text-sm">
           Loading notifications...
         </p>
       ) : filteredNotifications.length === 0 ? (
-        <p className="text-blue-200 text-sm">
+        <p className="neo-muted text-sm">
           No notifications match your search.
         </p>
       ) : (
@@ -237,7 +237,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                 <img src={n.sender.avatar || "/default-avatar.png"} className="h-10 w-10 rounded-full object-cover" />
 
                 <div>
-                  <p className="text-white">
+                  <p className="neo-text">
                     <span className="font-semibold">
                       {n.sender.name}
                     </span>{" "}
@@ -248,7 +248,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                     {n.type === "message" && "messaged you"}
                   </p>
 
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs neo-foreground-muted mt-1">
                     {new Date(n.createdAt).toLocaleString()}
                   </p>
                 </div>
@@ -259,7 +259,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                       e.stopPropagation();
                       deleteSingle(n._id);
                     }}
-                    className="text-white ml-auto"
+                    className="neo-text ml-auto"
                   >
                     <Trash2 className="h-5 cursor-pointer" />
                   </button>

@@ -210,7 +210,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
           className="hover:bg-white/20 p-2 rounded-full transition-colors"
           title="Back to chat list"
         >
-          <ArrowLeft size={24} className="text-white" />
+          <ArrowLeft size={24} className="neo-text" />
         </button>
 
         <img src={otherUser?.avatar || "/default-avatar.png"} className="h-12 w-12 rounded-full object-cover border ml-3"/>
@@ -219,7 +219,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
           onClick={() =>
             router.push(`/main/user/${otherUser?.username}`)
           }
-          className="ml-3 cursor-pointer font-semibold text-white text-[1.1rem]">
+          className="ml-3 cursor-pointer font-semibold neo-text text-[1.1rem]">
           {otherUser?.name || "User"}
         </p>
       </div>
@@ -237,7 +237,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
             <div key={m._id}>
               {showDateSeparator && (
                 <div className="flex justify-center my-3">
-                  <span className="text-xs text-blue-100 bg-blue-950/50 px-3 py-1 rounded-full border border-blue-200/15">
+                  <span className="text-xs neo-text bg-blue-950/50 px-3 py-1 rounded-full border border-blue-200/15">
                     {getDateString(m.createdAt)}
                   </span>
                 </div>
@@ -296,14 +296,14 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
             }
           }}
           disabled={isSending}
-          className="neo-input flex-1 px-3 py-2 rounded-md text-white disabled:opacity-50"
+          className="neo-input flex-1 px-3 py-2 rounded-md neo-text disabled:opacity-50"
           placeholder="Type a message..."
         />
 
         <button 
           onClick={sendMessage} 
           disabled={isSending}
-          className={`neo-button px-5 rounded-md text-white transition-all ${
+          className={`neo-button px-5 rounded-md transition-all ${
             isSending 
               ? "bg-blue-400 cursor-not-allowed opacity-60" 
               : "bg-blue-500 cursor-pointer hover:bg-blue-600"

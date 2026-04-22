@@ -106,58 +106,58 @@ export default function RegistrationForm() {
 
       {step === 1 && (
         <>
-          <p className="font-semibold text-[1rem] md:text-[1.2rem] text-white">
+          <p className="font-semibold text-[1rem] md:text-[1.2rem] neo-text">
             Welcome to Vector!
           </p>
 
-          <p className="mt-2 mb-5 text-[0.9rem] md:text-[1rem] text-gray-300">
+          <p className="mt-2 mb-5 text-[0.9rem] md:text-[1rem] neo-muted">
             Register to start posting right away!
           </p>
 
           <div className="flex flex-col md:flex-row gap-2 md:gap-5">
             <div className="w-full">
-              <p className="font-semibold text-white">First Name</p>
+              <p className="font-semibold neo-text">First Name</p>
               <input type="text" placeholder="demo" className="neo-input h-10 my-2 text-[0.95rem]" onChange={(e) => setName(e.target.value)} />
             </div>
 
             <div className="w-full">
-              <p className="font-semibold text-white">Last Name</p>
+              <p className="font-semibold neo-text">Last Name</p>
               <input type="text" placeholder="user" className="neo-input h-10 my-2 text-[0.95rem]" onChange={(e) => setSurname(e.target.value)} />
             </div>
           </div>
 
           <div className="flex flex-col md:flex-row gap-2 md:gap-5">
             <div className="w-full">
-              <p className="font-semibold text-white">Email</p>
+              <p className="font-semibold neo-text">Email</p>
               <input type="email" placeholder="demo@gmail.com" className="neo-input h-10 my-2 text-[0.95rem]" onChange={(e) => setEmail(e.target.value)} />
             </div>
 
             <div className="w-full">
-              <p className="font-semibold text-white">Phone number</p>
+              <p className="font-semibold neo-text">Phone number</p>
               <input type="tel" placeholder="+00 00000 00000" className="neo-input h-10 my-2 text-[0.95rem]" onChange={(e) => setPhone(e.target.value)} />
             </div>
           </div>
 
-          <p className="font-semibold text-white mt-2">
+          <p className="font-semibold neo-text mt-2">
             Set a password
           </p>
 
           <div className="relative">
             <input type={showPassword ? "text" : "password"} placeholder="Enter a password" className="neo-input h-10 my-2 pr-10" onChange={(e) => setPassword(e.target.value)} />
 
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-white/60" onClick={() => setShowPassword(!showPassword)}>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer neo-foreground-muted" onClick={() => setShowPassword(!showPassword)}>
               {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
             </span>
           </div>
 
-          <p className="font-semibold text-white">
+          <p className="font-semibold neo-text">
             Confirm your password
           </p>
 
           <div className="relative">
             <input type={showConfirmPassword ? "text" : "password"} placeholder="Confirm your password" className="neo-input h-10 my-2 pr-10" onChange={(e) => setConfirmPassword(e.target.value)} />
 
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-white/60" onClick={() => setShowConfirmPassword(!showConfirmPassword)} >
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer neo-foreground-muted" onClick={() => setShowConfirmPassword(!showConfirmPassword)} >
               {showConfirmPassword ? (
                 <Eye size={18} />
               ) : (
@@ -166,7 +166,7 @@ export default function RegistrationForm() {
             </span>
           </div>
 
-          <Button className="w-full text-white mt-5 cursor-pointer bg-blue-500 hover:bg-blue-600" onClick={nextStep}>
+          <Button className="w-full mt-5 cursor-pointer bg-blue-500 hover:bg-blue-600" onClick={nextStep}>
             Continue
           </Button>
         </>
@@ -174,7 +174,7 @@ export default function RegistrationForm() {
 
       {step === 2 && (
         <>
-          <p className="font-bold text-center text-[1.2rem] text-white mb-4">
+          <p className="font-bold text-center text-[1.2rem] neo-text mb-4">
             Set up your profile
           </p>
 
@@ -190,29 +190,29 @@ export default function RegistrationForm() {
 
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
-          <p className="font-semibold text-white">Set a username</p>
+          <p className="font-semibold neo-text">Set a username</p>
 
           <div className="my-3 neo-input flex items-center px-3 h-10 rounded-lg gap-2">
             <p>@</p>
             <input placeholder="demouser09" className="h-full w-full outline-none bg-transparent" onChange={(e) => setUsername(e.target.value)} />
           </div>
 
-          <p className="font-semibold text-white">Set a bio</p>
+          <p className="font-semibold neo-text">Set a bio</p>
 
           <textarea placeholder="Enter your bio (30 words max)" className="neo-textarea w-full md:w-90 mt-2 h-12" onChange={(e) => setBio(e.target.value)} />
 
-          <p className="font-semibold mt-3 text-white">
+          <p className="font-semibold mt-3 neo-text">
             Set a description
           </p>
 
           <textarea placeholder="Enter your bio (200 words max)" className="neo-textarea w-full mt-2 h-24" onChange={(e) => setDescription(e.target.value)} />
 
           <div className="flex justify-between gap-2 mt-4">
-            <Button className="neo-button-secondary text-white" onClick={() => setStep(1)}>
+            <Button className="neo-button-secondary" onClick={() => setStep(1)}>
               Back
             </Button>
 
-            <Button disabled={loading} className="text-white" onClick={handleSubmit}>
+            <Button disabled={loading} className="neo-text" onClick={handleSubmit}>
               {loading ? "Creating..." : "Create account"}
             </Button>
           </div>

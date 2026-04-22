@@ -94,11 +94,11 @@ export default function Explore() {
   return (
     <div className="flex flex-col lg:flex-row gap-5 lg:gap-6">
       <div className="w-full py-5 px-4 md:px-7 lg:min-w-0">
-        <p className="text-[1.6rem] font-semibold text-center md:text-left text-white">
+        <p className="text-[1.6rem] font-semibold text-center md:text-left neo-text">
           Explore
         </p>
 
-        <p className="text-gray-300 text-center md:text-left">
+        <p className="neo-muted text-center md:text-left">
           Discover people, posts and ideas
         </p>
 
@@ -166,13 +166,13 @@ export default function Explore() {
 
         {/* TRENDING */}
         <div className="mt-5">
-          <p className="font-semibold text-white">
+          <p className="font-semibold neo-text">
             Trending domains
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-5">
             <div className="box h-35 rounded-md overflow-clip relative cursor-pointer hover:shadow-md">
-              <p className="absolute z-20 bottom-0 left-0 p-2 w-full flex items-center gap-2 bg-black/30 text-white">
+              <p className="absolute z-20 bottom-0 left-0 p-2 w-full flex items-center gap-2 bg-black/30 dark:bg-blue-950/60 neo-text">
                 <ExternalLink className="text-blue-500" />
                 Science and technology
               </p>
@@ -183,7 +183,7 @@ export default function Explore() {
             </div>
 
             <div className="box h-35 rounded-md overflow-clip relative cursor-pointer hover:shadow-md">
-              <p className="absolute z-20 bottom-0 left-0 p-2 w-full flex items-center gap-2 bg-black/30 text-white">
+              <p className="absolute z-20 bottom-0 left-0 p-2 w-full flex items-center gap-2 bg-black/30 dark:bg-blue-950/60 neo-text">
                 <ExternalLink className="text-blue-500" />
                 Sports
               </p>
@@ -197,17 +197,17 @@ export default function Explore() {
 
         {/* TOP POSTS */}
         <div className="mt-5">
-          <p className="font-semibold text-white">
+          <p className="font-semibold neo-text">
             Top posts of the week
           </p>
 
           <div className="flex flex-col gap-5 md:flex-row items-stretch md:items-stretch mt-5">
             {loading ? (
-              <p className="text-gray-300">
+              <p className="neo-muted">
                 Loading top posts...
               </p>
             ) : topPosts.length === 0 ? (
-              <p className="text-gray-300">
+              <p className="neo-muted">
                 No trending posts this week
               </p>
             ) : (
@@ -217,9 +217,9 @@ export default function Explore() {
                   <div
                     onClick={() => handleClick(post)}
                     key={post._id}
-                    className="neo-card w-full md:w-[32%] min-h-44 px-5 py-4 relative cursor-pointer text-white flex flex-col justify-between"
+                    className="neo-card w-full md:w-[32%] min-h-44 px-5 py-4 relative cursor-pointer neo-text flex flex-col justify-between"
                   >
-                    <p className="text-blue-300">
+                    <p className="neo-muted">
                       {post.likes?.length || 0} likes
                     </p>
 
@@ -233,7 +233,7 @@ export default function Explore() {
 
                     <div>
                       <p
-                        className="text-[0.9rem] w-fit hover:text-blue-300"
+                        className="text-[0.9rem] w-fit hover:text-blue-500"
                         onClick={(e) => {
                           e.stopPropagation();
                           if (!post?.author?.username)
@@ -246,7 +246,7 @@ export default function Explore() {
                         @{post?.author?.username || "unknown"}
                       </p>
 
-                      <p className="text-blue-200 text-[0.8rem]">
+                      <p className="neo-muted text-[0.8rem]">
                         {new Date(
                           post.createdAt
                         ).toLocaleDateString("en-GB")}

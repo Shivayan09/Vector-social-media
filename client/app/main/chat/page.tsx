@@ -134,11 +134,11 @@ export default function ChatListPage() {
                         placeholder="Search chats..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full p-2 rounded-lg outline-none bg-black/20 text-white"
+                        className="w-full p-2 rounded-lg outline-none bg-black/20 dark:bg-blue-950/40 neo-text"
                     />
                 </div>
 
-                <h1 className="text-xl font-bold px-5 pt-3 text-white">
+                <h1 className="text-xl font-bold px-5 pt-3 neo-text">
                     Your chats
                 </h1>
 
@@ -154,7 +154,7 @@ export default function ChatListPage() {
                                 onClick={() =>
                                     router.push(`/main/chat/${convo._id}`)
                                 }
-                                className="neo-panel-soft flex items-center gap-3 p-4 rounded-lg cursor-pointer text-white transition-all duration-200 hover:translate-x-[-2px] hover:translate-y-[-2px]"
+                                className="neo-panel-soft flex items-center gap-3 p-4 rounded-lg cursor-pointer neo-text transition-all duration-200 hover:translate-x-[-2px] hover:translate-y-[-2px]"
                             >
                                 <img
                                     src={
@@ -168,7 +168,7 @@ export default function ChatListPage() {
                                     <p className="font-semibold">
                                         {otherUser?.name}
                                     </p>
-                                    <p className="text-sm text-gray-400">
+                                    <p className="text-sm neo-foreground-muted">
                                         @{otherUser?.username}
                                     </p>
                                 </div>

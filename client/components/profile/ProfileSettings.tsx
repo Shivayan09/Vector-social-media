@@ -147,7 +147,7 @@ export default function ProfileSettings() {
 
   return (
     <div className="neo-app-bg h-screen px-5 md:px-20 py-5 md:pt-5 overflow-y-auto">
-      <h1 className="text-xl md:text-2xl mb-3 font-semibold text-white text-center md:text-left">Edit Profile</h1>
+      <h1 className="text-xl md:text-2xl mb-3 font-semibold neo-text text-center md:text-left">Edit Profile</h1>
 
       <div className="flex flex-col md:flex-row items-center gap-2 md:gap-6 mb-6">
         <div className="h-22 md:h-24 w-22 md:w-24 rounded-full overflow-hidden border-3 border-blue-200/25 shadow-[6px_6px_0_0_rgba(15,23,42,0.8)]">
@@ -158,7 +158,7 @@ export default function ProfileSettings() {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="text-blue-200 font-medium cursor-pointer"
+            className="neo-muted font-medium cursor-pointer"
           >
             Change photo
           </button>
@@ -169,7 +169,7 @@ export default function ProfileSettings() {
                 type="button"
                 disabled={uploadingAvatar}
                 onClick={handleAvatarUpload}
-                className="neo-button h-9 px-5 text-sm rounded-md text-white cursor-pointer"
+                className="neo-button h-9 px-5 text-sm rounded-md cursor-pointer"
               >
                 {uploadingAvatar ? "Uploading..." : "Set as profile pic"}
               </button>
@@ -188,7 +188,7 @@ export default function ProfileSettings() {
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-5 text-white">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-5 neo-text">
         <EditableInput
           label="Username"
           name="username"
@@ -268,7 +268,7 @@ function EditableInput({
       <div className="flex justify-between mb-1">
         <label className="font-medium">{label}</label>
         {!editable && (
-          <button onClick={onEdit} className="text-blue-200 text-sm cursor-pointer">
+          <button onClick={onEdit} className="neo-muted text-sm cursor-pointer">
             Edit
           </button>
         )}
@@ -278,7 +278,7 @@ function EditableInput({
         value={value}
         disabled={!editable}
         onChange={onChange}
-        className={`neo-input w-full px-3 py-2 rounded-lg text-white/80 ${editable ? "border-blue-500 outline-2 outline-white" : "neo-shell-soft cursor-not-allowed"
+        className={`neo-input w-full px-3 py-2 rounded-lg neo-text ${editable ? "border-blue-500 outline-2 outline-white" : "neo-shell-soft cursor-not-allowed"
           }`}
       />
     </div>
@@ -298,7 +298,7 @@ function EditableTextarea({
       <div className="flex justify-between mb-1">
         <label className="font-medium">{label}</label>
         {!editable && (
-          <button onClick={onEdit} className="text-blue-200 text-sm cursor-pointer">
+          <button onClick={onEdit} className="neo-muted text-sm cursor-pointer">
             Edit
           </button>
         )}
@@ -309,7 +309,7 @@ function EditableTextarea({
         disabled={!editable}
         onChange={onChange}
         rows={3}
-        className={`neo-textarea w-full px-3 py-2 rounded-lg text-white/80 ${editable ? "border-blue-500 outline-2 outline-white" : "neo-shell-soft cursor-not-allowed"
+        className={`neo-textarea w-full px-3 py-2 rounded-lg neo-text ${editable ? "border-blue-500 outline-2 outline-white" : "neo-shell-soft cursor-not-allowed"
           }`}
       />
     </div>

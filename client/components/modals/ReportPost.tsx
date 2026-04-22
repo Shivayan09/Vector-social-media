@@ -65,11 +65,11 @@ export default function ReportPost({ open, onClose, onSubmit }: ReportPostProps)
           visible ? "scale-100 translate-y-0" : "scale-95 translate-y-2"
         }`}
       >
-        <h2 className="text-[1.2rem] font-semibold text-blue-600 dark:text-white mb-3">
+        <h2 className="text-[1.2rem] font-semibold neo-text mb-3">
           Report post
         </h2>
 
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <p className="text-sm neo-foreground-muted dark:neo-foreground-muted mb-4">
           Tell us what's wrong with this post.
         </p>
 
@@ -105,7 +105,7 @@ export default function ReportPost({ open, onClose, onSubmit }: ReportPostProps)
           <button
             disabled={!reason}
             onClick={handleSubmit}
-            className="neo-button w-1/2 py-1.5 rounded-md cursor-pointer text-white"
+            className="neo-button w-1/2 py-1.5 rounded-md cursor-pointer"
           >
             Submit report
           </button>

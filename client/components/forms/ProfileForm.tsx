@@ -68,7 +68,7 @@ export default function ProfileForm() {
 
     return (
         <div className="neo-shell flex flex-col items-center justify-center mx-auto rounded-2xl w-[90vw] md:w-[40vw] px-10 py-5">
-            <p className="font-bold text-center text-[1.8rem] text-white">Set up your profile</p>
+            <p className="font-bold text-center text-[1.8rem] neo-text">Set up your profile</p>
 
             <div>
                 <div className="flex items-center gap-10 my-5">
@@ -80,10 +80,10 @@ export default function ProfileForm() {
                         )}
                     </div>
                     <div className="flex flex-col md:flex-row gap-5">
-                        <Button className="h-10 cursor-pointer text-white" onClick={() => fileRef.current?.click()}>
+                        <Button className="h-10 cursor-pointer" onClick={() => fileRef.current?.click()}>
                             Upload picture
                         </Button>
-                        <Button className="h-10 cursor-pointer neo-button-secondary text-white">
+                        <Button className="h-10 cursor-pointer neo-button-secondary">
                             Discard picture
                         </Button>
                     </div>
@@ -99,19 +99,19 @@ export default function ProfileForm() {
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
             <div className="w-full">
-                <p className="font-semibold text-left text-white">Set a username</p>
+                <p className="font-semibold text-left neo-text">Set a username</p>
                 <div className="my-3 neo-input flex items-center px-3 h-10 rounded-lg gap-2">
                     <p>@</p>
                     <input type="text" placeholder="demouser09" className="h-full w-full outline-none"
                         onChange={(e) => setUsername(e.target.value)} />
                 </div>
-                <p className="font-semibold text-white">Set a bio</p>
+                <p className="font-semibold neo-text">Set a bio</p>
                 <textarea placeholder="Enter your bio (30 words max)" className="neo-textarea w-full px-3 py-1 rounded-md mt-2 h-10"
                     onChange={(e) => setBio(e.target.value)} />
-                <p className="font-semibold mt-3 text-white">Set a description</p>
+                <p className="font-semibold mt-3 neo-text">Set a description</p>
                 <textarea placeholder="Enter your bio (200 words max)" className="neo-textarea w-full px-3 py-1 rounded-md mt-2 h-20"
                     onChange={(e) => setDescription(e.target.value)} />
-                <Button disabled={loading} className="h-10 mt-2 w-full cursor-pointer text-white" onClick={handleSubmit}>
+                <Button disabled={loading} className="h-10 mt-2 w-full cursor-pointer" onClick={handleSubmit}>
                     {loading ? 'Setting your profile..' : 'Continue'}
                 </Button>
             </div>

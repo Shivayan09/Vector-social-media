@@ -71,11 +71,11 @@ export default function LoginForm() {
 
     return (
         <div className="neo-shell px-10 py-8 w-80 md:w-96">
-            <p className="font-semibold text-[1rem] md:text-[1.2rem] text-white">
+            <p className="font-semibold text-[1rem] md:text-[1.2rem] neo-text">
                 Welcome back!
             </p>
 
-            <p className="mt-2 mb-5 text-[0.9rem] md:text-[1.1rem] text-gray-300">
+            <p className="mt-2 mb-5 text-[0.9rem] md:text-[1.1rem] neo-muted">
                 Log in to get right back in!
             </p>
 
@@ -89,12 +89,12 @@ export default function LoginForm() {
 
             <div className="relative flex items-center justify-center mt-5">
                 <div className="absolute w-full h-px neo-divider"></div>
-                <span className="relative px-3 text-md text-blue-100">
+                <span className="relative px-3 text-md neo-muted">
                     or
                 </span>
             </div>
 
-            <p className="font-semibold text-white">Username</p>
+            <p className="font-semibold neo-text">Username</p>
             <input
                 type="text"
                 placeholder="demousername09"
@@ -102,7 +102,7 @@ export default function LoginForm() {
                 onChange={(e) => setUsername(e.target.value)}
             />
 
-            <p className="font-semibold text-white">Password</p>
+            <p className="font-semibold neo-text">Password</p>
 
             <div className="relative">
                 <input
@@ -113,7 +113,7 @@ export default function LoginForm() {
                 />
 
                 <span
-                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-black/50"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer neo-foreground-muted"
                     onClick={() => setShowPassword(!showPassword)}
                 >
                     {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
@@ -121,11 +121,11 @@ export default function LoginForm() {
             </div>
 
             <div className="flex items-center justify-between">
-                <p className="text-[0.9rem] text-white">
+                <p className="text-[0.9rem] neo-text">
                     Forgot your password?
                 </p>
                 <span
-                    className="text-blue-200 underline cursor-pointer"
+                    className="neo-muted underline cursor-pointer"
                     onClick={() => router.push("/auth/forgot-password")}
                 >
                     Click here
@@ -134,18 +134,18 @@ export default function LoginForm() {
 
             <Button
                 disabled={loading}
-                className="w-full mt-5 cursor-pointer text-white"
+                className="w-full mt-5 cursor-pointer"
                 onClick={handleLogin}
             >
                 {loading ? "Logging in" : "Log in"}
             </Button>
 
             <div className="flex items-center justify-between mt-3">
-                <p className="text-[0.9rem] mt-3 text-white">
+                <p className="text-[0.9rem] mt-3 neo-text">
                     Don't have an account?
                 </p>
                 <span
-                    className="font-semibold underline cursor-pointer mt-1 text-blue-100"
+                    className="font-semibold underline cursor-pointer mt-1 neo-muted"
                     onClick={() => router.push("/auth/register")}
                 >
                     Register

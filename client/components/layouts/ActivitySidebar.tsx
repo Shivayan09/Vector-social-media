@@ -117,7 +117,7 @@ export default function ActivitySidebar() {
           <X />
         </button>
 
-        <p className="font-semibold ml-2 text-[1.1rem] text-white">
+        <p className="font-semibold ml-2 text-[1.1rem] neo-text">
           Search people you know
         </p>
 
@@ -126,7 +126,7 @@ export default function ActivitySidebar() {
           <input type="text" placeholder="Search users" value={query} onChange={(e) => setQuery(e.target.value)} className="outline-0 w-full h-full bg-transparent" />
         </div>
 
-        <p className="text-[1.1rem] font-semibold flex items-center gap-2 text-white">
+        <p className="text-[1.1rem] font-semibold flex items-center gap-2 neo-text">
           <UserPlus className="h-5 text-blue-500" />
           Suggestions
         </p>
@@ -192,7 +192,7 @@ export default function ActivitySidebar() {
 
         </div>
 
-        <p className="text-gray-400 text-[0.8rem] text-center mt-10">
+        <p className="neo-foreground-muted text-[0.8rem] text-center mt-10">
           All rights reserved @Vector 2026
         </p>
       </div>

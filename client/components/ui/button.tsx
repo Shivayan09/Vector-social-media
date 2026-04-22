@@ -9,9 +9,9 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-blue-500 text-white hover:bg-blue-600",
+        default: "",
         destructive:
-          "bg-red-500 text-white hover:bg-red-600 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
+          "bg-red-500 hover:bg-red-600 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
         outline:
           "neo-button-secondary bg-[color:var(--neo-surface-soft)] text-[color:var(--neo-foreground)] hover:bg-[color:rgba(59,130,246,0.18)]",
         secondary:

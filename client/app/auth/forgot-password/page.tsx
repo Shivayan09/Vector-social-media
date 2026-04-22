@@ -48,14 +48,14 @@ export default function ForgotPasswordPage() {
     return (
         <div className="flex items-center justify-center h-screen">
             <div className="neo-shell px-10 py-5 w-80 md:w-90">
-                <p className="font-semibold text-[1rem] md:text-[1.2rem] text-white">
+                <p className="font-semibold text-[1rem] md:text-[1.2rem] neo-text">
                     Forgot Password
                 </p>
-                <p className="mt-2 mb-5 text-[0.9rem] md:text-[1rem] text-gray-300">
+                <p className="mt-2 mb-5 text-[0.9rem] md:text-[1rem] neo-muted">
                     Enter your email and we'll send you a reset link.
                 </p>
 
-                <p className="font-semibold text-white">Email</p>
+                <p className="font-semibold neo-text">Email</p>
                 <input
                     type="email"
                     placeholder="you@example.com"
@@ -66,7 +66,7 @@ export default function ForgotPasswordPage() {
 
                 <Button
                     disabled={loading}
-                    className="w-full mt-2 cursor-pointer text-white"
+                    className="w-full mt-2 cursor-pointer"
                     onClick={handleSubmit}
                 >
                     {loading ? "Sending..." : "Send Reset Link"}
@@ -74,7 +74,7 @@ export default function ForgotPasswordPage() {
 
                 <div className="flex items-center justify-center mt-4">
                     <span
-                        className="text-[0.9rem] text-white/70 underline cursor-pointer"
+                        className="text-[0.9rem] neo-muted underline cursor-pointer"
                         onClick={() => router.push("/auth/login")}
                     >
                         Back to Login

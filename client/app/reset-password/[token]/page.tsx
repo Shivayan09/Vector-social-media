@@ -56,14 +56,14 @@ export default function ResetPasswordPage({
     return (
         <div className="flex items-center justify-center h-screen">
             <div className="neo-shell px-10 py-5 w-80 md:w-90">
-                <p className="font-semibold text-[1rem] md:text-[1.2rem] text-white">
+                <p className="font-semibold text-[1rem] md:text-[1.2rem] neo-text">
                     Reset Password
                 </p>
-                <p className="mt-2 mb-5 text-[0.9rem] md:text-[1rem] text-gray-300">
+                <p className="mt-2 mb-5 text-[0.9rem] md:text-[1rem] neo-muted">
                     Enter your new password below.
                 </p>
 
-                <p className="font-semibold text-white">New Password</p>
+                <p className="font-semibold neo-text">New Password</p>
                 <div className="relative">
                     <input
                         type={showPassword ? "text" : "password"}
@@ -73,7 +73,7 @@ export default function ResetPasswordPage({
                         onChange={(e) => setNewPassword(e.target.value)}
                     />
                     <span
-                        className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-black/50"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer neo-foreground-muted"
                         onClick={() => setShowPassword(!showPassword)}
                     >
                         {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
@@ -82,7 +82,7 @@ export default function ResetPasswordPage({
 
                 <Button
                     disabled={loading}
-                    className="w-full mt-2 cursor-pointer text-white"
+                    className="w-full mt-2 cursor-pointer"
                     onClick={handleSubmit}
                 >
                     {loading ? "Resetting..." : "Reset Password"}
@@ -90,7 +90,7 @@ export default function ResetPasswordPage({
 
                 <div className="flex items-center justify-center mt-4">
                     <span
-                        className="text-[0.9rem] text-white/70 underline cursor-pointer"
+                        className="text-[0.9rem] neo-muted underline cursor-pointer"
                         onClick={() => router.push("/auth/login")}
                     >
                         Back to Login

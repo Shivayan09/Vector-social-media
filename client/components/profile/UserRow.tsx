@@ -17,8 +17,8 @@ export default function UserRow({ user }: { user: any }) {
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => router.push(`/main/user/${user.username}`)}>
                 <img src={user.avatar || "/default-avatar.png"} className="h-12 w-12 rounded-full object-cover" />
                 <div>
-                    <p className="font-semibold text-white">{user.name}</p>
-                    <p className="text-sm text-blue-200">@{user.username}</p>
+                    <p className="font-semibold neo-text">{user.name}</p>
+                    <p className="text-sm neo-muted">@{user.username}</p>
                 </div>
             </div>
             {!isSelf && (

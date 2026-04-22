@@ -37,8 +37,8 @@ export default function FollowButton({ userId, isFollowing, onFollowChange }: Fo
       onClick={toggleFollow}
       className={`w-25 md:w-30 h-9 rounded-md cursor-pointer transition-all duration-200 font-medium ${
         following
-          ? "border text-white dark:text-white/60 hover:bg-black/5 dark:hover:bg-white/2"
-          : "bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700 text-white"
+          ? "border border-blue-500 neo-text hover:bg-blue-500/10"
+          : "neo-button"
       }`}>
       {following ? "Following" : "Follow"}
     </button>

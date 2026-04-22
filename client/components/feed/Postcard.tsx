@@ -156,8 +156,8 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                     <div className="h-8 md:h-12 w-8 md:w-12 rounded-full transition-all duration-200" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
                         <img src={post?.author?.avatar || "/default-avatar.png"} className="h-full w-full rounded-full object-cover" />
                     </div>
-                    <span className="font-semibold ml-1 transition-all duration-200 text-white hover:text-blue-500" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>{post?.author?.name}</span>
-                    <span className="text-[0.9rem] text-white/60 transition-all duration-200 hover:text-white/80" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
+                    <span className="font-semibold ml-1 transition-all duration-200 neo-text hover:text-blue-500" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>{post?.author?.name}</span>
+                    <span className="text-[0.9rem] neo-foreground-muted transition-all duration-200 hover:neo-text" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
                         @{post?.author?.username}
                     </span>
                     <p className="absolute left-195 text-[0.9rem] font-semibold text-blue-500 flex items-center gap-1.5">
@@ -172,12 +172,12 @@ export default function PostCard({ post, setPost }: PostCardProps) {
 
                 <div ref={menuRef} className="relative">
                     <button onClick={(e) => { e.stopPropagation(); setMenuOpen(prev => !prev); }} className="p-1 rounded-full hover:bg-blue-400/15 dark:hover:bg-blue-400/20">
-                        <MoreHorizontal size={20} className="text-white cursor-pointer mt-0.5" />
+                        <MoreHorizontal size={20} className="neo-text cursor-pointer mt-0.5" />
                     </button>
 
                     {menuOpen && (
                         <div className="neo-panel-soft absolute overflow-clip top-0 right-0 w-30 z-50">
-                            <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-blue-200 transition-all duration-300 hover:bg-blue-400/15"
+                            <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm neo-muted transition-all duration-300 hover:bg-blue-400/15"
                                 onClick={handleShare}>
                                 <Share2 size={14} />
                                 Share post
@@ -209,12 +209,12 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                 </div>
             </div>
 
-            <p className="mt-2 mb-5 p-1 text-[0.9rem] md:text-[1.1rem] text-blue-50">
+            <p className="mt-2 mb-5 p-1 text-[0.9rem] md:text-[1.1rem] neo-text">
                 {post.content}
             </p>
 
-            <div className="flex justify-between text-white border-t border-blue-200/20 pt-3">
-                <div className="flex items-center justify-between w-2/3 text-blue-100 text-sm">
+            <div className="flex justify-between neo-text border-t border-blue-200/20 pt-3">
+                <div className="flex items-center justify-between w-2/3 neo-muted text-sm">
                     <p className="flex gap-1 items-center cursor-pointer hover:text-blue-300 md:w-[20%] justify-center">
                         <MessageCircle className="h-4.5 md:h-5 hover:text-blue-500" />
                         {post.commentsCount || 0} {post.commentsCount===1 ? 'Comment' : 'Comments'}

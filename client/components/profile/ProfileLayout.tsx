@@ -59,10 +59,10 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
 
             <div className="flex justify-between items-start flex-wrap gap-3">
               <div className="flex flex-col">
-                <h1 className="text-xl md:text-2xl font-bold text-white">
+                <h1 className="text-xl md:text-2xl font-bold neo-text">
                   {user.name} {user.surname}
                 </h1>
-                <p className="text-blue-200">@{user.username}</p>
+                <p className="neo-muted">@{user.username}</p>
               </div>
 
               {isSelfProfile ? (
@@ -75,7 +75,7 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
                 <div className="flex gap-2 w-full sm:w-fit">
 
                   {following === null ? (
-                    <div className="h-9 w-30 rounded-md bg-gray-700 animate-pulse" />
+                    <div className="h-9 w-30 rounded-md neo-surface animate-pulse" />
                   ) : (
                     <FollowButton
                       userId={user._id}
@@ -97,13 +97,13 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
         </div>
 
         <div className="mt-5 flex flex-col gap-2">
-          <p className="text-sm text-white">{user.bio}</p>
+          <p className="text-sm neo-text">{user.bio}</p>
 
-          <p className="text-sm opacity-80 text-white">
+          <p className="text-sm opacity-80 neo-text">
             {user.description}
           </p>
 
-          <div className="flex justify-center gap-6 font-semibold mt-2 text-white">
+          <div className="flex justify-center gap-6 font-semibold mt-2 neo-text">
             <span>{user.followersCount} Followers</span>
             <span>{user.followingCount} Following</span>
           </div>
@@ -118,7 +118,7 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
             className={`relative pb-2 font-semibold capitalize transition cursor-pointer whitespace-nowrap ${
               activeTab === tab
                 ? "text-blue-500 dark:text-blue-300"
-                : "text-white dark:hover:text-white"
+                : "neo-text"
             }`}
           >
             {tab}

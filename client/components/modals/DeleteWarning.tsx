@@ -52,7 +52,7 @@ export default function ConfirmModal({
           </button>
         </div>
 
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+        <p className="text-sm neo-foreground-muted dark:neo-foreground-muted mb-3">
           {description}
         </p>
 
@@ -66,7 +66,7 @@ export default function ConfirmModal({
           <button onClick={onClose} className="neo-button-secondary w-[50%] py-1.5 rounded-md cursor-pointer">
             Cancel
           </button>
-          <button onClick={onConfirm} className="neo-button w-[50%] cursor-pointer py-1.5 rounded-md text-white">
+          <button onClick={onConfirm} className="neo-button w-[50%] cursor-pointer py-1.5 rounded-md">
             {confirmText}
           </button>
         </div>

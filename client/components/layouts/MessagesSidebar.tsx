@@ -120,18 +120,18 @@ export default function MessagesSidebar() {
                     <X />
                 </button>
 
-                <p className="text-[1.1rem] font-semibold flex items-center gap-2 text-white">
+                <p className="text-[1.1rem] font-semibold flex items-center gap-2 neo-text">
                     <UserPlus className="h-5 text-blue-500" />
                     Suggestions
                 </p>
                 <div className="mt-4 flex items-center gap-2 neo-panel-soft px-3 py-2 rounded-md">
-                    <Search className="h-4 w-4 text-gray-400" />
+                    <Search className="h-4 w-4 neo-foreground-muted" />
                     <input
                         type="text"
                         placeholder="Search users..."
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        className="bg-transparent outline-none text-sm text-white placeholder-gray-400 w-full"
+                        className="bg-transparent outline-none text-sm neo-text placeholder:text-slate-500 dark:placeholder:text-blue-200 w-full"
                     />
                 </div>
 
@@ -173,7 +173,7 @@ export default function MessagesSidebar() {
                                     </div>
 
                                     <div className="flex flex-col w-30">
-                                        <p className="text-[0.9rem] text-white truncate cursor-pointer w-fit hover:text-blue-600" onClick={(e) => { e.stopPropagation(); handleClick(suggestedUser.username) }}>
+                                        <p className="text-[0.9rem] neo-text truncate cursor-pointer w-fit hover:text-blue-600" onClick={(e) => { e.stopPropagation(); handleClick(suggestedUser.username) }}>
                                             {suggestedUser.name}
                                         </p>
                                         <p className="opacity-50 text-[0.8rem] truncate">
@@ -182,7 +182,7 @@ export default function MessagesSidebar() {
                                     </div>
 
                                     <button onClick={() => startChat(suggestedUser._id)} className="mt-1 cursor-pointer">
-                                        <Send className="text-white opacity-60" />
+                                        <Send className="neo-text opacity-60" />
                                     </button>
                                 </div>
                             );
@@ -191,7 +191,7 @@ export default function MessagesSidebar() {
 
                 </div>
 
-                <p className="text-gray-400 text-[0.8rem] text-center mt-5">
+                <p className="neo-foreground-muted text-[0.8rem] text-center mt-5">
                     All rights reserved @Vector 2026
                 </p>
             </div>
