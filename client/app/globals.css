@@ -308,6 +308,14 @@
     color: var(--neo-foreground-muted);
   }
 
+  .neo-border {
+    border-color: var(--neo-border);
+  }
+
+  .neo-border-soft {
+    border-color: var(--neo-border-soft);
+  }
+
   .neo-text {
     color: var(--neo-foreground);
   }

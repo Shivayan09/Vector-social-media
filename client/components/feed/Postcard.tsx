@@ -213,7 +213,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                 {post.content}
             </p>
 
-            <div className="flex justify-between neo-text border-t border-blue-200/20 pt-3">
+            <div className="flex justify-between neo-text border-t neo-border-soft pt-3">
                 <div className="flex items-center justify-between w-2/3 neo-muted text-sm">
                     <p className="flex gap-1 items-center cursor-pointer hover:text-blue-300 md:w-[20%] justify-center">
                         <MessageCircle className="h-4.5 md:h-5 hover:text-blue-500" />

@@ -118,11 +118,11 @@ export default function Explore() {
           {open && (
             <div className="neo-panel-soft absolute w-full mt-2 max-h-75 overflow-y-auto z-50">
               {searching ? (
-                <p className="p-4 text-sm opacity-50">
+                <p className="p-4 text-sm neo-muted">
                   Searching...
                 </p>
               ) : results.length === 0 ? (
-                <p className="p-4 text-sm opacity-50">
+                <p className="p-4 text-sm neo-muted">
                   No users found.
                 </p>
               ) : (
@@ -137,23 +137,20 @@ export default function Explore() {
                         router.push(`/main/user/${user.username}`);
                       }}
                     >
-                      <div className="h-10 w-10 rounded-full overflow-hidden border border-blue-200/15">
+                      <div className="h-10 w-10 rounded-full overflow-hidden border neo-border-soft">
                         <img
-                          src={
-                            user.avatar ||
-                            "/default-avatar.png"
-                          }
+                          src={user.avatar || "/default-avatar.png"}
                           alt={user.name}
                           className="h-full w-full object-cover"
                         />
                       </div>
 
                       <div>
-                        <p className="text-sm font-medium">
+                        <p className="text-sm font-medium neo-text">
                           {user.name}
                         </p>
 
-                        <p className="text-xs opacity-50">
+                        <p className="text-xs neo-muted">
                           @{user?.username || "unknown"}
                         </p>
                       </div>

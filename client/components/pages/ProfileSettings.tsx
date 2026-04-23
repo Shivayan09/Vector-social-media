@@ -135,15 +135,15 @@ export default function ProfileSettings() {
       <h1 className="text-2xl font-semibold mb-6">Edit Profile</h1>
 
       <div className="flex items-center gap-6 mb-6">
-        <div className="h-24 w-24 rounded-full overflow-hidden border">
+        <div className="h-24 w-24 rounded-full overflow-hidden border neo-border">
           <img src={preview || avatar || "/avatar-placeholder.png"} className="h-full w-full object-cover" />
         </div>
 
-        <button type="button" onClick={() => fileInputRef.current?.click()} className="text-blue-600 font-medium cursor-pointer">
+        <button type="button" onClick={() => fileInputRef.current?.click()} className="neo-muted font-medium cursor-pointer">
           Change photo
         </button>
 
-        <button type="button" disabled={!selectedFile || uploadingAvatar} onClick={handleAvatarUpload} className={`px-4 py-1.5 rounded-md text-white transition ${!selectedFile || uploadingAvatar ? "bg-blue-300 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600 cursor-pointer"}`}>
+        <button type="button" disabled={!selectedFile || uploadingAvatar} onClick={handleAvatarUpload} className={`px-4 py-1.5 rounded-md neo-text transition ${!selectedFile || uploadingAvatar ? "bg-blue-300 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600 cursor-pointer"}`}>
           {uploadingAvatar ? "Uploading..." : "Set as profile pic"}
         </button>
 
@@ -209,8 +209,8 @@ export default function ProfileSettings() {
 
       {/* Actions */}
       <div className="flex justify-end gap-4 mt-7">
-        <button className="w-40 py-2 border cursor-pointer rounded-lg">Cancel</button>
-        <button disabled={loading || !isFormChanged} onClick={handleSave} className={`w-40 py-2 text-white rounded-lg ${isFormChanged ? 'bg-blue-600 cursor-pointer' : 'cursor-not-allowed bg-blue-400'} ${loading ? 'cursor-not-allowed bg-blue-400' : ''}`}>
+        <button className="w-40 py-2 border neo-border cursor-pointer rounded-lg">Cancel</button>
+        <button disabled={loading || !isFormChanged} onClick={handleSave} className={`w-40 py-2 neo-text rounded-lg ${isFormChanged ? 'bg-blue-600 cursor-pointer' : 'cursor-not-allowed bg-blue-400'} ${loading ? 'cursor-not-allowed bg-blue-400' : ''}`}>
           {loading ? 'Saving..' : 'Save changes'}
         </button>
       </div>
@@ -233,7 +233,7 @@ function EditableInput({
       <div className="flex justify-between mb-1">
         <label className="font-medium">{label}</label>
         {!editable && (
-          <button onClick={onEdit} className="text-blue-600 text-sm cursor-pointer">
+          <button onClick={onEdit} className="neo-muted text-sm cursor-pointer">
             Edit
           </button>
         )}
@@ -243,7 +243,7 @@ function EditableInput({
         value={value}
         disabled={!editable}
         onChange={onChange}
-        className={`w-full px-3 py-2 rounded-lg border ${editable ? "border-blue-500" : "bg-gray-100 cursor-not-allowed"
+        className={`w-full px-3 py-2 rounded-lg border ${editable ? "neo-border" : "bg-gray-100 cursor-not-allowed"
           }`}
       />
     </div>
@@ -263,7 +263,7 @@ function EditableTextarea({
       <div className="flex justify-between mb-1">
         <label className="font-medium">{label}</label>
         {!editable && (
-          <button onClick={onEdit} className="text-blue-600 text-sm cursor-pointer">
+          <button onClick={onEdit} className="neo-muted text-sm cursor-pointer">
             Edit
           </button>
         )}
@@ -274,7 +274,7 @@ function EditableTextarea({
         disabled={!editable}
         onChange={onChange}
         rows={3}
-        className={`w-full px-3 py-2 rounded-lg border ${editable ? "border-blue-500" : "bg-gray-100 cursor-not-allowed"
+        className={`w-full px-3 py-2 rounded-lg border ${editable ? "neo-border" : "bg-gray-100 cursor-not-allowed"
           }`}
       />
     </div>

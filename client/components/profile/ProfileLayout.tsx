@@ -110,7 +110,7 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
         </div>
       </div>
 
-      <div className="flex justify-between md:justify-center md:gap-50 border-b-2 border-white/50 mb-6">
+      <div className="flex justify-between md:justify-center md:gap-50 border-b-2 neo-border mb-6">
         {["posts", "followers", "following"].map((tab) => (
           <button
             key={tab}

@@ -65,7 +65,7 @@ export default function ExploreSidebar() {
                     <X />
                 </button>
 
-                <div className="p-2 pb-4 mb-4 border-b border-blue-200/20">
+                <div className="p-2 pb-4 mb-4 border-b neo-border">
                 <p className="flex items-center gap-1 font-semibold"> <Compass className="h-5 text-blue-500"/> Explore topics</p>
                 <div className="grid grid-cols-2 gap-3 mt-4">
                     {EXPLORE_TOPICS.map((topic) => (
@@ -85,14 +85,14 @@ export default function ExploreSidebar() {
                     <p className="flex items-center gap-2 font-semibold"> <TrendingUp className="h-5 text-blue-500"/> Trending topics</p>
                     {loading ? (
                         <div className="neo-panel-soft mt-4 flex items-start gap-3 p-3">
-                            <div className="h-12 w-12 shrink-0 bg-blue-950/40 rounded-md overflow-clip border border-blue-200/15"><img src="/cse.jpg" alt="" className="h-full w-full object-cover"/></div>
+                            <div className="h-12 w-12 shrink-0 bg-blue-950/40 rounded-md overflow-clip border neo-border-soft"><img src="/cse.jpg" alt="" className="h-full w-full object-cover"/></div>
                             <div className="min-w-0 flex-1 text-[0.95rem] leading-5 break-words">Artificial Intelligence and Machine Learning</div>
                             <p className="flex items-center gap-0.5 text-[0.8rem] shrink-0 pt-1"> <Heart className="text-blue-400 h-4 w-4" fill="currentColor"/> 120</p>
                         </div>
                     ) : (
                         trendingPosts.map(post => (
                             <div key={post._id} className="neo-panel-soft mt-4 flex items-start gap-3 p-3">
-                                <div className="h-12 w-12 shrink-0 bg-blue-950/40 rounded-md overflow-clip border border-blue-200/15">
+                                <div className="h-12 w-12 shrink-0 bg-blue-950/40 rounded-md overflow-clip border neo-border-soft">
                                     <img 
                                         src={post.author?.avatar || "/default-avatar.png"} 
                                         alt={post.author?.username} 

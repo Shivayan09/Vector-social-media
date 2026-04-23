@@ -150,7 +150,7 @@ export default function ProfileSettings() {
       <h1 className="text-xl md:text-2xl mb-3 font-semibold neo-text text-center md:text-left">Edit Profile</h1>
 
       <div className="flex flex-col md:flex-row items-center gap-2 md:gap-6 mb-6">
-        <div className="h-22 md:h-24 w-22 md:w-24 rounded-full overflow-hidden border-3 border-blue-200/25 shadow-[6px_6px_0_0_rgba(15,23,42,0.8)]">
+        <div className="h-22 md:h-24 w-22 md:w-24 rounded-full overflow-hidden border-3 neo-border-soft shadow-[6px_6px_0_0_rgba(15,23,42,0.8)]">
           <img src={preview || avatar || "/avatar-placeholder.png"} className="h-full w-full object-cover" />
         </div>
 
@@ -245,8 +245,8 @@ export default function ProfileSettings() {
       </div>
 
       <div className="flex justify-end gap-4 mt-7">
-        <button className="w-40 py-2 bg-blue-600 text-white cursor-pointer rounded-lg" onClick={handleCancel}>Cancel</button>
-        <button disabled={loading || !isFormChanged} onClick={handleSave} className={`w-40 py-2 text-white rounded-lg ${isFormChanged ? 'bg-blue-600 cursor-pointer' : 'cursor-not-allowed bg-blue-400'} ${loading ? 'cursor-not-allowed bg-blue-400' : ''}`}>
+        <button className="w-40 py-2 border neo-border cursor-pointer rounded-lg" onClick={handleCancel}>Cancel</button>
+        <button disabled={loading || !isFormChanged} onClick={handleSave} className={`w-40 py-2 neo-text rounded-lg ${isFormChanged ? 'bg-blue-600 cursor-pointer' : 'cursor-not-allowed bg-blue-400'} ${loading ? 'cursor-not-allowed bg-blue-400' : ''}`}>
           {loading ? 'Saving..' : 'Save changes'}
         </button>
       </div>
@@ -266,7 +266,7 @@ function EditableInput({
   return (
     <div>
       <div className="flex justify-between mb-1">
-        <label className="font-medium">{label}</label>
+        <label className="font-medium neo-text">{label}</label>
         {!editable && (
           <button onClick={onEdit} className="neo-muted text-sm cursor-pointer">
             Edit
@@ -278,7 +278,7 @@ function EditableInput({
         value={value}
         disabled={!editable}
         onChange={onChange}
-        className={`neo-input w-full px-3 py-2 rounded-lg neo-text ${editable ? "border-blue-500 outline-2 outline-white" : "neo-shell-soft cursor-not-allowed"
+        className={`neo-input w-full px-3 py-2 rounded-lg neo-text ${editable ? "neo-border outline-2 outline-white" : "neo-shell-soft cursor-not-allowed"
           }`}
       />
     </div>
@@ -296,7 +296,7 @@ function EditableTextarea({
   return (
     <div className="md:col-span-2">
       <div className="flex justify-between mb-1">
-        <label className="font-medium">{label}</label>
+        <label className="font-medium neo-text">{label}</label>
         {!editable && (
           <button onClick={onEdit} className="neo-muted text-sm cursor-pointer">
             Edit
@@ -309,7 +309,7 @@ function EditableTextarea({
         disabled={!editable}
         onChange={onChange}
         rows={3}
-        className={`neo-textarea w-full px-3 py-2 rounded-lg neo-text ${editable ? "border-blue-500 outline-2 outline-white" : "neo-shell-soft cursor-not-allowed"
+        className={`neo-textarea w-full px-3 py-2 rounded-lg neo-text ${editable ? "neo-border outline-2 outline-white" : "neo-shell-soft cursor-not-allowed"
           }`}
       />
     </div>

@@ -237,7 +237,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
             <div key={m._id}>
               {showDateSeparator && (
                 <div className="flex justify-center my-3">
-                  <span className="text-xs neo-text bg-blue-950/50 px-3 py-1 rounded-full border border-blue-200/15">
+                  <span className="text-xs neo-text bg-blue-950/50 px-3 py-1 rounded-full border neo-border-soft">
                     {getDateString(m.createdAt)}
                   </span>
                 </div>

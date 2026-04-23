@@ -137,23 +137,23 @@ export default function MessagesSidebar() {
 
                 <div className="mt-5 flex flex-col gap-2 w-fit min-h-[75vh] max-h-[60vh] overflow-y-auto hide-scrollbar pr-1">
                     {loading ? (
-                        <p className="text-sm opacity-50">Loading users...</p>
+                        <p className="text-sm neo-muted">Loading users...</p>
                     ) : query.trim() ? (
                         searching ? (
-                            <p className="text-sm opacity-50">Searching...</p>
+                            <p className="text-sm neo-muted">Searching...</p>
                         ) : results.length === 0 ? (
-                            <p className="text-sm opacity-50">No users found.</p>
+                            <p className="text-sm neo-muted">No users found.</p>
                         ) : (
                             results.filter((user) => user._id !== userData?.id).map((user) => {
                                 const isFollowing = userData?.following?.includes(user._id.toString()) ?? false;
                                 return (
                                     <div key={user._id} className="flex items-center gap-2">
-                                        <div className="h-12 w-12 rounded-full overflow-hidden border border-blue-200/15">
+                                        <div className="h-12 w-12 rounded-full overflow-hidden border neo-border-soft">
                                             <img src={user.avatar || "/default-avatar.png"} alt={user.name} className="h-full w-full object-cover" />
                                         </div>
                                         <div className="flex flex-col w-30">
                                             <p className="text-[0.9rem] truncate">{user.name}</p>
-                                            <p className="opacity-50 text-[0.8rem] truncate">
+                                            <p className="neo-muted text-[0.8rem] truncate">
                                                 @{user.username}
                                             </p>
                                         </div>
@@ -162,13 +162,13 @@ export default function MessagesSidebar() {
                             })
                         )
                     ) : filteredUsers.length === 0 ? (
-                        <p className="text-sm opacity-50">No users found.</p>
+                        <p className="text-sm neo-muted">No users found.</p>
                     ) : (
                         filteredUsers.map((suggestedUser) => {
                             const isFollowing = userData?.following?.includes(suggestedUser._id.toString()) ?? false;
                             return (
                                 <div onClick={() => startChat(suggestedUser._id)} key={suggestedUser._id} className="neo-panel-soft flex items-center gap-2 cursor-pointer p-3 rounded-md hover:translate-x-[-2px] hover:translate-y-[-2px]">
-                                    <div className="h-10 w-10 rounded-full overflow-hidden border border-blue-200/15">
+                                    <div className="h-10 w-10 rounded-full overflow-hidden border neo-border-soft">
                                         <img src={suggestedUser.avatar || "/default-avatar.png"} alt={suggestedUser.name} className="h-full w-full object-cover" />
                                     </div>
 
@@ -176,7 +176,7 @@ export default function MessagesSidebar() {
                                         <p className="text-[0.9rem] neo-text truncate cursor-pointer w-fit hover:text-blue-600" onClick={(e) => { e.stopPropagation(); handleClick(suggestedUser.username) }}>
                                             {suggestedUser.name}
                                         </p>
-                                        <p className="opacity-50 text-[0.8rem] truncate">
+                                        <p className="neo-muted text-[0.8rem] truncate">
                                             {suggestedUser.bio || "No bio available"}
                                         </p>
                                     </div>

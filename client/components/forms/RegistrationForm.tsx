@@ -100,7 +100,7 @@ export default function RegistrationForm() {
   return (
     <div className="neo-shell px-5 md:px-10 py-6 w-80 md:w-fit">
 
-      <div className="w-full h-1 bg-blue-950/70 rounded-full mb-5 border border-blue-200/20 overflow-hidden">
+      <div className="w-full h-1 bg-blue-950/70 rounded-full mb-5 border neo-border overflow-hidden">
         <div className={`h-full bg-blue-500 transition-all duration-300 ${step === 1 ? "w-1/2" : "w-full"}`} />
       </div>
 
@@ -183,7 +183,7 @@ export default function RegistrationForm() {
               {preview ? (
                 <img src={preview} className="h-full w-full object-cover rounded-full" />
               ) : (
-                <Plus className="h-10 w-10 opacity-50" />
+                <Plus className="h-10 w-10 opacity-50 neo-text" />
               )}
             </div>
           </div>
@@ -193,7 +193,7 @@ export default function RegistrationForm() {
           <p className="font-semibold neo-text">Set a username</p>
 
           <div className="my-3 neo-input flex items-center px-3 h-10 rounded-lg gap-2">
-            <p>@</p>
+            <p className="neo-text">@</p>
             <input placeholder="demouser09" className="h-full w-full outline-none bg-transparent" onChange={(e) => setUsername(e.target.value)} />
           </div>
 
