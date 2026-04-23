@@ -55,23 +55,20 @@ export default function Sidebar() {
   };
 
   const fetchUnreadCount = async () => {
-    if (!isLoggedIn) return;
     try {
       const { data } = await axios.get(`${BACKEND_URL}/api/notifications`, { withCredentials: true });
       const unread = data.filter((n: any) => !n.isRead).length;
       setUnreadCount(unread);
     } catch {
-      // silent fail to avoid console noise when logged out
+      console.error("Failed to fetch notifications");
     }
   };
 
   useEffect(() => {
-    if (isLoggedIn) {
-      fetchUnreadCount();
-      const interval = setInterval(fetchUnreadCount, 10000);
-      return () => clearInterval(interval);
-    }
-  }, [isLoggedIn]);
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   const isMain = pathname === "/main";
 
