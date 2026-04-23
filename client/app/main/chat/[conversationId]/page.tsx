@@ -226,7 +226,12 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
 
       <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
 
-        {messages.map((m, index) => {
+        {messages.length === 0 ? (
+  <p className="text-center text-gray-600 dark:text-gray-400 mt-4">
+    No messages
+  </p>
+) : (
+  messages.map((m, index) => {
 
           const isMe = m.sender._id === userData?.id;
           const showDateSeparator = 
@@ -279,7 +284,8 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
               </div>
             </div>
           );
-        })}
+       }))
+}
 
         <div ref={bottomRef} />
       </div>
