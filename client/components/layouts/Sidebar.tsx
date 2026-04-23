@@ -87,7 +87,7 @@ export default function Sidebar() {
         <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={() => setOpen(false)} />
       )}
 
-      <aside className={`neo-sidebar-shell fixed md:static top-0 left-0 z-50 h-screen neo-text w-50 md:w-55 flex flex-col gap-5 px-2 py-5 font-serif text-[1.1rem] transform transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
+      <aside className={`neo-sidebar-shell fixed md:static top-0 left-0 z-50 h-screen neo-text w-50 md:w-55 flex flex-col gap-5 px-2 py-5 font-serif text-[1.1rem] rounded-none transform transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
         <div className="flex w-full">
           <div className="flex justify-center ml-3">
             <img
