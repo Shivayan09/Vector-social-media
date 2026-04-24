@@ -10,7 +10,6 @@ export default function Feed() {
     const { posts, setPosts } = useAppContext();
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
     const observerTarget = useRef<HTMLDivElement>(null);
     const loadingRef = useRef(false);
     const hasMoreRef = useRef(true);
@@ -30,7 +29,6 @@ export default function Feed() {
                 setPosts(prev => [...prev, ...(res.data.posts || [])]);
             }
             hasMoreRef.current = res.data.hasMore;
-            setHasMore(res.data.hasMore);
         } catch (error) {
             console.error("Failed to fetch posts", error);
             if (pageNum === 1) setPosts([]);

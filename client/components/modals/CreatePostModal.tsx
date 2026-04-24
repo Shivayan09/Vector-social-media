@@ -1,19 +1,20 @@
 "use client";
 
 import { X, Image as ImageIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "../ui/button";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import type { Post } from "@/lib/types";
 
 type CreateModalProps = {
     onClose: () => void;
-    onPostCreated: (post: any) => void;
+    onPostCreated: (post: Post) => void;
 };
 
 export default function CreatePostModal({onClose,onPostCreated}: CreateModalProps) {
-    const [visible, setVisible] = useState(false);
+    const [visible, setVisible] = useState(true);
     const [intent, setIntent] = useState("");
     const [content, setContent] = useState("");
     const [imageFile, setImageFile] = useState<File | null>(null);
@@ -23,11 +24,6 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
     const router = useRouter();
 
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
-
-    useEffect(() => {
-        setVisible(true);
-    }, []);
-
     const handleClose = () => {
         setVisible(false);
         setTimeout(onClose, 200);
@@ -90,7 +86,7 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                     </select>
                 </div>
 
-                <textarea placeholder="What's on your mind?" value={content} onChange={(e) => setContent(e.target.value)} className="w-full h-32 resize-none border border-black/10 dark:border-white/10 rounded-lg p-3 outline-none" />
+                <textarea placeholder="What&apos;s on your mind?" value={content} onChange={(e) => setContent(e.target.value)} className="w-full h-32 resize-none border border-black/10 dark:border-white/10 rounded-lg p-3 outline-none" />
 
                 {imagePreview && (
                     <div className="relative mt-3 w-full max-h-48 rounded-lg overflow-hidden border border-black/10 dark:border-white/10">

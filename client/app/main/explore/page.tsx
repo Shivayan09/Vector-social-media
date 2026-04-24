@@ -14,6 +14,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
+import type { Intent } from "@/lib/types";
 
 type User = {
   _id: string;
@@ -21,8 +22,6 @@ type User = {
   username?: string;
   avatar?: string;
 };
-
-type Intent = "ask" | "build" | "share" | "discuss" | "reflect";
 
 type TopPost = {
   _id: string;
@@ -108,11 +107,15 @@ export default function Explore() {
         );
 
         setTopPosts(data.posts || []);
-      } catch (error: any) {
-        toast.error(
-          error?.response?.data?.message ||
-            "Failed to load explore data"
-        );
+      } catch (error: unknown) {
+        if (axios.isAxiosError(error)) {
+          toast.error(
+            error.response?.data?.message ||
+              "Failed to load explore data"
+          );
+        } else {
+          toast.error("Failed to load explore data");
+        }
       } finally {
         setLoading(false);
       }

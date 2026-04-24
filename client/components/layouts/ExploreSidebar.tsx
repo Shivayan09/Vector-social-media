@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "../ui/button";
-import { Compass, Heart, Lightbulb, Shuffle, TrendingUp, Trophy, UserPlus, X } from "lucide-react";
+import { Compass, Heart, Lightbulb, TrendingUp, Trophy, UserPlus, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";

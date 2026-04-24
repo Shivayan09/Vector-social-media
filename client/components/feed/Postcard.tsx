@@ -2,20 +2,21 @@
 
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
-import { Bookmark, Heart, MessageCircle, Repeat, HelpCircle, Hammer, Share2, MessagesSquare, MoreHorizontal, Trash2, Flag, Share, LucideShare2, Forward } from "lucide-react";
+import { Bookmark, Heart, MessageCircle, HelpCircle, Hammer, Share2, MessagesSquare, MoreHorizontal, Trash2, Flag, Forward } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import PostDelete from "../modals/DeleteWarning";
 import ReportPost from "../modals/ReportPost";
 import { useRouter } from "next/navigation";
-import CommentsSection from "./CommentsSection";
+import type { Post } from "@/lib/types";
 
 type PostCardProps = {
-    post: any;
-    setPost?: React.Dispatch<React.SetStateAction<any>>;
+    post: Post;
+    setPost?: React.Dispatch<React.SetStateAction<Post | null>>;
 };
 
-const intentIconMap: Record<string, any> = {
+const intentIconMap: Record<string, LucideIcon> = {
     ask: HelpCircle,
     build: Hammer,
     share: Share2,
@@ -24,12 +25,8 @@ const intentIconMap: Record<string, any> = {
 };
 
 export default function PostCard({ post, setPost }: PostCardProps) {
-
-    // prevent crash if author missing
-    if (!post?.author) return null;
-
     const router = useRouter();
-    const { userData, posts, setPosts } = useAppContext();
+    const { userData, setPosts } = useAppContext();
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
@@ -40,7 +37,6 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
     const [likeAnimating, setLikeAnimating] = useState(false);
-    const [showComments, setShowComments] = useState(false);
 
     function timeAgo(dateString: string) {
         const now = new Date().getTime();
@@ -77,10 +73,10 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                 : [...post.likes, userData?.id];
 
             if (setPost) {
-                setPost((prev: any) => ({
+                setPost((prev) => prev ? ({
                     ...prev,
                     likes: updatedLikes,
-                }));
+                }) : prev);
             }
             else {
                 setPosts(prev =>
@@ -128,6 +124,9 @@ export default function PostCard({ post, setPost }: PostCardProps) {
         };
     }, [menuOpen]);
 
+    // prevent crash if author missing
+    if (!post?.author) return null;
+
     const handleShare = async (e: React.MouseEvent) => {
         e.stopPropagation();
         const postUrl = `${window.location.origin}/main/post/${post._id}`;
@@ -154,7 +153,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
             <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                     <div className="h-8 md:h-12 w-8 md:w-12 rounded-full transition-all duration-200" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
-                        <img src={post?.author?.avatar || "/default-avatar.png"} className="h-full w-full rounded-full object-cover" />
+                        <img alt={post.author?.name || "Post author"} src={post?.author?.avatar || "/default-avatar.png"} className="h-full w-full rounded-full object-cover" />
                     </div>
                     <span className="font-semibold ml-1 transition-all duration-200 text-white hover:text-blue-500" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>{post?.author?.name}</span>
                     <span className="text-[0.9rem] text-white/60 transition-all duration-200 hover:text-white/80" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
@@ -257,10 +256,6 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                 onClose={() => setShowReportModal(false)}
                 onSubmit={handleReport}
             />
-
-            {showComments && (
-                <CommentsSection postId={post._id} />
-            )}
         </div>
     );
 }
