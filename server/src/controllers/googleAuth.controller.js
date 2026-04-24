@@ -86,7 +86,7 @@ export const googleAuth = async (req, res) => {
       isProfileComplete: true,
     });
 
-  } catch (err) {
+  } catch {
     res.status(500).json({
       success: false,
       message: "Google auth failed",
