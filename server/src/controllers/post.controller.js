@@ -173,3 +173,21 @@ export const getTopPostsOfWeek = async (req, res) => {
         });
     }
 };
+export const incrementShare = async (req, res) => {
+    try {
+        const post = await Post.findByIdAndUpdate(
+            req.params.id,
+            { $inc: { sharesCount: 1 } },
+            { new: true }
+        );
+        if (!post) {
+            return res.status(404).json({ success: false, message: "Post not found" });
+        }
+        res.json({
+            success: true,
+            sharesCount: post.sharesCount,
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
