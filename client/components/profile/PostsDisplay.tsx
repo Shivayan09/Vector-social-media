@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import PostCard from "../feed/Postcard";
+import type { Post } from "@/lib/types";
 
 type PostsDisplayProps = {
     userId: string;
@@ -10,7 +11,7 @@ type PostsDisplayProps = {
 };
 
 export default function PostsDisplay({ userId, emptyText }: PostsDisplayProps) {
-    const [posts, setPosts] = useState<any[]>([]);
+    const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
@@ -26,7 +27,7 @@ export default function PostsDisplay({ userId, emptyText }: PostsDisplayProps) {
             }
         };
         fetchPosts();
-    }, [userId]);
+    }, [BACKEND_URL, userId]);
     if (loading) {
         return <p className="text-center text-blue-500/70">Loading posts...</p>;
     }

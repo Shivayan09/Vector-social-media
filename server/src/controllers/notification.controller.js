@@ -25,7 +25,7 @@ export const deleteNotification = async (req, res) => {
             });
         }
         return res.json({ success: true });
-    } catch (err) {
+    } catch {
         return res.status(500).json({
             success: false,
             message: "Server error"
@@ -46,7 +46,7 @@ export const deleteMultipleNotifications = async (req, res) => {
         return res.json({
             success: true
         });
-    } catch (err) {
+    } catch {
         return res.status(500).json({
             success: false,
             message: "Server error"

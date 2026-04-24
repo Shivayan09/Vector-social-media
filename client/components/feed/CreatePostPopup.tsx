@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Pen } from "lucide-react";
 import { useAppContext } from "@/context/AppContext";
 import CreateModal from "../modals/CreatePostModal";
+import type { Post } from "@/lib/types";
 
 export default function CreatePostPopup() {
     const pathname = usePathname();
@@ -13,8 +14,8 @@ export default function CreatePostPopup() {
 
     if (pathname !== "/main") return null;
 
-    const handlePostCreated = (newPost: any) => {
-        setPosts((prev: any[]) => [newPost, ...prev]);
+    const handlePostCreated = (newPost: Post) => {
+        setPosts((prev) => [newPost, ...prev]);
     };
 
     return (

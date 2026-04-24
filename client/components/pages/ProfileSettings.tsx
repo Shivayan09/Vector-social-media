@@ -4,6 +4,7 @@ import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
 import { ChangeEvent, useEffect, useState, useRef } from "react";
 import { toast } from "react-toastify";
+import type { ProfileFormData } from "@/lib/types";
 
 type EditableMap = {
   username: boolean;
@@ -14,18 +15,31 @@ type EditableMap = {
   description: boolean;
 };
 
+type EditableFieldProps = {
+  label: string;
+  name: keyof ProfileFormData;
+  value: string;
+  editable: boolean;
+  onEdit: () => void;
+  onChange: (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => void;
+};
+
 export default function ProfileSettings() {
   const { userData, setUserData } = useAppContext();
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [loading, setLoading] = useState(false);
-  const [initialData, setInitialData] = useState<any>(null);
+  const [initialData, setInitialData] =
+    useState<ProfileFormData | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatar, setAvatar] = useState<string | null>(null);
-  const [formData, setFormData] = useState<any>(null);
+  const [formData, setFormData] =
+    useState<ProfileFormData | null>(null);
   const [editable, setEditable] = useState<EditableMap>({
     username: false,
     name: false,
@@ -136,7 +150,7 @@ export default function ProfileSettings() {
 
       <div className="flex items-center gap-6 mb-6">
         <div className="h-24 w-24 rounded-full overflow-hidden border">
-          <img src={preview || avatar || "/avatar-placeholder.png"} className="h-full w-full object-cover" />
+          <img alt="Profile preview" src={preview || avatar || "/avatar-placeholder.png"} className="h-full w-full object-cover" />
         </div>
 
         <button type="button" onClick={() => fileInputRef.current?.click()} className="text-blue-600 font-medium cursor-pointer">
@@ -227,7 +241,7 @@ function EditableInput({
   editable,
   onEdit,
   onChange,
-}: any) {
+}: EditableFieldProps) {
   return (
     <div>
       <div className="flex justify-between mb-1">
@@ -257,7 +271,7 @@ function EditableTextarea({
   editable,
   onEdit,
   onChange,
-}: any) {
+}: EditableFieldProps) {
   return (
     <div className="md:col-span-2">
       <div className="flex justify-between mb-1">

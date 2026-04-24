@@ -1,10 +1,11 @@
 "use client";
 
 import { Bell } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useAppContext } from "@/context/AppContext";
+import type { Notification } from "@/lib/types";
 
 export default function NotificationBell() {
   const { userData } = useAppContext();
@@ -13,21 +14,26 @@ export default function NotificationBell() {
 
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const fetchUnreadCount = async () => {
+  const fetchUnreadCount = useCallback(async () => {
     try {
-      const { data } = await axios.get(`${BACKEND_URL}/api/notifications`, { withCredentials: true });
-      const unread = data.filter((n: any) => !n.isRead).length;
+      const { data } = await axios.get<Notification[]>(
+        `${BACKEND_URL}/api/notifications`,
+        { withCredentials: true }
+      );
+      const unread = data.filter((n) => !n.isRead).length;
       setUnreadCount(unread);
-    } catch (err) {
+    } catch {
       console.error("Failed to fetch notifications");
     }
-  };
+  }, [BACKEND_URL]);
 
   useEffect(() => {
-    if (userData) {
-      fetchUnreadCount();
-    }
-  }, [userData]);
+    if (!userData) return;
+    const timeoutId = window.setTimeout(() => {
+      void fetchUnreadCount();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [fetchUnreadCount, userData]);
 
   if (!userData) return null;
 

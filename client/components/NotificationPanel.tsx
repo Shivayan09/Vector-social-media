@@ -1,28 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { Trash2 } from "lucide-react";
 import ConfirmModal from "./modals/DeleteWarning";
-
-type Notification = {
-  _id: string;
-  type: "follow" | "like" | "comment" | "message";
-  sender: {
-    _id: string;
-    username: string;
-    name: string;
-    avatar?: string;
-  };
-  post?: {
-    _id: string;
-  };
-  isRead: boolean;
-  createdAt: string;
-};
+import type { Notification } from "@/lib/types";
 
 type Props = {
   search?: string;
@@ -39,22 +24,27 @@ export default function NotificationPanel({ search = "" }: Props) {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
-      const { data } = await axios.get(
+      const { data } = await axios.get<Notification[]>(
         `${BACKEND_URL}/api/notifications`,
         { withCredentials: true }
       );
       setNotifications(data);
-    } catch (err: any) {
-      toast.error(
-        err.response?.data?.message || "Failed to fetch notifications"
-      );
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        toast.error(
+          err.response?.data?.message ||
+            "Failed to fetch notifications"
+        );
+      } else {
+        toast.error("Failed to fetch notifications");
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [BACKEND_URL]);
 
   const deleteSingle = async (id: string) => {
     try {
@@ -64,10 +54,12 @@ export default function NotificationPanel({ search = "" }: Props) {
       );
       setNotifications((prev) => prev.filter((n) => n._id !== id));
       toast.success("Notification deleted");
-    } catch (err: any) {
-      toast.error(
-        err.response?.data?.message || "Delete failed"
-      );
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        toast.error(err.response?.data?.message || "Delete failed");
+      } else {
+        toast.error("Delete failed");
+      }
     }
   };
 
@@ -89,10 +81,14 @@ export default function NotificationPanel({ search = "" }: Props) {
       setSelectMode(false);
 
       toast.success("Selected notifications deleted");
-    } catch (err: any) {
-      toast.error(
-        err.response?.data?.message || "Bulk delete failed"
-      );
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        toast.error(
+          err.response?.data?.message || "Bulk delete failed"
+        );
+      } else {
+        toast.error("Bulk delete failed");
+      }
     }
   };
 
@@ -106,14 +102,18 @@ export default function NotificationPanel({ search = "" }: Props) {
       setSelected([]);
       setSelectMode(false);
       toast.success("All notifications cleared");
-    } catch (err: any) {
-      toast.error(
-        err.response?.data?.message || "Delete all failed"
-      );
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        toast.error(
+          err.response?.data?.message || "Delete all failed"
+        );
+      } else {
+        toast.error("Delete all failed");
+      }
     }
   };
 
-  const markAllAsRead = async () => {
+  const markAllAsRead = useCallback(async () => {
     try {
       const unread = notifications.filter((n) => !n.isRead);
 
@@ -133,19 +133,23 @@ export default function NotificationPanel({ search = "" }: Props) {
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [BACKEND_URL, notifications]);
 
   useEffect(() => {
-    if (userData) {
-      fetchNotifications();
-    }
-  }, [userData]);
+    if (!userData) return;
+    const timeoutId = window.setTimeout(() => {
+      void fetchNotifications();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [fetchNotifications, userData]);
 
   useEffect(() => {
-    if (notifications.some((n) => !n.isRead)) {
-      markAllAsRead();
-    }
-  }, [notifications.length]);
+    if (!notifications.some((n) => !n.isRead)) return;
+    const timeoutId = window.setTimeout(() => {
+      void markAllAsRead();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [markAllAsRead, notifications]);
 
   if (!userData) return null;
 
@@ -234,7 +238,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                   }
                 }}
                 className="flex gap-3 flex-1 cursor-pointer p-2 rounded-lg">
-                <img src={n.sender.avatar || "/default-avatar.png"} className="h-10 w-10 rounded-full object-cover" />
+                <img alt={n.sender.name || "Notification sender"} src={n.sender.avatar || "/default-avatar.png"} className="h-10 w-10 rounded-full object-cover" />
 
                 <div>
                   <p className="text-white">

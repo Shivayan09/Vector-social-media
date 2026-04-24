@@ -7,6 +7,7 @@ import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import { Trash2, ArrowLeft } from "lucide-react";
 import ConfirmModal from "@/components/modals/DeleteWarning";
+import type { Conversation, Message, UserSummary } from "@/lib/types";
 
 type Params = {
   conversationId: string;
@@ -19,14 +20,14 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
 
   const { userData } = useAppContext();
 
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
   const [receiverId, setReceiverId] = useState<string | null>(null);
-  const [otherUser, setOtherUser] = useState<any>(null);
+  const [otherUser, setOtherUser] = useState<UserSummary | null>(null);
   const [isSending, setIsSending] = useState(false);
 
   const [warningOpen, setWarningOpen] = useState(false);
-  const [selectedMessage, setSelectedMessage] = useState<any>(null);
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -73,7 +74,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
 
     socket.emit("register", userData.id);
 
-    const handleReceiveMessage = (message: any) => {
+    const handleReceiveMessage = (message: Message) => {
       setMessages((prev) => {
         if (prev.some((m) => m._id === message._id)) return prev;
         if (message.conversation !== conversationId) return prev;
@@ -81,7 +82,13 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
       });
     };
 
-    const handleDelete = ({ messageId, conversationId: convo }: any) => {
+    const handleDelete = ({
+      messageId,
+      conversationId: convo,
+    }: {
+      messageId: string;
+      conversationId: string;
+    }) => {
       if (convo === conversationId) {
         setMessages((prev) =>
           prev.filter((m) => m._id !== messageId)
@@ -104,7 +111,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
 
     const fetchChat = async () => {
 
-      const convoRes = await axios.get(
+      const convoRes = await axios.get<Conversation>(
         `${BACKEND_URL}/api/conversation/${conversationId}`,
         { withCredentials: true }
       );
@@ -112,7 +119,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
       const participants = convoRes.data.participants;
 
       const other = participants.find(
-        (p: any) => p._id !== userData?.id
+        (p: UserSummary) => p._id !== userData?.id
       );
 
       if (other) {
@@ -120,7 +127,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
         setOtherUser(other);
       }
 
-      const msgRes = await axios.get(
+      const msgRes = await axios.get<Message[]>(
         `${BACKEND_URL}/api/messages/${conversationId}`,
         { withCredentials: true }
       );
@@ -134,7 +141,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
           {},
           { withCredentials: true }
         );
-      } catch (error) {
+      } catch {
         // Silently handle error to not interrupt chat load
       }
     };
@@ -143,7 +150,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
       fetchChat();
     }
 
-  }, [conversationId, userData]);
+  }, [BACKEND_URL, conversationId, userData]);
 
   // AUTO SCROLL
   useEffect(() => {
@@ -213,7 +220,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
           <ArrowLeft size={24} className="text-white" />
         </button>
 
-        <img src={otherUser?.avatar || "/default-avatar.png"} className="h-12 w-12 rounded-full object-cover border ml-3"/>
+        <img alt={otherUser?.name || "User avatar"} src={otherUser?.avatar || "/default-avatar.png"} className="h-12 w-12 rounded-full object-cover border ml-3"/>
 
         <p
           onClick={() =>

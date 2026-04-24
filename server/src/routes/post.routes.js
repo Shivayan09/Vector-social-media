@@ -1,10 +1,11 @@
 import express from "express";
 import { createPost, deletePost, getPosts, getPostsByUser, getSinglePost, getTopPostsOfWeek, toggleLike, incrementShare } from "../controllers/post.controller.js";
 import authMiddleware from "../middlewares/auth.middleware.js";
+import upload from "../middlewares/upload.middleware.js";
 
 const postRouter = express.Router();
 
-postRouter.post("/", authMiddleware, createPost);
+postRouter.post("/", authMiddleware, upload.single("image"), createPost);
 postRouter.get("/top-week", getTopPostsOfWeek);
 postRouter.get("/", getPosts);
 postRouter.get("/:postId", getSinglePost);

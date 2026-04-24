@@ -25,7 +25,7 @@ export default async function RootPage() {
     }
 
     redirect("/main");
-  } catch (e) {
+  } catch {
     redirect("/auth/login");
   }
 }

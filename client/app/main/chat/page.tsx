@@ -7,15 +7,16 @@ import { useAppContext } from "@/context/AppContext";
 import { ArrowRight, Trash2 } from "lucide-react";
 import ConfirmModal from "@/components/modals/DeleteWarning";
 import { toast } from "react-toastify";
+import type { Conversation, UserSummary } from "@/lib/types";
 
 export default function ChatListPage() {
     const { userData } = useAppContext();
     const router = useRouter();
 
-    const [conversations, setConversations] = useState<any[]>([]);
-    const [filteredConversations, setFilteredConversations] = useState<any[]>([]);
+    const [conversations, setConversations] = useState<Conversation[]>([]);
+    const [filteredConversations, setFilteredConversations] = useState<Conversation[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
-    const [chatToDelete, setChatToDelete] = useState<any>(null);
+    const [chatToDelete, setChatToDelete] = useState<Conversation | null>(null);
     const [hasMessages, setHasMessages] = useState(false);
     const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
 
@@ -29,7 +30,7 @@ export default function ChatListPage() {
             );
 
             const results = await Promise.all(
-                allConvos.map(async (convo: any) => {
+                allConvos.map(async (convo: Conversation) => {
                     const { data: messages } = await axios.get(
                         `${BACKEND_URL}/api/messages/${convo._id}`,
                         { withCredentials: true }
@@ -43,7 +44,7 @@ export default function ChatListPage() {
             setConversations(validConvos);
 
             const unreadCountEntries = await Promise.all(
-                validConvos.map(async (convo: any) => {
+                validConvos.map(async (convo: Conversation) => {
                     try {
                         const { data } = await axios.get(
                             `${BACKEND_URL}/api/messages/${convo._id}/unread-count`,
@@ -62,12 +63,12 @@ export default function ChatListPage() {
         };
 
         if (userData?.id) fetchConversations();
-    }, [userData]);
+    }, [BACKEND_URL, userData]);
 
     useEffect(() => {
         const filtered = conversations.filter((convo) => {
             const otherUser = convo.participants.find(
-                (p: any) => p._id !== userData?.id
+                (p: UserSummary) => p._id !== userData?.id
             );
 
             return (
@@ -83,7 +84,10 @@ export default function ChatListPage() {
         setFilteredConversations(filtered);
     }, [searchTerm, conversations, userData]);
 
-    const handleDeleteClick = async (e: React.MouseEvent, convo: any) => {
+    const handleDeleteClick = async (
+        e: React.MouseEvent,
+        convo: Conversation
+    ) => {
         e.stopPropagation();
 
         try {
@@ -145,7 +149,7 @@ export default function ChatListPage() {
                 <div className="flex flex-col p-5 gap-2">
                     {filteredConversations.map((convo) => {
                         const otherUser = convo.participants.find(
-                            (p: any) => p._id !== userData?.id
+                            (p: UserSummary) => p._id !== userData?.id
                         );
 
                         return (
@@ -157,6 +161,7 @@ export default function ChatListPage() {
                                 className="flex items-center gap-3 p-4 rounded-lg cursor-pointer bg-black/10 hover:bg-black/15 hover:shadow-lg text-white transition-all duration-200"
                             >
                                 <img
+                                    alt={otherUser?.name || "Chat user"}
                                     src={
                                         otherUser?.avatar ||
                                         "/default-avatar.png"

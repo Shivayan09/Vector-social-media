@@ -2,8 +2,8 @@
 
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { useAppContext } from "@/context/AppContext";
 import UserRow from "./UserRow";
+import type { UserSummary } from "@/lib/types";
 
 type Props = {
     userId: string;
@@ -11,7 +11,7 @@ type Props = {
 };
 
 export default function FollowersDisplay({ userId, emptyText }: Props) {
-    const [users, setUsers] = useState<any[]>([]);
+    const [users, setUsers] = useState<UserSummary[]>([]);
     const [loading, setLoading] = useState(true);
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
@@ -25,7 +25,7 @@ export default function FollowersDisplay({ userId, emptyText }: Props) {
             }
         };
         fetchFollowers();
-    }, [userId]);
+    }, [BACKEND_URL, userId]);
 
     if (loading) return <p className="text-center mt-6 text-white">Loading...</p>;
 

@@ -1,16 +1,35 @@
 import Post from "../models/post.model.js";
 import Notification from "../models/notification.model.js";
+import cloudinary from "../config/cloudinary.js";
 
-export const createPost = async (req, res, next) => {
+export const createPost = async (req, res) => {
     try {
         const { content, intent } = req.body;
-        if (!content || !intent) {
+        if (!intent || (!content && !req.file)) {
             return res.json({
                 success: false,
-                message: "Content and intent are required"
+                message: "Intent and either content or image are required"
             });
         }
-        const post = await Post.create({ author: req.user.id, content, intent });
+        
+        let image = null;
+        let imagePublicId = null;
+
+        if (req.file) {
+            const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+                folder: "posts"
+            });
+            image = uploadResult.secure_url;
+            imagePublicId = uploadResult.public_id;
+        }
+
+        const post = await Post.create({ 
+            author: req.user.id, 
+            content: content || "", 
+            intent, 
+            image, 
+            imagePublicId 
+        });
         const populatedPost = await post.populate("author", "username name surname avatar");
         res.status(201).json({
             success: true,
@@ -63,6 +82,11 @@ export const deletePost = async (req, res) => {
                 message: "You are not allowed to delete this post",
             });
         }
+        
+        if (post.imagePublicId) {
+            await cloudinary.uploader.destroy(post.imagePublicId);
+        }
+
         await post.deleteOne();
         res.status(200).json({
             success: true,
@@ -83,10 +107,9 @@ export const toggleLike = async (req, res) => {
     }
     const userId = req.user.id;
     const index = post.likes.indexOf(userId);
-    let liked = false;
+    const liked = index === -1;
     if (index === -1) {
         post.likes.push(userId);
-        liked = true;
         if (post.author.toString() !== userId) {
             await Notification.create({
                 recipient: post.author,
@@ -97,7 +120,6 @@ export const toggleLike = async (req, res) => {
         }
     } else {
         post.likes.splice(index, 1);
-        liked = false;
     }
     await post.save();
     res.json({
@@ -115,7 +137,7 @@ export const getPostsByUser = async (req, res) => {
             success: true,
             posts,
         });
-    } catch (error) {
+    } catch {
         return res.status(500).json({
             success: false,
             message: "Failed to fetch user posts",
@@ -130,7 +152,7 @@ export const getSinglePost = async (req, res) => {
             return res.status(404).json({ message: "Post not found" });
         }
         res.json(post);
-    } catch (err) {
+    } catch {
         res.status(500).json({ message: "Server error" });
     }
 };
