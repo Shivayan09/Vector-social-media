@@ -249,7 +249,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
             )}
 
             {post.image && (
-                <div className="w-full mb-4 rounded-xl overflow-hidden border border-white/10 max-h-[500px]">
+                <div className="w-full mb-4 rounded-xl overflow-hidden border border-white/10 max-h-125">
                     <img src={post.image} alt="Post attachment" className="w-full h-full object-cover" />
                 </div>
             )}
