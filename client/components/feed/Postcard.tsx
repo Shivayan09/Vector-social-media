@@ -63,22 +63,32 @@ export default function PostCard({ post, setPost }: PostCardProps) {
 
     const handleLike = async () => {
         try {
+            // 🚨 guard: don't proceed if user id missing
+            if (!userData?.id) {
+                toast.error("User not authenticated");
+                return;
+            }
+
             if (!isLiked) {
                 setLikeAnimating(true);
                 setTimeout(() => setLikeAnimating(false), 300);
             }
 
             const updatedLikes = isLiked
-                ? post.likes.filter((id: string) => String(id) !== String(userData?.id))
-                : [...post.likes, userData?.id];
+                ? post.likes.filter(id => String(id) !== String(userData.id))
+                : [...post.likes, userData.id]; // ✅ now always string
 
+            // ✅ update local state safely
             if (setPost) {
-                setPost((prev) => prev ? ({
-                    ...prev,
-                    likes: updatedLikes,
-                }) : prev);
-            }
-            else {
+                setPost(prev =>
+                    prev
+                        ? {
+                            ...prev,
+                            likes: updatedLikes,
+                        }
+                        : prev
+                );
+            } else {
                 setPosts(prev =>
                     prev.map(p =>
                         p._id === post._id
@@ -88,8 +98,12 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                 );
             }
 
-            await axios.put(`${BACKEND_URL}/api/posts/${post._id}/like`, {}, { withCredentials: true });
-
+            // ✅ API call
+            await axios.put(
+                `${BACKEND_URL}/api/posts/${post._id}/like`,
+                {},
+                { withCredentials: true }
+            );
         } catch {
             toast.error("Failed to like post");
         }
@@ -182,7 +196,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                     <p className="absolute left-195 text-[0.9rem] font-semibold text-blue-500 flex items-center gap-1.5">
                         Intent:
                         {(() => {
-                            const Icon = intentIconMap[post.intent];
+                            const Icon = post.intent ? intentIconMap[post.intent] : null;
                             return Icon ? <Icon size={16} className="text-blue-500 mt-0.5" /> : null;
                         })()}
                         <span className="capitalize">{post.intent}</span>
@@ -244,7 +258,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                 <div className="flex items-center justify-between w-2/3 text-gray-200 dark:text-gray-300 text-sm">
                     <p className="flex gap-1 items-center cursor-pointer hover:text-blue-500 md:w-[20%] justify-center">
                         <MessageCircle className="h-4.5 md:h-5 hover:text-blue-500" />
-                        {post.commentsCount || 0} {post.commentsCount===1 ? 'Comment' : 'Comments'}
+                        {post.commentsCount || 0} {post.commentsCount === 1 ? 'Comment' : 'Comments'}
                     </p>
 
                     <p onClick={handleShare} className="flex gap-1 items-center cursor-pointer md:w-[20%] justify-center hover:text-blue-500">
@@ -253,7 +267,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
 
                     <p onClick={(e) => { e.stopPropagation(); handleLike() }} className="flex gap-1 items-center md:w-[20%] justify-center cursor-pointer hover:text-blue-500">
                         <Heart className={`h-4.5 md:h-5 cursor-pointer transition-transform duration-300 hover:text-blue-500 ${isLiked ? "text-blue-500" : ""} ${likeAnimating ? "scale-135" : "scale-100"}`} fill={isLiked ? "currentColor" : "none"} />
-                        {post.likes.length} {post.likes.length===1 ? 'Like' : 'Likes'}
+                        {post.likes.length} {post.likes.length === 1 ? 'Like' : 'Likes'}
                     </p>
                 </div>
 
