@@ -142,8 +142,28 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                 await navigator.clipboard.writeText(postUrl);
                 toast.success("Post link copied to clipboard");
             }
+
+            // Increment share count in DB
+            await axios.put(`${BACKEND_URL}/api/posts/${post._id}/share`, {}, { withCredentials: true });
+
+            // Update local state
+            if (setPost) {
+                setPost((prev: any) => ({
+                    ...prev,
+                    sharesCount: (prev.sharesCount || 0) + 1,
+                }));
+            } else {
+                setPosts(prev =>
+                    prev.map(p =>
+                        p._id === post._id
+                            ? { ...p, sharesCount: (p.sharesCount || 0) + 1 }
+                            : p
+                    )
+                );
+            }
+
         } catch {
-            toast.error("Failed to share post");
+            // share dismissed or failed
         }
         setMenuOpen(false);
     };
@@ -221,7 +241,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                     </p>
 
                     <p onClick={handleShare} className="flex gap-1 items-center cursor-pointer md:w-[20%] justify-center hover:text-blue-500">
-                        <Forward className="h-4.5 md:h-5" />0 Shares
+                        <Forward className="h-4.5 md:h-5" />{post.sharesCount || 0} {post.sharesCount === 1 ? 'Share' : 'Shares'}
                     </p>
 
                     <p onClick={(e) => { e.stopPropagation(); handleLike() }} className="flex gap-1 items-center md:w-[20%] justify-center cursor-pointer hover:text-blue-500">
