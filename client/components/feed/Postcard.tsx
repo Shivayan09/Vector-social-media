@@ -147,10 +147,10 @@ export default function PostCard({ post, setPost }: PostCardProps) {
 
             // Update local state
             if (setPost) {
-                setPost((prev: any) => ({
+                setPost((prev) => prev ? ({
                     ...prev,
                     sharesCount: (prev.sharesCount || 0) + 1,
-                }));
+                }) : prev);
             } else {
                 setPosts(prev =>
                     prev.map(p =>

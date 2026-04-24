@@ -32,6 +32,7 @@ export type Post = {
   intent?: Intent;
   likes: string[];
   commentsCount?: number;
+  sharesCount?: number;
   createdAt: string;
 };
 
