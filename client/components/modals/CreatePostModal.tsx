@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X, Image as ImageIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { toast } from "react-toastify";
@@ -16,6 +16,8 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
     const [visible, setVisible] = useState(false);
     const [intent, setIntent] = useState("");
     const [content, setContent] = useState("");
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
     const router = useRouter();
@@ -35,8 +37,17 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
         e.preventDefault();
         try {
             setLoading(true);
-            const { data } = await axios.post(BACKEND_URL + "/api/posts",{ content, intent }, { withCredentials: true }
-            );
+            const formData = new FormData();
+            formData.append("content", content);
+            formData.append("intent", intent);
+            if (imageFile) {
+                formData.append("image", imageFile);
+            }
+
+            const { data } = await axios.post(BACKEND_URL + "/api/posts", formData, { 
+                withCredentials: true,
+                headers: { "Content-Type": "multipart/form-data" }
+            });
             if (!data.success || !data.post) {
                 toast.error("Failed to post");
                 return;
@@ -81,12 +92,35 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
 
                 <textarea placeholder="What's on your mind?" value={content} onChange={(e) => setContent(e.target.value)} className="w-full h-32 resize-none border border-black/10 dark:border-white/10 rounded-lg p-3 outline-none" />
 
+                {imagePreview && (
+                    <div className="relative mt-3 w-full max-h-48 rounded-lg overflow-hidden border border-black/10 dark:border-white/10">
+                        <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                        <button onClick={() => { setImageFile(null); setImagePreview(null); }} className="absolute top-2 right-2 bg-black/50 p-1 rounded-full text-white hover:bg-black/70 transition">
+                            <X size={16} />
+                        </button>
+                    </div>
+                )}
+
+                <div className="flex items-center gap-3 mt-3">
+                    <label className="cursor-pointer flex items-center gap-2 text-blue-500 hover:text-blue-600 transition p-2 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                        <ImageIcon size={20} />
+                        <span className="text-sm font-medium">Add Image</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                                setImageFile(file);
+                                setImagePreview(URL.createObjectURL(file));
+                            }
+                        }} />
+                    </label>
+                </div>
+
                 <div className="flex justify-between gap-3 mt-4">
                     <Button variant="outline" onClick={handleClose} className="cursor-pointer w-[47%]">
                         Discard
                     </Button>
 
-                    <Button disabled={loading || !intent || !content.trim()} onClick={handlePost} className={`cursor-pointer w-[47%] ${loading ? "bg-blue-400 dark:bg-gray-100" : "bg-blue-500 dark:text-white hover:bg-blue-600"}`}>
+                    <Button disabled={loading || !intent || (!content.trim() && !imageFile)} onClick={handlePost} className={`cursor-pointer w-[47%] ${loading ? "bg-blue-400 dark:bg-gray-100" : "bg-blue-500 dark:text-white hover:bg-blue-600"}`}>
                         {loading ? "Posting..." : "Post"}
                     </Button>
                 </div>

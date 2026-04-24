@@ -209,9 +209,17 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                 </div>
             </div>
 
-            <p className="mt-2 mb-5 p-1 text-[0.9rem] md:text-[1.1rem] text-gray-100">
-                {post.content}
-            </p>
+            {post.content && (
+                <p className="mt-2 mb-3 p-1 text-[0.9rem] md:text-[1.1rem] text-gray-100">
+                    {post.content}
+                </p>
+            )}
+
+            {post.image && (
+                <div className="w-full mb-4 rounded-xl overflow-hidden border border-white/10 max-h-[500px]">
+                    <img src={post.image} alt="Post attachment" className="w-full h-full object-cover" />
+                </div>
+            )}
 
             <div className="flex justify-between text-white border-t border-white/20 dark:border-white/10 pt-3">
                 <div className="flex items-center justify-between w-2/3 text-gray-200 dark:text-gray-300 text-sm">

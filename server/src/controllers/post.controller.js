@@ -1,16 +1,35 @@
 import Post from "../models/post.model.js";
 import Notification from "../models/notification.model.js";
+import cloudinary from "../config/cloudinary.js";
 
 export const createPost = async (req, res, next) => {
     try {
         const { content, intent } = req.body;
-        if (!content || !intent) {
+        if (!intent || (!content && !req.file)) {
             return res.json({
                 success: false,
-                message: "Content and intent are required"
+                message: "Intent and either content or image are required"
             });
         }
-        const post = await Post.create({ author: req.user.id, content, intent });
+        
+        let image = null;
+        let imagePublicId = null;
+
+        if (req.file) {
+            const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+                folder: "posts"
+            });
+            image = uploadResult.secure_url;
+            imagePublicId = uploadResult.public_id;
+        }
+
+        const post = await Post.create({ 
+            author: req.user.id, 
+            content: content || "", 
+            intent, 
+            image, 
+            imagePublicId 
+        });
         const populatedPost = await post.populate("author", "username name surname avatar");
         res.status(201).json({
             success: true,
@@ -63,6 +82,11 @@ export const deletePost = async (req, res) => {
                 message: "You are not allowed to delete this post",
             });
         }
+        
+        if (post.imagePublicId) {
+            await cloudinary.uploader.destroy(post.imagePublicId);
+        }
+
         await post.deleteOne();
         res.status(200).json({
             success: true,
