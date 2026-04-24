@@ -7,7 +7,7 @@ export type Intent =
 
 export type UserSummary = {
   _id: string;
-  id?: string;
+  id: string;
   name: string;
   surname?: string;
   email?: string;
