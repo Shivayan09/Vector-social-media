@@ -2,8 +2,6 @@
 
 Vector is a full-stack social media platform built with a Next.js frontend and an Express/MongoDB backend. It supports account creation, Google OAuth, profile setup, a post feed, likes, comments, following, notifications, and real-time direct messaging with Socket.IO.
 
-<img width="1920" height="1200" alt="image" src="https://github.com/user-attachments/assets/46cb0322-a8f2-4f58-a4c5-cbfb80092759" />
-
 ## Overview
 
 The repository is split into two main apps:
