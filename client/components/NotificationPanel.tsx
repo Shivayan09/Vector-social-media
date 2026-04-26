@@ -229,12 +229,17 @@ export default function NotificationPanel({ search = "" }: Props) {
 
               <div
                 onClick={() => {
-                  if (!selectMode) {
-                    if (n.post?._id) {
-                      router.push(`/main/post/${n.post._id}`);
-                    } else {
-                      router.push(`/main/user/${n.sender.username}`);
-                    }
+                  if (selectMode) return;
+
+                  if (n.type === "message") {
+                    router.push(`/main/chat/${n.sender.username}`);
+                    return;
+                  }
+
+                  if (n.post?._id) {
+                    router.push(`/main/post/${n.post._id}`);
+                  } else {
+                    router.push(`/main/user/${n.sender.username}`);
                   }
                 }}
                 className="flex gap-3 flex-1 cursor-pointer p-2 rounded-lg">
