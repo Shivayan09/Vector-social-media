@@ -232,19 +232,23 @@ export default function NotificationPanel({ search = "" }: Props) {
                   if (selectMode) return;
 
                   if (n.type === "message") {
-                    if (n.conversation?._id) {
-                      router.push(`/main/chat/${n.conversation._id}`);
+                    const id = n.conversation?._id;
+
+                    if (id) {
+                      router.push(`/main/chat/${id}`);
                     } else {
-                      console.error("Missing conversationId in notification", n);
-   
-                    }  return;
+                      console.error("Missing conversation in notification", n);
+                      toast.error("Chat not available");
+                    }
+                    return;
                   }
 
                   if (n.post?._id) {
                     router.push(`/main/post/${n.post._id}`);
-                  } else {
-                    router.push(`/main/user/${n.sender.username}`);
+                    return;
                   }
+
+                  router.push(`/main/user/${n.sender.username}`);
                 }}
                 className="flex gap-3 flex-1 cursor-pointer p-2 rounded-lg">
                 <img alt={n.sender.name || "Notification sender"} src={n.sender.avatar || "/default-avatar.png"} className="h-10 w-10 rounded-full object-cover" />
