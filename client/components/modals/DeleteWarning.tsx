@@ -41,7 +41,7 @@ export default function ConfirmModal({
             ? "scale-100 translate-y-0 opacity-100"
             : "scale-95 translate-y-2 opacity-0"
         }`}>
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-4 text-zinc-900 dark:text-white">
           <p className="text-[1.2rem] font-semibold">{title}</p>
           <button onClick={onClose} className="cursor-pointer">
             <X />
@@ -58,7 +58,7 @@ export default function ConfirmModal({
           </div>
         )}
 
-        <div className="flex justify-end gap-3 w-full">
+        <div className="flex justify-end gap-3 w-full text-zinc-900 dark:text-white">
           <button onClick={onClose} className="w-[50%] py-1.5 rounded-md border cursor-pointer hover:bg-black/5">
             Cancel
           </button>
