@@ -6,6 +6,7 @@ import { ExternalLink, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
+import InlineLoader from "@/components/loaders/InlineLoader";
 
 type User = {
   _id: string;
@@ -203,9 +204,7 @@ export default function Explore() {
 
           <div className="flex flex-col gap-5 md:flex-row items-center mt-5">
             {loading ? (
-              <p className="text-gray-300">
-                Loading top posts...
-              </p>
+              <InlineLoader text="Loading top posts..." className="text-gray-300" />
             ) : topPosts.length === 0 ? (
               <p className="text-gray-300">
                 No trending posts this week

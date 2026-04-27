@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import PostCard from "../feed/Postcard";
+import SkeletonLoader from "../loaders/SkeletonLoader";
 
 type PostsDisplayProps = {
     userId: string;
@@ -28,7 +29,11 @@ export default function PostsDisplay({ userId, emptyText }: PostsDisplayProps) {
         fetchPosts();
     }, [userId]);
     if (loading) {
-        return <p className="text-center text-blue-500/70">Loading posts...</p>;
+        return (
+            <div className="mt-4">
+                <SkeletonLoader count={3} height="h-40" />
+            </div>
+        );
     }
     if (posts.length === 0) {
         return (

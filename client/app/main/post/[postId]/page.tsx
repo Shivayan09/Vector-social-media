@@ -6,6 +6,7 @@ import axios from "axios";
 import PostCard from "@/components/feed/Postcard";
 import CommentsSection from "@/components/feed/CommentsSection";
 import Navbar from "@/components/Navbar";
+import SkeletonLoader from "@/components/loaders/SkeletonLoader";
 
 export default function PostPage() {
   const { postId } = useParams();
@@ -32,7 +33,7 @@ export default function PostPage() {
     if (postId) fetchPost();
   }, [postId]);
 
-  if (loading) return <p className="p-10">Loading...</p>;
+  if (loading) return <div className="p-10"><SkeletonLoader count={1} height="h-64" /></div>;
   if (!post) return <p className="p-10">Post not found</p>;
 
   return (
