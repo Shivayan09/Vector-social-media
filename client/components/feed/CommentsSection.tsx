@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { Trash2 } from "lucide-react";
 import DeleteWarning from "@/components/modals/DeleteWarning";
+import InlineLoader from "../loaders/InlineLoader";
 import type { Comment } from "@/lib/types";
 
 export default function CommentsSection({ postId }: { postId: string }) {
@@ -90,7 +91,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
     };
 
     if (loading) {
-        return <p className="text-sm text-gray-500">Loading comments...</p>;
+        return <div className="py-2"><InlineLoader text="Loading comments..." /></div>;
     }
 
     return (

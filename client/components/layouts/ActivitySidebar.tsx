@@ -6,6 +6,7 @@ import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import FollowButton from "../ui/FollowButton";
 import { useRouter } from "next/navigation";
+import InlineLoader from "../loaders/InlineLoader";
 
 type SuggestedUser = {
   _id: string;
@@ -133,7 +134,7 @@ export default function ActivitySidebar() {
 
         <div className="mt-5 flex flex-col gap-6 w-70 min-h-[60vh] max-h-[60vh] overflow-y-auto pr-1">
           {loading ? (
-            <p className="text-sm opacity-50">Loading users...</p>
+            <InlineLoader text="Loading users..." />
           ) : query.trim() ? (
             searching ? (
               <p className="text-sm opacity-50">Searching...</p>
