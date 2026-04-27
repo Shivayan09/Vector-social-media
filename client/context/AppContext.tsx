@@ -16,6 +16,7 @@ axios.defaults.withCredentials = true;
 export type User = {
   id: string;
   _id: string;
+  role?: "user" | "admin" | "moderator";
   name: string;
   surname: string;
   email: string;
