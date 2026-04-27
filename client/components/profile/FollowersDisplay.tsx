@@ -3,6 +3,7 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import UserRow from "./UserRow";
+import SkeletonLoader from "../loaders/SkeletonLoader";
 import type { UserSummary } from "@/lib/types";
 
 type Props = {
@@ -27,7 +28,7 @@ export default function FollowersDisplay({ userId, emptyText }: Props) {
         fetchFollowers();
     }, [BACKEND_URL, userId]);
 
-    if (loading) return <p className="text-center mt-6 text-white">Loading...</p>;
+    if (loading) return <div className="mt-6"><SkeletonLoader count={3} height="h-16" /></div>;
 
     if (users.length === 0) {
         return <p className="text-center text-gray-500 mt-6">{emptyText}</p>;

@@ -5,6 +5,7 @@ import axios from "axios";
 import PostList from "./PostList";
 import { useAppContext } from "@/context/AppContext";
 import CreatePostPopup from "./CreatePostPopup";
+import SkeletonLoader from "../loaders/SkeletonLoader";
 
 export default function Feed() {
     const { posts, setPosts } = useAppContext();
@@ -63,10 +64,8 @@ export default function Feed() {
         <div className="hide-scrollbar w-full px-5 md:px-10 pb-10">
             <PostList posts={posts} />
             {loading && (
-                <div className="flex flex-col gap-3 mt-4">
-                    {[...Array(3)].map((_, i) => (
-                        <div key={i} className="h-40 bg-gray-300 dark:bg-gray-700 rounded-lg animate-pulse" />
-                    ))}
+                <div className="mt-4">
+                    <SkeletonLoader count={3} height="h-40" />
                 </div>
             )}
             <div ref={observerTarget} className="h-10" />
