@@ -1,7 +1,7 @@
 "use client";
 
-import PremiumAuthPage from "@/components/forms/PremiumAuthPage";
+import RegistrationForm from "@/components/forms/RegistrationForm";
 
 export default function Register() {
-  return <PremiumAuthPage />;
+  return <RegistrationForm />;
 }
