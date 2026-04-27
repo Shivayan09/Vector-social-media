@@ -2,9 +2,9 @@
 
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { useAppContext } from "@/context/AppContext";
 import UserRow from "./UserRow";
 import SkeletonLoader from "../loaders/SkeletonLoader";
+import type { UserSummary } from "@/lib/types";
 
 type Props = {
     userId: string;
@@ -12,7 +12,7 @@ type Props = {
 };
 
 export default function FollowersDisplay({ userId, emptyText }: Props) {
-    const [users, setUsers] = useState<any[]>([]);
+    const [users, setUsers] = useState<UserSummary[]>([]);
     const [loading, setLoading] = useState(true);
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
@@ -26,7 +26,7 @@ export default function FollowersDisplay({ userId, emptyText }: Props) {
             }
         };
         fetchFollowers();
-    }, [userId]);
+    }, [BACKEND_URL, userId]);
 
     if (loading) return <div className="mt-6"><SkeletonLoader count={3} height="h-16" /></div>;
 

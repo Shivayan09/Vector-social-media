@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, ReactNode } from "react";
+import { useState, useEffect, useCallback, ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Home, Search, Bell, User, Plus, Menu, X, Settings, LogOut, Send } from "lucide-react";
@@ -10,6 +10,7 @@ import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import LogoutWarning from "../modals/LogoutWarning";
 import Themetoggle from "@/app/theme-toggle";
+import type { Notification, Post } from "@/lib/types";
 
 interface SidebarItemProps {
   icon: ReactNode;
@@ -33,7 +34,10 @@ export default function Sidebar() {
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    setOpen(false);
+    const timeoutId = window.setTimeout(() => {
+      setOpen(false);
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [pathname]);
 
   const handleLogout = async () => {
@@ -54,21 +58,31 @@ export default function Sidebar() {
     }
   };
 
-  const fetchUnreadCount = async () => {
+  const fetchUnreadCount = useCallback(async () => {
     try {
-      const { data } = await axios.get(`${BACKEND_URL}/api/notifications`, { withCredentials: true });
-      const unread = data.filter((n: any) => !n.isRead).length;
+      const { data } = await axios.get<Notification[]>(
+        `${BACKEND_URL}/api/notifications`,
+        { withCredentials: true }
+      );
+      const unread = data.filter((n) => !n.isRead).length;
       setUnreadCount(unread);
     } catch {
       console.error("Failed to fetch notifications");
     }
-  };
+  }, [BACKEND_URL]);
 
   useEffect(() => {
-    fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 10000);
-    return () => clearInterval(interval);
-  }, []);
+    const timeoutId = window.setTimeout(() => {
+      void fetchUnreadCount();
+    }, 0);
+    const interval = window.setInterval(() => {
+      void fetchUnreadCount();
+    }, 10000);
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.clearInterval(interval);
+    };
+  }, [fetchUnreadCount]);
 
   const isMain = pathname === "/main";
 
@@ -87,10 +101,11 @@ export default function Sidebar() {
         <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={() => setOpen(false)} />
       )}
 
-      <aside className={`fixed md:static top-0 left-0 z-50 h-screen text-white w-50 md:w-55 border-r border-black/5 shadow-lg flex flex-col gap-5 px-2 py-5 font-serif text-[1.1rem] backdrop-blur-3xl transform transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
+      <aside className={`fixed md:static top-0 left-0 z-50 h-screen overflow-y-auto hide-scrollbar text-white w-50 md:w-55 border-r border-black/5 shadow-lg flex flex-col gap-5 px-2 py-5 font-serif text-[1.1rem] backdrop-blur-3xl transform transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
         <div className="flex w-full">
           <div className="flex justify-center ml-3">
             <img
+              alt={userData?.name || "User avatar"}
               src={userData?.avatar || "/default-avatar.png"}
               className="h-12 w-12 rounded-full object-cover border shrink-0"
             />
@@ -174,7 +189,7 @@ export default function Sidebar() {
       {createOpen && (
         <CreateModal
           onClose={() => setCreateOpen(false)}
-          onPostCreated={(post) => {
+          onPostCreated={(post: Post) => {
             if (!post || !post._id) return;
             setPosts((prev) => [post, ...prev]);
           }}

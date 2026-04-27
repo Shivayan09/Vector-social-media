@@ -1,12 +1,21 @@
 "use client";
 
-import ExploreSidebar from "@/components/layouts/ExploreSidebar";
 import axios from "axios";
-import { ExternalLink, Search } from "lucide-react";
+import {
+  Compass,
+  ExternalLink,
+  Heart,
+  Lightbulb,
+  Search,
+  Shuffle,
+  Trophy,
+  TrendingUp,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import InlineLoader from "@/components/loaders/InlineLoader";
+import type { Intent } from "@/lib/types";
 
 type User = {
   _id: string;
@@ -15,17 +24,80 @@ type User = {
   avatar?: string;
 };
 
+type TopPost = {
+  _id: string;
+  content: string;
+  intent: Intent;
+  likes?: string[];
+  createdAt: string;
+  author?: {
+    username?: string;
+  };
+};
+
+const intentLabel: Record<Intent, string> = {
+  ask: "Ask",
+  build: "Build",
+  share: "Share",
+  discuss: "Discuss",
+  reflect: "Reflect",
+};
+
+const intentImage: Record<Intent, string> = {
+  ask: "/science.webp",
+  build: "/tech.png",
+  share: "/political.avif",
+  discuss: "/sports.avif",
+  reflect: "/kohli2.jpg",
+};
+
 export default function Explore() {
-  const [topPosts, setTopPosts] = useState<any[]>([]);
+  const [topPosts, setTopPosts] = useState<TopPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<User[]>([]);
   const [searching, setSearching] = useState(false);
   const [open, setOpen] = useState(false);
+  const [highlightedTopic, setHighlightedTopic] = useState<Intent | null>(null);
   const router = useRouter();
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  const topicCards = useMemo(() => {
+    const counts: Record<Intent, number> = {
+      ask: 0,
+      build: 0,
+      share: 0,
+      discuss: 0,
+      reflect: 0,
+    };
+
+    topPosts.forEach((post) => {
+      if (post.intent in counts) {
+        counts[post.intent] += 1;
+      }
+    });
+
+    return Object.entries(counts)
+      .map(([intent, count]) => ({
+        intent: intent as Intent,
+        label: intentLabel[intent as Intent],
+        count,
+      }))
+      .sort((a, b) => b.count - a.count)
+      .filter((topic) => topic.count > 0)
+      .slice(0, 3);
+  }, [topPosts]);
+
+  const trendingTopics = useMemo(() => {
+    return topPosts.slice(0, 5).map((post) => ({
+      id: post._id,
+      title: post.content,
+      likes: post.likes?.length || 0,
+      intent: post.intent,
+    }));
+  }, [topPosts]);
 
   useEffect(() => {
     const fetchTopPosts = async () => {
@@ -36,15 +108,24 @@ export default function Explore() {
         );
 
         setTopPosts(data.posts || []);
-      } catch (error: any) {
-        toast.error(error.message);
+      } catch (error: unknown) {
+        if (axios.isAxiosError(error)) {
+          toast.error(
+            error.response?.data?.message ||
+              "Failed to load explore data"
+          );
+        } else {
+          toast.error("Failed to load explore data");
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTopPosts();
-  }, []);
+    if (BACKEND_URL) {
+      fetchTopPosts();
+    }
+  }, [BACKEND_URL]);
 
   useEffect(() => {
     const delay = setTimeout(async () => {
@@ -57,7 +138,9 @@ export default function Explore() {
       try {
         setSearching(true);
         const res = await axios.get(
-          `${BACKEND_URL}/api/users/search?query=${query}`,
+          `${BACKEND_URL}/api/users/search?query=${encodeURIComponent(
+            query
+          )}`,
           { withCredentials: true }
         );
 
@@ -71,10 +154,17 @@ export default function Explore() {
     }, 400);
 
     return () => clearTimeout(delay);
-  }, [query]);
+  }, [query, BACKEND_URL]);
 
-  const handleClick = (post: any) => {
+  const handleClick = (post: TopPost) => {
     router.push(`/main/post/${post._id}`);
+  };
+
+  const handleRandomTopic = () => {
+    if (topicCards.length === 0) return;
+    const random =
+      topicCards[Math.floor(Math.random() * topicCards.length)];
+    setHighlightedTopic(random.intent);
   };
 
   useEffect(() => {
@@ -93,8 +183,7 @@ export default function Explore() {
   }, []);
 
   return (
-    <div className="flex">
-      <div className="w-full py-5 px-7">
+    <div className="w-full py-5 px-7">
         <p className="text-[1.6rem] font-semibold text-center md:text-left text-white">
           Explore
         </p>
@@ -165,34 +254,133 @@ export default function Explore() {
           )}
         </div>
 
-        {/* TRENDING */}
+        {/* TRENDING DOMAINS */}
         <div className="mt-5">
           <p className="font-semibold text-white">
             Trending domains
           </p>
 
-          <div className="flex justify-between my-5">
-            <div className="box h-35 w-[48%] rounded-md overflow-clip relative cursor-pointer hover:shadow-md">
-              <p className="absolute z-20 bottom-0 left-0 p-2 w-full flex items-center gap-2 bg-black/30 text-white">
-                <ExternalLink className="text-blue-500" />
-                Science and technology
-              </p>
-              <img
-                src="/science.webp"
-                className="h-full w-full object-cover object-bottom"
-              />
+          {loading ? (
+            <p className="text-gray-300 mt-3">Loading domains...</p>
+          ) : topicCards.length === 0 ? (
+            <p className="text-gray-300 mt-3">No active domains yet</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 my-5">
+              {topicCards.map((topic) => (
+                <div
+                  key={topic.intent}
+                  className={`box h-35 rounded-md overflow-hidden relative border cursor-pointer transition ${
+                    highlightedTopic === topic.intent
+                      ? "border-blue-400 shadow-lg"
+                      : "border-white/20 hover:shadow-md"
+                  }`}
+                >
+                  <p className="absolute z-20 bottom-0 left-0 p-2 w-full flex items-center justify-between bg-black/40 text-white text-sm">
+                    <span className="flex items-center gap-2">
+                      <ExternalLink className="text-blue-400 h-4" />
+                      {topic.label}
+                    </span>
+                    <span>{topic.count} posts</span>
+                  </p>
+                  <img
+                    src={intentImage[topic.intent]}
+                    alt={topic.label}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              ))}
             </div>
+          )}
+        </div>
 
-            <div className="box h-35 w-[48%] rounded-md overflow-clip relative cursor-pointer hover:shadow-md">
-              <p className="absolute z-20 bottom-0 left-0 p-2 w-full flex items-center gap-2 bg-black/30 text-white">
-                <ExternalLink className="text-blue-500" />
-                Sports
-              </p>
-              <img
-                src="/kohli2.jpg"
-                className="h-full w-full object-cover object-top"
-              />
-            </div>
+        {/* EXPLORE TOPICS */}
+        <div className="mt-5 p-4 rounded-xl border border-white/15 bg-black/15 backdrop-blur-xl text-white">
+          <p className="flex items-center gap-2 font-semibold">
+            <Compass className="h-5 text-blue-400" />
+            Explore topics
+          </p>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
+            {topicCards.slice(0, 2).map((topic) => (
+              <button
+                key={topic.intent}
+                type="button"
+                onClick={() => setHighlightedTopic(topic.intent)}
+                className="h-20 border border-white/15 rounded-md flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 transition"
+              >
+                {topic.intent === "build" ? (
+                  <Trophy className="h-4" />
+                ) : (
+                  <Lightbulb className="h-4" />
+                )}
+                <span className="text-sm">{topic.label}</span>
+              </button>
+            ))}
+
+            <button
+              type="button"
+              onClick={handleRandomTopic}
+              className="col-span-2 md:col-span-1 h-20 border border-white/15 rounded-md flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 transition"
+            >
+              <Shuffle className="h-4 opacity-80" />
+              <span className="text-sm">Random</span>
+            </button>
+          </div>
+
+          {highlightedTopic && (
+            <p className="text-sm text-blue-200 mt-3">
+              Highlighted topic: {intentLabel[highlightedTopic]}
+            </p>
+          )}
+        </div>
+
+        {/* TRENDING TOPICS */}
+        <div className="mt-5 p-4 rounded-xl border border-white/15 bg-black/15 backdrop-blur-xl text-white">
+          <p className="flex items-center gap-2 font-semibold">
+            <TrendingUp className="h-5 text-blue-400" />
+            Trending topics
+          </p>
+
+          <div className="mt-4 space-y-3">
+            {loading ? (
+              <p className="text-gray-300">Loading trending topics...</p>
+            ) : trendingTopics.length === 0 ? (
+              <p className="text-gray-300">No trending topics this week</p>
+            ) : (
+              trendingTopics.map((topic) => (
+                <button
+                  type="button"
+                  key={topic.id}
+                  onClick={() =>
+                    router.push(`/main/post/${topic.id}`)
+                  }
+                  className="w-full text-left flex items-start gap-3 rounded-md hover:bg-white/10 p-2 transition"
+                >
+                  <div className="h-11 w-11 rounded-md overflow-hidden bg-white/10 shrink-0">
+                    <img
+                      src={intentImage[topic.intent]}
+                      alt={intentLabel[topic.intent]}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm line-clamp-2">{topic.title}</p>
+                    <p className="text-xs text-blue-200 mt-1">
+                      #{intentLabel[topic.intent]}
+                    </p>
+                  </div>
+
+                  <p className="flex items-center gap-1 text-xs text-gray-200 pt-1">
+                    <Heart
+                      className="text-blue-400 h-4"
+                      fill="currentColor"
+                    />
+                    {topic.likes}
+                  </p>
+                </button>
+              ))
+            )}
           </div>
         </div>
 
@@ -256,9 +444,6 @@ export default function Explore() {
             )}
           </div>
         </div>
-      </div>
-
-      <ExploreSidebar />
     </div>
   );
 }

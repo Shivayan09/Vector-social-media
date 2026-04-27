@@ -17,8 +17,12 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         }
     }, [loading, isLoggedIn, router]);
 
-    if (loading || !isLoggedIn) {
-        return <GlobalLoader/>
+    if (loading) {
+        return <GlobalLoader />;
+    }
+
+    if (!isLoggedIn) {
+        return null;
     }
 
     return <>{children}</>;

@@ -2,16 +2,17 @@
 
 import { Edit } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import PostsDisplay from "./PostsDisplay";
 import FollowButton from "@/components/ui/FollowButton";
 import FollowersDisplay from "./FollowersDisplay";
 import FollowingDisplay from "./FollowingDisplay";
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
+import type { UserSummary } from "@/lib/types";
 
 type ProfileLayoutProps = {
-  user: any;
+  user: UserSummary;
   isFollowing?: boolean;
 };
 
@@ -21,15 +22,7 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
   const router = useRouter();
   const { userData } = useAppContext();
   const isSelfProfile = userData?.id === user._id;
-  const [followersCount, setFollowersCount] = useState(user.followers?.length || 0);
-  const [followingCount] = useState(user.following?.length || 0);
-  const [following, setFollowing] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    if (isFollowing !== undefined) {
-      setFollowing(isFollowing);
-    }
-  }, [isFollowing]);
+  const [following, setFollowing] = useState<boolean>(isFollowing ?? false);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
@@ -53,7 +46,7 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
 
         <div className="flex items-start gap-6 mt-5 md:mt-0">
 
-          <img src={user.avatar || "/default-avatar.png"} className="h-28 w-28 rounded-full object-cover border shrink-0"/>
+          <img alt={user.name || "Profile avatar"} src={user.avatar || "/default-avatar.png"} className="h-28 w-28 rounded-full object-cover border shrink-0"/>
 
           <div className="flex flex-col gap-2 w-full">
 
@@ -74,18 +67,11 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
               ) : (
                 <div className="flex gap-2 w-full sm:w-fit">
 
-                  {following === null ? (
-                    <div className="h-9 w-30 rounded-md bg-gray-700 animate-pulse" />
-                  ) : (
-                    <FollowButton
-                      userId={user._id}
-                      isFollowing={following}
-                      onFollowChange={(next) => {
-                        setFollowing(next);
-                        setFollowersCount((prev: number) => (next ? prev + 1 : prev - 1));
-                      }}
-                    />
-                  )}
+                  <FollowButton
+                    userId={user._id}
+                    isFollowing={following}
+                    onFollowChange={setFollowing}
+                  />
 
                   <button onClick={startChat} className="bg-blue-500 h-9 w-1/2 sm:w-30 text-white rounded-md cursor-pointer">
                     Chat
@@ -104,8 +90,8 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
           </p>
 
           <div className="flex justify-center gap-6 font-semibold mt-2 text-white">
-            <span>{user.followersCount} Followers</span>
-            <span>{user.followingCount} Following</span>
+            <span>{user.followersCount ?? user.followers?.length ?? 0} Followers</span>
+            <span>{user.followingCount ?? user.following?.length ?? 0} Following</span>
           </div>
         </div>
       </div>
@@ -114,7 +100,9 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
         {["posts", "followers", "following"].map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab as any)}
+            onClick={() =>
+              setActiveTab(tab as "posts" | "followers" | "following")
+            }
             className={`relative pb-2 font-semibold capitalize transition cursor-pointer whitespace-nowrap ${
               activeTab === tab
                 ? "text-blue-500 dark:text-blue-300"
@@ -136,8 +124,8 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
             userId={user._id}
             emptyText={
               isSelfProfile
-                ? "You haven't posted anything yet."
-                : "This user hasn't posted yet."
+                ? "You haven&apos;t posted anything yet."
+                : "This user hasn&apos;t posted yet."
             }
           />
         )}

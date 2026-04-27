@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "react-toastify";
 import { createPortal } from "react-dom";
+import { useMounted } from "@/lib/useMounted";
 
 type ReportPostProps = {
   open: boolean;
@@ -23,26 +24,14 @@ const REPORT_REASONS = [
 export default function ReportPost({ open, onClose, onSubmit }: ReportPostProps) {
   const [reason, setReason] = useState("");
   const [note, setNote] = useState("");
-  const [visible, setVisible] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (open) setVisible(true);
-  }, [open]);
+  const mounted = useMounted();
 
   if (!mounted) return null;
 
   const closeModal = () => {
-    setVisible(false);
-    setTimeout(() => {
-      onClose();
-      setReason("");
-      setNote("");
-    }, 200);
+    onClose();
+    setReason("");
+    setNote("");
   };
 
   const handleSubmit = () => {
@@ -55,14 +44,14 @@ export default function ReportPost({ open, onClose, onSubmit }: ReportPostProps)
   return createPortal(
     <div
       className={`fixed inset-0 z-9999 flex items-center justify-center bg-black/40 transition-opacity duration-200 ${
-        visible ? "opacity-100" : "opacity-0 pointer-events-none"
+        open ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
       onClick={closeModal}
     >
       <div
         onClick={(e) => e.stopPropagation()}
         className={`w-[90%] max-w-md rounded-xl bg-white dark:bg-blue-950 border p-5 shadow-lg transform transition-all duration-200 ${
-          visible ? "scale-100 translate-y-0" : "scale-95 translate-y-2"
+          open ? "scale-100 translate-y-0" : "scale-95 translate-y-2"
         }`}
       >
         <h2 className="text-[1.2rem] font-semibold text-blue-600 dark:text-white mb-3">
@@ -70,7 +59,7 @@ export default function ReportPost({ open, onClose, onSubmit }: ReportPostProps)
         </h2>
 
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Tell us what's wrong with this post.
+          Tell us what&apos;s wrong with this post.
         </p>
 
         <select
