@@ -15,7 +15,7 @@ export default function InlineLoader({
         aria-hidden="true"
         className="w-4 h-4 border-2 border-gray-300 dark:border-gray-600 border-t-blue-500 rounded-full animate-spin"
       />
-      {text && <span className="text-sm text-gray-600 dark:text-gray-400">{text}</span>}
+      {text && <span className="text-sm">{text}</span>}
     </div>
   );
 }
