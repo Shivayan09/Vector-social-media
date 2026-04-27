@@ -232,8 +232,12 @@ export default function NotificationPanel({ search = "" }: Props) {
                   if (selectMode) return;
 
                   if (n.type === "message") {
-                    router.push(`/main/chat/${n.sender.username}`);
-                    return;
+                    if (n.conversation?._id) {
+                      router.push(`/main/chat/${n.conversation._id}`);
+                    } else {
+                      console.error("Missing conversationId in notification", n);
+   
+                    }  return;
                   }
 
                   if (n.post?._id) {
