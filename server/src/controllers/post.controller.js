@@ -2,6 +2,20 @@ import Post from "../models/post.model.js";
 import Notification from "../models/notification.model.js";
 import cloudinary from "../config/cloudinary.js";
 
+export const removePostById = async (postId) => {
+    const post = await Post.findById(postId);
+    if (!post) {
+        return null;
+    }
+
+    if (post.imagePublicId) {
+        await cloudinary.uploader.destroy(post.imagePublicId);
+    }
+
+    await post.deleteOne();
+    return post;
+};
+
 export const createPost = async (req, res) => {
     try {
         const { content, intent } = req.body;
@@ -82,12 +96,8 @@ export const deletePost = async (req, res) => {
                 message: "You are not allowed to delete this post",
             });
         }
-        
-        if (post.imagePublicId) {
-            await cloudinary.uploader.destroy(post.imagePublicId);
-        }
 
-        await post.deleteOne();
+        await removePostById(postId);
         res.status(200).json({
             success: true,
             message: "Post deleted successfully",
