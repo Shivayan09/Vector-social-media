@@ -229,17 +229,15 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                                     Delete post
                                 </button>
                             )}
-                            {!isOwner && (
-                                <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-black/3 dark:hover:bg-white/5"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setMenuOpen(false);
-                                        setShowReportModal(true);
-                                    }}>
-                                    <Flag size={14} />
-                                    Report post
-                                </button>
-                            )}
+                            <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-black/3 dark:hover:bg-white/5"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setMenuOpen(false);
+                                    setShowReportModal(true);
+                                }}>
+                                <Flag size={14} />
+                                Report post
+                            </button>
                         </div>
                     )}
                 </div>

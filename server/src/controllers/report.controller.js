@@ -27,7 +27,7 @@ export const createPostReport = async (req, res) => {
       });
     }
 
-    const post = await Post.findById(postId).select("author");
+    const post = await Post.findById(postId);
     if (!post) {
       return res.status(404).json({ success: false, message: "Post not found" });
     }
@@ -36,7 +36,6 @@ export const createPostReport = async (req, res) => {
       targetType: "post",
       targetId: postId,
       reportedBy: reporterId,
-      status: { $in: ["open", "in_review"] },
     });
 
     if (existingReport) {
@@ -50,11 +49,8 @@ export const createPostReport = async (req, res) => {
       targetType: "post",
       targetId: postId,
       reportedBy: reporterId,
-      postAuthor: post.author,
       reason,
       details: details.trim(),
-      status: "open",
-      actionTaken: "none",
     });
 
     return res.status(201).json({
