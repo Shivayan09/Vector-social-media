@@ -11,6 +11,7 @@ import commentRoutes from "./src/routes/comment.routes.js";
 import notificationRoutes from "./src/routes/notification.routes.js";
 import messageRouter from "./src/routes/message.routes.js";
 import conversationRouter from "./src/routes/conversation.routes.js";
+import reportRouter from "./src/routes/report.routes.js";
 import { initSocket } from "./src/socket/socket.js";
 
 const app = express();
@@ -41,6 +42,7 @@ app.use("/api/comments", commentRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/messages", messageRouter);
 app.use("/api/conversation", conversationRouter);
+app.use("/api/reports", reportRouter);
 
 const PORT = process.env.PORT || 5000;
 

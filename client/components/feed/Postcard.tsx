@@ -9,7 +9,8 @@ import { toast } from "react-toastify";
 import PostDelete from "../modals/DeleteWarning";
 import ReportPost from "../modals/ReportPost";
 import { useRouter } from "next/navigation";
-import type { Post } from "@/lib/types";
+import type { Post, ReportReason } from "@/lib/types";
+import { reportPost } from "@/lib/reportApi";
 
 type PostCardProps = {
     post: Post;
@@ -120,7 +121,9 @@ export default function PostCard({ post, setPost }: PostCardProps) {
         }
     };
 
-    const handleReport = async () => { }
+    const handleReport = async (reason: ReportReason, details?: string) => {
+        await reportPost(post._id, reason, details);
+    };
 
     useEffect(() => {
         if (!menuOpen) return;
@@ -226,17 +229,15 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                                     Delete post
                                 </button>
                             )}
-                            {!isOwner && (
-                                <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-black/3 dark:hover:bg-white/5"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setMenuOpen(false);
-                                        setShowReportModal(true);
-                                    }}>
-                                    <Flag size={14} />
-                                    Report post
-                                </button>
-                            )}
+                            <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-black/3 dark:hover:bg-white/5"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setMenuOpen(false);
+                                    setShowReportModal(true);
+                                }}>
+                                <Flag size={14} />
+                                Report post
+                            </button>
                         </div>
                     )}
                 </div>
