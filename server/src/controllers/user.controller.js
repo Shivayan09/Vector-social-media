@@ -204,21 +204,15 @@ export const getAllUsers = async (req, res) => {
 
 export const getSuggestedUsers = async (req, res) => {
     try {
-        const currentUserId = req.user.id;
-        const currentUser = await User.findById(currentUserId);
-        if (!currentUser) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
-            });
-        }
+        const currentUserId = req.user._id || req.user.id;
+        const following = req.user.following || [];
 
         const suggestedUsers = await User.find({
             $and: [
                 { _id: { $ne: currentUserId } },
-                { _id: { $nin: currentUser.following } }
+                { _id: { $nin: following } }
             ]
-        }).select("-password").limit(10);
+        }).select("name username bio avatar followers following").limit(10);
 
         res.status(200).json({
             success: true,
