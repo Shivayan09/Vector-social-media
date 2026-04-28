@@ -42,7 +42,7 @@ export default function ActivitySidebar() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await axios.get(`${BACKEND_URL}/api/users/all`,{ withCredentials: true });
+        const res = await axios.get(`${BACKEND_URL}/api/users/suggestions`, { withCredentials: true });
         setUsers(res.data.users);
       } catch (err) {
         console.error("Failed to fetch users:", err);
@@ -86,15 +86,7 @@ export default function ActivitySidebar() {
       document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredUsers = users.filter((suggestedUser) => {
-    if (suggestedUser._id === userData?.id) {
-      return false;
-    }
-    if (userData?.following?.includes(suggestedUser._id)) {
-      return false;
-    }
-    return true;
-  });
+  const filteredUsers = users;
 
   const handleClick = (username?: string) => {
     if (!username) {
