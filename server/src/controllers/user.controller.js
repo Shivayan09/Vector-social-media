@@ -202,6 +202,37 @@ export const getAllUsers = async (req, res) => {
     }
 };
 
+export const getSuggestedUsers = async (req, res) => {
+    try {
+        const currentUserId = req.user.id;
+        const currentUser = await User.findById(currentUserId);
+        if (!currentUser) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        const suggestedUsers = await User.find({
+            $and: [
+                { _id: { $ne: currentUserId } },
+                { _id: { $nin: currentUser.following } }
+            ]
+        }).select("-password").limit(10);
+
+        res.status(200).json({
+            success: true,
+            users: suggestedUsers
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch suggested users",
+            error: error.message
+        });
+    }
+};
+
 export const searchUsers = async (req, res) => {
     try {
         const { query } = req.query;
