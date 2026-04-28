@@ -161,7 +161,6 @@ export const getMe = (req, res) => {
             name: user.name,
             surname: user.surname,
             email: user.email,
-            role: user.role,
             username: user.username,
             bio: user.bio,
             description: user.description,

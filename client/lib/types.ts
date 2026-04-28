@@ -8,7 +8,6 @@ export type Intent =
 export type UserSummary = {
   _id: string;
   id: string;
-  role?: "user" | "admin" | "moderator";
   name: string;
   surname?: string;
   email?: string;
