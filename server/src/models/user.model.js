@@ -63,12 +63,6 @@ const userSchema = new mongoose.Schema(
       default: "local",
     },
 
-    role: {
-      type: String,
-      enum: ["user", "admin", "moderator"],
-      default: "user",
-    },
-
     description: {
       type: String,
       trim: true,
