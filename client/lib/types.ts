@@ -63,6 +63,9 @@ export type Notification = {
   post?: {
     _id: string;
   };
+  conversation?: {
+    _id: string;
+  };
   isRead: boolean;
   createdAt: string;
 };
