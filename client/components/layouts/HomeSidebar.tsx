@@ -1,5 +1,5 @@
 "use client";
-import { Home, Search, Bell, User, Plus, TrendingUp, UserPlus, Compass, Lightbulb, Dumbbell, Activity, Trophy, Shuffle } from "lucide-react";
+import { TrendingUp, UserPlus } from "lucide-react";
 import { Button } from "../ui/button";
 
 export default function HomeSidebar() {

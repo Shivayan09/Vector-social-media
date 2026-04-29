@@ -13,8 +13,6 @@ const MODELS = [
 ];
 
 async function generateWithFallback(prompt) {
-    let lastError;
-
     for (const modelName of MODELS) {
         try {
             console.log(`⚡ Trying model: ${modelName}`);
@@ -38,7 +36,6 @@ async function generateWithFallback(prompt) {
 
             if (isRateLimit) {
                 console.warn(`⚠️ ${modelName} rate limited. Switching...`);
-                lastError = err;
                 continue;
             }
 

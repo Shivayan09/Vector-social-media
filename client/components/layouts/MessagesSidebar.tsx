@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
+import InlineLoader from "../loaders/InlineLoader";
 
 type SuggestedUser = {
     _id: string;
@@ -28,8 +29,6 @@ export default function MessagesSidebar() {
     const [query, setQuery] = useState("");
     const [results, setResults] = useState<User[]>([]);
     const [searching, setSearching] = useState(false);
-
-    // ✅ conversations
     const [conversations, setConversations] = useState<any[]>([]);
 
     const wrapperRef = useRef<HTMLDivElement>(null);
@@ -52,7 +51,7 @@ export default function MessagesSidebar() {
         fetchUsers();
     }, [BACKEND_URL]);
 
-    // 🔥 Fetch conversations (FIXED VERSION)
+    // 🔥 Fetch conversations
     useEffect(() => {
         const fetchConversations = async () => {
             try {
@@ -61,7 +60,6 @@ export default function MessagesSidebar() {
                     { withCredentials: true }
                 );
 
-                // 🔥 NO extra message fetch
                 const sorted = data.sort(
                     (a: any, b: any) =>
                         new Date(b.updatedAt).getTime() -
@@ -97,7 +95,7 @@ export default function MessagesSidebar() {
         return () => clearTimeout(delay);
     }, [query, BACKEND_URL]);
 
-    // Close sidebar on outside click
+    // Close sidebar
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
@@ -182,10 +180,7 @@ export default function MessagesSidebar() {
                                     className="flex items-center gap-2 p-2 rounded-md hover:bg-black/10 cursor-pointer"
                                 >
                                     <img
-                                        src={
-                                            otherUser?.avatar ||
-                                            "/default-avatar.png"
-                                        }
+                                        src={otherUser?.avatar || "/default-avatar.png"}
                                         className="h-10 w-10 rounded-full"
                                     />
 
@@ -194,7 +189,6 @@ export default function MessagesSidebar() {
                                             {otherUser?.name}
                                         </p>
 
-                                        {/* ✅ FIXED TEXT */}
                                         <p className="text-xs text-gray-400 truncate w-32">
                                             {convo.updatedAt
                                                 ? "Message sent"
@@ -202,12 +196,9 @@ export default function MessagesSidebar() {
                                         </p>
                                     </div>
 
-                                    {/* ✅ FIXED TIME */}
                                     <p className="text-xs text-gray-400 ml-auto">
                                         {convo.updatedAt
-                                            ? new Date(
-                                                  convo.updatedAt
-                                              ).toLocaleTimeString([], {
+                                            ? new Date(convo.updatedAt).toLocaleTimeString([], {
                                                   hour: "2-digit",
                                                   minute: "2-digit",
                                               })
@@ -219,11 +210,7 @@ export default function MessagesSidebar() {
                     )}
                 </div>
 
-                {/* Suggestions */}
-                <p className="text-[1.1rem] font-semibold text-white mb-2">
-                    Suggestions
-                </p>
-
+                {/* 🔍 SEARCH */}
                 <div className="mt-4 flex items-center gap-2 bg-white/10 px-3 py-2 rounded-md">
                     <Search className="h-4 w-4 text-gray-400" />
                     <input
@@ -235,21 +222,42 @@ export default function MessagesSidebar() {
                     />
                 </div>
 
-                <div className="mt-5 flex flex-col gap-2">
-                    {filteredUsers.map((u) => (
-                        <div
-                            key={u._id}
-                            onClick={() => startChat(u._id)}
-                            className="flex items-center gap-2 cursor-pointer"
-                        >
-                            <img
-                                src={u.avatar || "/default-avatar.png"}
-                                className="h-10 w-10 rounded-full"
-                            />
-                            <p className="text-white">{u.name}</p>
-                            <Send className="ml-auto opacity-60" />
-                        </div>
-                    ))}
+                <div className="mt-5 flex flex-col gap-2 w-fit min-h-[75vh] max-h-[60vh] overflow-y-auto hide-scrollbar pr-1">
+                    {loading ? (
+                        <InlineLoader text="Loading users..." />
+                    ) : query.trim() ? (
+                        searching ? (
+                            <p className="text-sm opacity-50">Searching...</p>
+                        ) : results.length === 0 ? (
+                            <p className="text-sm opacity-50">No users found.</p>
+                        ) : (
+                            results
+                                .filter((user) => user._id !== userData?.id)
+                                .map((user) => (
+                                    <div key={user._id} className="flex items-center gap-2">
+                                        <img src={user.avatar || "/default-avatar.png"} className="h-10 w-10 rounded-full" />
+                                        <div>
+                                            <p>{user.name}</p>
+                                            <p className="text-xs opacity-50">@{user.username}</p>
+                                        </div>
+                                    </div>
+                                ))
+                        )
+                    ) : filteredUsers.length === 0 ? (
+                        <p className="text-sm opacity-50">No users found.</p>
+                    ) : (
+                        filteredUsers.map((u) => (
+                            <div
+                                key={u._id}
+                                onClick={() => startChat(u._id)}
+                                className="flex items-center gap-2 cursor-pointer"
+                            >
+                                <img src={u.avatar || "/default-avatar.png"} className="h-10 w-10 rounded-full" />
+                                <p>{u.name}</p>
+                                <Send className="ml-auto opacity-60" />
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
         </>

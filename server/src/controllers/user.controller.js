@@ -202,6 +202,31 @@ export const getAllUsers = async (req, res) => {
     }
 };
 
+export const getSuggestedUsers = async (req, res) => {
+    try {
+        const currentUserId = req.user._id || req.user.id;
+        const following = req.user.following || [];
+
+        const suggestedUsers = await User.find({
+            $and: [
+                { _id: { $ne: currentUserId } },
+                { _id: { $nin: following } }
+            ]
+        }).select("name username bio avatar followers following").limit(10);
+
+        res.status(200).json({
+            success: true,
+            users: suggestedUsers
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch suggested users",
+            error: error.message
+        });
+    }
+};
+
 export const searchUsers = async (req, res) => {
     try {
         const { query } = req.query;

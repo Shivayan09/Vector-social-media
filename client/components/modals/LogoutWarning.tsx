@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "../ui/button";
 
 export default function LogoutWarning({
@@ -11,11 +11,7 @@ export default function LogoutWarning({
   onClose: () => void;
   onConfirm: () => void;
 }) {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    setVisible(true);
-  }, []);
+  const [visible, setVisible] = useState(true);
 
   const handleClose = () => {
     setVisible(false);

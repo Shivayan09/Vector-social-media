@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import axios from "axios";
-import { Camera, Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast } from "react-toastify";
@@ -83,7 +83,7 @@ export default function ProfileForm() {
                         <Button className="h-10 cursor-pointer bg-blue-500 text-white hover:bg-blue-600" onClick={() => fileRef.current?.click()}>
                             Upload picture
                         </Button>
-                        <Button className="h-10 cursor-pointer bg-black/70 dark:bg-white dark:hover:bg-white/70">
+                        <Button onClick={handleRemove} className="h-10 cursor-pointer bg-black/70 dark:bg-white dark:hover:bg-white/70">
                             Discard picture
                         </Button>
                     </div>
