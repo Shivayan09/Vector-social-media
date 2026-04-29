@@ -23,42 +23,72 @@ export default function ChatListPage() {
 
     useEffect(() => {
         const fetchConversations = async () => {
-            const { data: allConvos } = await axios.get(
-                `${BACKEND_URL}/api/conversation`,
-                { withCredentials: true }
-            );
+            try {
+                const { data: allConvos } = await axios.get(
+                    `${BACKEND_URL}/api/conversation`,
+                    { withCredentials: true }
+                );
 
-            const results = await Promise.all(
-                allConvos.map(async (convo: any) => {
-                    const { data: messages } = await axios.get(
-                        `${BACKEND_URL}/api/messages/${convo._id}`,
-                        { withCredentials: true }
-                    );
-                    return messages.length > 0 ? convo : null;
-                })
-            );
+                const results = await Promise.all(
+                    allConvos.map(async (convo: any) => {
+                        try {
+                            const { data: messages } = await axios.get(
+                                `${BACKEND_URL}/api/messages/${convo._id}`,
+                                { withCredentials: true }
+                            );
 
-            const validConvos = results.filter(Boolean);
+                            // ✅ FIX: safe last message extraction
+                            const lastMessage =
+                                messages && messages.length > 0
+                                    ? messages[messages.length - 1]
+                                    : null;
 
-            setConversations(validConvos);
+                            return {
+                                ...convo,
+                                lastMessage,
+                            };
+                        } catch {
+                            return {
+                                ...convo,
+                                lastMessage: null,
+                            };
+                        }
+                    })
+                );
 
-            const unreadCountEntries = await Promise.all(
-                validConvos.map(async (convo: any) => {
-                    try {
-                        const { data } = await axios.get(
-                            `${BACKEND_URL}/api/messages/${convo._id}/unread-count`,
-                            { withCredentials: true }
-                        );
-                        return [convo._id, data.unreadCount] as const;
-                    } catch {
-                        return [convo._id, 0] as const;
-                    }
-                })
-            );
+                // ❌ DO NOT FILTER conversations
+                const validConvos = results;
 
-            const counts = Object.fromEntries(unreadCountEntries) as Record<string, number>;
-            setUnreadCounts(counts);
-            setFilteredConversations(validConvos);
+                // ✅ sort safely
+                validConvos.sort(
+                    (a: any, b: any) =>
+                        new Date(b.lastMessage?.createdAt || b.updatedAt).getTime() -
+                        new Date(a.lastMessage?.createdAt || a.updatedAt).getTime()
+                );
+
+                setConversations(validConvos);
+
+                // unread count (unchanged)
+                const unreadCountEntries = await Promise.all(
+                    validConvos.map(async (convo: any) => {
+                        try {
+                            const { data } = await axios.get(
+                                `${BACKEND_URL}/api/messages/${convo._id}/unread-count`,
+                                { withCredentials: true }
+                            );
+                            return [convo._id, data.unreadCount] as const;
+                        } catch {
+                            return [convo._id, 0] as const;
+                        }
+                    })
+                );
+
+                const counts = Object.fromEntries(unreadCountEntries) as Record<string, number>;
+                setUnreadCounts(counts);
+                setFilteredConversations(validConvos);
+            } catch (error) {
+                console.error("Error fetching conversations", error);
+            }
         };
 
         if (userData?.id) fetchConversations();
@@ -164,24 +194,39 @@ export default function ChatListPage() {
                                     className="h-12 w-12 rounded-full object-cover"
                                 />
 
-                                <div>
+                                <div className="flex flex-col">
                                     <p className="font-semibold">
                                         {otherUser?.name}
                                     </p>
-                                    <p className="text-sm text-gray-400">
-                                        @{otherUser?.username}
+
+                                    {/* ✅ FIXED LAST MESSAGE */}
+                                    <p className="text-sm text-gray-400 truncate max-w-[200px]">
+                                    {convo.lastMessage
+                                        ? convo.lastMessage.text ||
+                                        convo.lastMessage.content ||
+                                        convo.lastMessage.message ||
+                                        "Unsupported message"
+                                        : "No messages yet"}
                                     </p>
                                 </div>
 
-                                <div className="w-full">
-                                    {unreadCounts[convo._id] > 0 && (
-                                    <div className="ml-auto w-6 mr-2 bg-red-500 text-white rounded-full h-6 flex items-center justify-center text-xs font-bold">
+                                {/* ✅ FIXED TIME */}
+                                <div className="text-xs text-gray-400 ml-auto">
+                                    {convo.lastMessage?.createdAt
+                                        ? new Date(convo.lastMessage.createdAt).toLocaleTimeString([], {
+                                              hour: "2-digit",
+                                              minute: "2-digit",
+                                          })
+                                        : ""}
+                                </div>
+
+                                {unreadCounts[convo._id] > 0 && (
+                                    <div className="ml-2 bg-red-500 text-white rounded-full h-6 w-6 flex items-center justify-center text-xs font-bold">
                                         {unreadCounts[convo._id]}
                                     </div>
                                 )}
-                                </div>
 
-                                <ArrowRight className="ml-auto opacity-70" />
+                                <ArrowRight className="ml-2 opacity-70" />
 
                                 <Trash2
                                     onClick={(e) =>
