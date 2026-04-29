@@ -5,7 +5,7 @@ import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import { Trash2 } from "lucide-react";
+import { Trash2, MessageCircle, UserPlus } from "lucide-react";
 import ConfirmModal from "./modals/DeleteWarning";
 import type { Notification } from "@/lib/types";
 
@@ -23,6 +23,8 @@ export default function NotificationPanel({ search = "" }: Props) {
   const [warningOpen, setWarningOpen] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
+  const [followLoading, setFollowLoading] = useState<Record<string, boolean>>({});
+  const [messageLoading, setMessageLoading] = useState<Record<string, boolean>>({});
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -134,6 +136,60 @@ export default function NotificationPanel({ search = "" }: Props) {
       console.error(err);
     }
   }, [BACKEND_URL, notifications]);
+
+  const isFollowingUser = (userId: string) => {
+    return userData?.following?.includes(userId) ?? false;
+  };
+
+  const handleFollowBack = async (senderId: string) => {
+    try {
+      setFollowLoading((prev) => ({ ...prev, [senderId]: true }));
+      const res = await axios.put(
+        `${BACKEND_URL}/api/users/${senderId}/follow`,
+        {},
+        { withCredentials: true }
+      );
+      if (res.data.followed) {
+        toast.success("Followed successfully");
+      } else {
+        toast.success("Unfollowed successfully");
+      }
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        toast.error(err.response?.data?.message || "Follow action failed");
+      } else {
+        toast.error("Follow action failed");
+      }
+    } finally {
+      setFollowLoading((prev) => ({ ...prev, [senderId]: false }));
+    }
+  };
+
+  const handleReplyToMessage = async (notificationId: string, senderId: string, conversationId?: string) => {
+    try {
+      setMessageLoading((prev) => ({ ...prev, [notificationId]: true }));
+
+      if (conversationId) {
+        router.push(`/main/chat/${conversationId}`);
+        return;
+      }
+
+      const { data } = await axios.post(
+        `${BACKEND_URL}/api/conversation`,
+        { receiverId: senderId },
+        { withCredentials: true }
+      );
+      router.push(`/main/chat/${data._id}`);
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        toast.error(err.response?.data?.message || "Failed to open chat");
+      } else {
+        toast.error("Failed to open chat");
+      }
+    } finally {
+      setMessageLoading((prev) => ({ ...prev, [notificationId]: false }));
+    }
+  };
 
   useEffect(() => {
     if (!userData) return;
@@ -258,15 +314,53 @@ export default function NotificationPanel({ search = "" }: Props) {
                 </div>
 
                 {!selectMode && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteSingle(n._id);
-                    }}
-                    className="text-white ml-auto"
-                  >
-                    <Trash2 className="h-5 cursor-pointer" />
-                  </button>
+                  <div className="flex items-center gap-2 ml-auto">
+                    {n.type === "message" && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
+                        }}
+                        disabled={messageLoading[n._id]}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:opacity-70 text-white rounded-md transition"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        {messageLoading[n._id] ? "Loading..." : "Reply"}
+                      </button>
+                    )}
+                    {n.type === "follow" && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!isFollowingUser(n.sender._id)) {
+                            handleFollowBack(n.sender._id);
+                          }
+                        }}
+                        disabled={followLoading[n.sender._id] || isFollowingUser(n.sender._id)}
+                        className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-md transition ${
+                          isFollowingUser(n.sender._id)
+                            ? "bg-gray-600 text-gray-300 cursor-default"
+                            : "bg-blue-600 hover:bg-blue-700 text-white"
+                        }`}
+                      >
+                        <UserPlus className="h-4 w-4" />
+                        {followLoading[n.sender._id]
+                          ? "Loading..."
+                          : isFollowingUser(n.sender._id)
+                          ? "Following"
+                          : "Follow back"}
+                      </button>
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteSingle(n._id);
+                      }}
+                      className="text-white p-1 hover:text-red-400 transition"
+                    >
+                      <Trash2 className="h-5 cursor-pointer" />
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
