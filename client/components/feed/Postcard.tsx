@@ -185,7 +185,6 @@ export default function PostCard({ post, setPost }: PostCardProps) {
         <div className="border overflow-clip relative border-black/10 bg-black/10 backdrop-blur-3xl cursor-pointer hover:shadow-lg px-5 py-3 rounded-2xl transition"
             onClick={openPost}>
             <div className="flex items-center justify-between mb-1">
-                //done changes- made the container of width 90% and separated intent and user info into 2 divs instead of absolute positioning, the container wraps intent on next line and justifies between on meduim and above screens.
                 <div className="flex items-center flex-wrap sm:justify-between w-[90%]">
                     <div className="flex items-center gap-2">
                     <div className="h-8 md:h-12 w-8 md:w-12 rounded-full transition-all duration-200" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
@@ -258,7 +257,6 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                     <img src={post.image} alt="Post attachment" className="w-full h-full object-cover" />
                 </div>
             )}
-            // done changes- the p tags align items in column on small screens and container takes full width on small screens while w-2/3 on meduim and above screens.
             <div className="flex w-full gap-x-2 sm:justify-between text-white border-t border-white/20 dark:border-white/10 pt-3">
                 <div className="flex items-center w-full gap-4 sm:justify-between sm:w-2/3 text-gray-200 dark:text-gray-300 text-sm">
                     <p className="flex flex-col text-center gap-2 sm:flex-row items-center cursor-pointer hover:text-blue-500 md:w-[20%] justify-center">
