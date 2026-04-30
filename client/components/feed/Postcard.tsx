@@ -185,7 +185,9 @@ export default function PostCard({ post, setPost }: PostCardProps) {
         <div className="border overflow-clip relative border-black/10 bg-black/10 backdrop-blur-3xl cursor-pointer hover:shadow-lg px-5 py-3 rounded-2xl transition"
             onClick={openPost}>
             <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
+                //done changes- made the container of width 90% and separated intent and user info into 2 divs instead of absolute positioning, the container wraps intent on next line and justifies between on meduim and above screens.
+                <div className="flex items-center flex-wrap sm:justify-between w-[90%]">
+                    <div className="flex items-center gap-2">
                     <div className="h-8 md:h-12 w-8 md:w-12 rounded-full transition-all duration-200" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
                         <img alt={post.author?.name || "Post author"} src={post?.author?.avatar || "/default-avatar.png"} className="h-full w-full rounded-full object-cover" />
                     </div>
@@ -193,7 +195,9 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                     <span className="text-[0.9rem] text-white/60 transition-all duration-200 hover:text-white/80" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
                         @{post?.author?.username}
                     </span>
-                    <p className="absolute left-195 text-[0.9rem] font-semibold text-blue-500 flex items-center gap-1.5">
+                    </div>
+                    <div className="w-full sm:w-auto">
+                    <p className="text-[0.9rem] font-semibold text-blue-500 flex items-center gap-1.5 truncate">
                         Intent:
                         {(() => {
                             const Icon = post.intent ? intentIconMap[post.intent] : null;
@@ -201,6 +205,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                         })()}
                         <span className="capitalize">{post.intent}</span>
                     </p>
+                    </div>
                 </div>
 
                 <div ref={menuRef} className="relative">
@@ -253,26 +258,26 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                     <img src={post.image} alt="Post attachment" className="w-full h-full object-cover" />
                 </div>
             )}
-
-            <div className="flex justify-between text-white border-t border-white/20 dark:border-white/10 pt-3">
-                <div className="flex items-center justify-between w-2/3 text-gray-200 dark:text-gray-300 text-sm">
-                    <p className="flex gap-1 items-center cursor-pointer hover:text-blue-500 md:w-[20%] justify-center">
+            // done changes- the p tags align items in column on small screens and container takes full width on small screens while w-2/3 on meduim and above screens.
+            <div className="flex w-full gap-x-2 sm:justify-between text-white border-t border-white/20 dark:border-white/10 pt-3">
+                <div className="flex items-center w-full gap-4 sm:justify-between sm:w-2/3 text-gray-200 dark:text-gray-300 text-sm">
+                    <p className="flex flex-col text-center gap-2 sm:flex-row items-center cursor-pointer hover:text-blue-500 md:w-[20%] justify-center">
                         <MessageCircle className="h-4.5 md:h-5 hover:text-blue-500" />
                         {post.commentsCount || 0} {post.commentsCount === 1 ? 'Comment' : 'Comments'}
                     </p>
 
-                    <p onClick={handleShare} className="flex gap-1 items-center cursor-pointer md:w-[20%] justify-center hover:text-blue-500">
+                    <p onClick={handleShare} className="flex flex-col text-center sm:flex-row gap-1 items-center cursor-pointer hover:text-blue-500 md:w-[20%] justify-center">
                         <Forward className="h-4.5 md:h-5" />{post.sharesCount || 0} {post.sharesCount === 1 ? 'Share' : 'Shares'}
                     </p>
 
-                    <p onClick={(e) => { e.stopPropagation(); handleLike() }} className="flex gap-1 items-center md:w-[20%] justify-center cursor-pointer hover:text-blue-500">
+                    <p onClick={(e) => { e.stopPropagation(); handleLike() }} className="flex flex-col text-center sm:flex-row gap-1 items-center cursor-pointer hover:text-blue-500 md:w-[20%] justify-center">
                         <Heart className={`h-4.5 md:h-5 cursor-pointer transition-transform duration-300 hover:text-blue-500 ${isLiked ? "text-blue-500" : ""} ${likeAnimating ? "scale-135" : "scale-100"}`} fill={isLiked ? "currentColor" : "none"} />
                         {post.likes.length} {post.likes.length === 1 ? 'Like' : 'Likes'}
                     </p>
                 </div>
 
                 <div>
-                    <p className="text-[0.85rem]">{timeAgo(post.createdAt)}</p>
+                    <p className="text-sm sm:text-md">{timeAgo(post.createdAt)}</p>
                 </div>
             </div>
 
