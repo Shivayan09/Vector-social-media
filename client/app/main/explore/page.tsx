@@ -103,7 +103,7 @@ export default function Explore() {
     const fetchTopPosts = async () => {
       try {
         const { data } = await axios.get(
-          `${BACKEND_URL}/api/posts/top-week`,
+          `${BACKEND_URL}/api/posts/top-month`,
           { withCredentials: true }
         );
 
@@ -345,7 +345,7 @@ export default function Explore() {
             {loading ? (
               <p className="text-gray-300">Loading trending topics...</p>
             ) : trendingTopics.length === 0 ? (
-              <p className="text-gray-300">No trending topics this week</p>
+              <p className="text-gray-300">No trending topics this month</p>
             ) : (
               trendingTopics.map((topic) => (
                 <button
@@ -387,7 +387,7 @@ export default function Explore() {
         {/* TOP POSTS */}
         <div className="mt-5">
           <p className="font-semibold text-white">
-            Top posts of the week
+            Top posts of the month
           </p>
 
           <div className="flex flex-col gap-5 md:flex-row items-center mt-5">
@@ -395,7 +395,7 @@ export default function Explore() {
               <InlineLoader text="Loading top posts..." className="text-gray-300" />
             ) : topPosts.length === 0 ? (
               <p className="text-gray-300">
-                No trending posts this week
+                No trending posts this month
               </p>
             ) : (
               topPosts

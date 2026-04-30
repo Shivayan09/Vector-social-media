@@ -183,6 +183,29 @@ export const getTopPostsOfWeek = async (req, res) => {
         });
     }
 };
+
+export const getTopPostsOfMonth = async (req, res) => {
+    try {
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
+        
+        const posts = await Post.find({ createdAt: { $gte: oneMonthAgo } })
+            .populate("author", "username name surname avatar")
+            .sort({ likes: -1 })
+            .limit(10);
+        
+        res.status(200).json({
+            success: true,
+            posts
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
 export const incrementShare = async (req, res) => {
     try {
         const post = await Post.findByIdAndUpdate(
