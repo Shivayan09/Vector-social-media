@@ -216,3 +216,21 @@ export const searchUsers = async (req, res) => {
         });
     }
 };
+export const getSuggestedUsers = async (req, res) => {
+  try {
+    const currentUserId = req.user.id;
+
+    const currentUser = await User.findById(currentUserId);
+
+    const users = await User.find({
+      _id: { 
+        $ne: currentUserId, 
+        $nin: currentUser.following || []
+      }
+    }).select("_id name username avatar");
+
+    res.json({ users });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch suggested users" });
+  }
+};

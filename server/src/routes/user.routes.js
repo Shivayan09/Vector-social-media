@@ -1,7 +1,7 @@
 import express from "express";
 import authMiddleware from "../middlewares/auth.middleware.js";
 import upload from "../middlewares/upload.middleware.js";
-import { getAllUsers, getFollowers, getFollowing, getUserProfile, searchUsers, toggleFollowUser, updateProfile, uploadAvatar } from "../controllers/user.controller.js";
+import { getAllUsers, getFollowers, getFollowing, getUserProfile, searchUsers, toggleFollowUser, updateProfile, uploadAvatar, getSuggestedUsers } from "../controllers/user.controller.js";
 
 const userRouter = express.Router();
 
@@ -13,5 +13,6 @@ userRouter.get("/search", searchUsers);
 userRouter.get("/:username", getUserProfile);
 userRouter.get("/:id/followers", authMiddleware, getFollowers);
 userRouter.get("/:id/following", authMiddleware, getFollowing);
+userRouter.get("/suggested", authMiddleware, getSuggestedUsers);
 
 export default userRouter;
