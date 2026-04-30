@@ -7,16 +7,18 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { Trash2 } from "lucide-react";
 import DeleteWarning from "@/components/modals/DeleteWarning";
+import InlineLoader from "../loaders/InlineLoader";
+import type { Comment } from "@/lib/types";
 
 export default function CommentsSection({ postId }: { postId: string }) {
     const { userData } = useAppContext();
-    const [comments, setComments] = useState<any[]>([]);
+    const [comments, setComments] = useState<Comment[]>([]);
     const [text, setText] = useState("");
     const [loading, setLoading] = useState(true);
     const router = useRouter();
     const [buttonLoading, setButtonLoading] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [selectedComment, setSelectedComment] = useState<any>(null);
+    const [selectedComment, setSelectedComment] = useState<Comment | null>(null);
 
     function timeAgo(dateString: string) {
         const now = new Date().getTime();
@@ -42,7 +44,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
             setLoading(false);
         };
         fetchComments();
-    }, [postId]);
+    }, [BACKEND_URL, postId]);
 
     const handlePost = async () => {
         try {
@@ -50,8 +52,12 @@ export default function CommentsSection({ postId }: { postId: string }) {
             const { data } = await axios.post(`${BACKEND_URL}/api/comments/${postId}`, { content: text }, { withCredentials: true });
             setComments(prev => [...prev, data]);
             setText("");
-        } catch (error: any) {
-            toast.error(error.message);
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                toast.error(error.message);
+            } else {
+                toast.error("Failed to post comment");
+            }
         } finally {
             setButtonLoading(false);
         }
@@ -72,8 +78,12 @@ export default function CommentsSection({ postId }: { postId: string }) {
             await axios.delete(`${BACKEND_URL}/api/comments/${selectedComment._id}`, { withCredentials: true });
             setComments(prev => prev.filter(c => c._id !== selectedComment._id));
             toast.success("Comment deleted");
-        } catch (error: any) {
-            toast.error(error.message);
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                toast.error(error.message);
+            } else {
+                toast.error("Failed to delete comment");
+            }
         } finally {
             setShowDeleteModal(false);
             setSelectedComment(null);
@@ -81,7 +91,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
     };
 
     if (loading) {
-        return <p className="text-sm text-gray-500">Loading comments...</p>;
+        return <div className="py-2"><InlineLoader text="Loading comments..." /></div>;
     }
 
     return (
@@ -108,7 +118,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
 
                     return (
                         <div key={c._id} className="flex gap-3 py-3 px-2 rounded-lg">
-                            <img src={c.author?.avatar || "/default-avatar.png"} className="h-8 w-8 md:h-9 md:w-9 object-cover rounded-full shrink-0"/>
+                            <img alt={c.author?.name || "Comment author"} src={c.author?.avatar || "/default-avatar.png"} className="h-8 w-8 md:h-9 md:w-9 object-cover rounded-full shrink-0"/>
 
                             <div className="flex flex-col w-full">
 

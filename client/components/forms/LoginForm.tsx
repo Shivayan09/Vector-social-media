@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import { GoogleLogin } from "@react-oauth/google";
+import type { GoogleCredentialResponseLite } from "@/lib/types";
 
 export default function LoginForm() {
     const router = useRouter();
@@ -24,7 +25,7 @@ export default function LoginForm() {
         if (isLoggedIn) {
             router.replace("/main");
         }
-    }, [isLoggedIn]);
+    }, [isLoggedIn, router]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -54,9 +55,11 @@ export default function LoginForm() {
         }
     };
 
-    const handleGoogle = async (credentialResponse: any) => {
+    const handleGoogle = async (
+        credentialResponse: GoogleCredentialResponseLite
+    ) => {
         try {
-            const { data } = await axios.post(
+            await axios.post(
                 BACKEND_URL + "/api/auth/google",
                 { credential: credentialResponse.credential },
                 { withCredentials: true }
@@ -146,7 +149,7 @@ export default function LoginForm() {
 
             <div className="flex items-center justify-between mt-3">
                 <p className="text-[0.9rem] mt-3 text-white">
-                    Don't have an account?
+                    Don&apos;t have an account?
                 </p>
                 <span
                     className=" font-semibold underline cursor-pointer mt-1 text-white"

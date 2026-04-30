@@ -2,7 +2,7 @@
 
 import { X } from "lucide-react";
 import { createPortal } from "react-dom";
-import { useEffect, useState } from "react";
+import { useMounted } from "@/lib/useMounted";
 
 type ConfirmModalProps = {
   open: boolean;
@@ -23,11 +23,7 @@ export default function ConfirmModal({
   confirmText = "Delete",
   content,
 }: ConfirmModalProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useMounted();
 
   if (!mounted) return null;
 

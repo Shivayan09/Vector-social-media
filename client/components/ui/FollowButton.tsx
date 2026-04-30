@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 type FollowButtonProps = {
   userId: string;
@@ -12,11 +12,6 @@ export default function FollowButton({ userId, isFollowing, onFollowChange }: Fo
   const [following, setFollowing] = useState(isFollowing);
   const [loading, setLoading] = useState(false);
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
-
-  useEffect(() => {
-    setFollowing(isFollowing);
-  }, [isFollowing]);
-
   const toggleFollow = async () => {
     try {
       setLoading(true);
@@ -24,8 +19,10 @@ export default function FollowButton({ userId, isFollowing, onFollowChange }: Fo
       const next = res.data.followed;
       setFollowing(next);
       onFollowChange?.(next);
-    } catch (err: any) {
-      console.error(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error(err.message);
+      }
     } finally {
       setLoading(false);
     }

@@ -1,17 +1,7 @@
 import express from "express";
 import authMiddleware from "../middlewares/auth.middleware.js";
 import upload from "../middlewares/upload.middleware.js";
-import {
-  getAllUsers,
-  getFollowers,
-  getFollowing,
-  getUserProfile,
-  searchUsers,
-  toggleFollowUser,
-  updateProfile,
-  uploadAvatar,
-  getSuggestedUsers,
-} from "../controllers/user.controller.js";
+import { getAllUsers, getFollowers, getFollowing, getUserProfile, searchUsers, toggleFollowUser, updateProfile, uploadAvatar, getSuggestedUsers } from "../controllers/user.controller.js";
 
 const userRouter = express.Router();
 

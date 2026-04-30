@@ -1,7 +1,7 @@
 import Notification from "../models/notification.model.js";
 
 export const getNotifications = async (req, res) => {
-    const notifications = await Notification.find({ recipient: req.user._id, }).populate("sender", "name username avatar").populate("post").sort({ createdAt: -1 });
+    const notifications = await Notification.find({ recipient: req.user._id, }).populate("sender", "name username avatar").populate("post").populate("conversation").sort({ createdAt: -1 });
     return res.json(notifications);
 };
 
@@ -25,7 +25,7 @@ export const deleteNotification = async (req, res) => {
             });
         }
         return res.json({ success: true });
-    } catch (err) {
+    } catch {
         return res.status(500).json({
             success: false,
             message: "Server error"
@@ -46,7 +46,7 @@ export const deleteMultipleNotifications = async (req, res) => {
         return res.json({
             success: true
         });
-    } catch (err) {
+    } catch {
         return res.status(500).json({
             success: false,
             message: "Server error"

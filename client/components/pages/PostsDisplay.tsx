@@ -13,7 +13,7 @@ export default function PostsDislpay() {
             <div className="flex flex-col gap-6">
                 {userPosts.length === 0 ? (
                     <p className="text-gray-500">
-                        You haven't posted anything yet.
+                        You haven&apos;t posted anything yet.
                     </p>
                 ) : (
                     userPosts.map((post) => (

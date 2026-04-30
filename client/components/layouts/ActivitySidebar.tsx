@@ -6,6 +6,7 @@ import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import FollowButton from "../ui/FollowButton";
 import { useRouter } from "next/navigation";
+import InlineLoader from "../loaders/InlineLoader";
 
 type SuggestedUser = {
   _id: string;
@@ -41,7 +42,7 @@ export default function ActivitySidebar() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await axios.get(`${BACKEND_URL}/api/users/all`,{ withCredentials: true });
+        const res = await axios.get(`${BACKEND_URL}/api/users/suggestions`, { withCredentials: true });
         setUsers(res.data.users);
       } catch (err) {
         console.error("Failed to fetch users:", err);
@@ -85,15 +86,7 @@ export default function ActivitySidebar() {
       document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredUsers = users.filter((suggestedUser) => {
-    if (suggestedUser._id === userData?.id) {
-      return false;
-    }
-    if (userData?.following?.includes(suggestedUser._id)) {
-      return false;
-    }
-    return true;
-  });
+  const filteredUsers = users;
 
   const handleClick = (username?: string) => {
     if (!username) {
@@ -133,7 +126,7 @@ export default function ActivitySidebar() {
 
         <div className="mt-5 flex flex-col gap-6 w-70 min-h-[60vh] max-h-[60vh] overflow-y-auto pr-1">
           {loading ? (
-            <p className="text-sm opacity-50">Loading users...</p>
+            <InlineLoader text="Loading users..." />
           ) : query.trim() ? (
             searching ? (
               <p className="text-sm opacity-50">Searching...</p>

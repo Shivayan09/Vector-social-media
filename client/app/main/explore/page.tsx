@@ -14,6 +14,8 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
+import InlineLoader from "@/components/loaders/InlineLoader";
+import type { Intent } from "@/lib/types";
 
 type User = {
   _id: string;
@@ -21,8 +23,6 @@ type User = {
   username?: string;
   avatar?: string;
 };
-
-type Intent = "ask" | "build" | "share" | "discuss" | "reflect";
 
 type TopPost = {
   _id: string;
@@ -110,11 +110,15 @@ export default function Explore() {
         );
 
         setTopPosts(data.posts || []);
-      } catch (error: any) {
-        toast.error(
-          error?.response?.data?.message ||
-            "Failed to load explore data"
-        );
+      } catch (error: unknown) {
+        if (axios.isAxiosError(error)) {
+          toast.error(
+            error.response?.data?.message ||
+              "Failed to load explore data"
+          );
+        } else {
+          toast.error("Failed to load explore data");
+        }
       } finally {
         setLoading(false);
       }
@@ -451,9 +455,7 @@ useEffect(() => {
 
           <div className="flex flex-col gap-5 md:flex-row items-center mt-5">
             {loading ? (
-              <p className="text-gray-300">
-                Loading top posts...
-              </p>
+              <InlineLoader text="Loading top posts..." className="text-gray-300" />
             ) : topPosts.length === 0 ? (
               <p className="text-gray-300">
                 No trending posts this week

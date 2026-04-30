@@ -90,8 +90,12 @@ export default function RegistrationForm() {
       await refreshAuth();
       toast.success("Account created successfully!");
       router.replace("/main");
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Something went wrong");
+      }
     } finally {
       setLoading(false);
     }
@@ -181,7 +185,7 @@ export default function RegistrationForm() {
           <div className="flex justify-center my-5">
             <div onClick={() => fileRef.current?.click()} className="h-28 w-28 relative group flex items-center justify-center border border-black/10 rounded-full outline-2 outline-neutral-200 bg-white/10 transition-all duration-200 hover:outline-4 cursor-pointer overflow-hidden" >
               {preview ? (
-                <img src={preview} className="h-full w-full object-cover rounded-full" />
+                <img alt="Profile preview" src={preview} className="h-full w-full object-cover rounded-full" />
               ) : (
                 <Plus className="h-10 w-10 opacity-50" />
               )}

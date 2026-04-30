@@ -9,8 +9,15 @@ const postSchema = new mongoose.Schema({
 
   content: {
     type: String,
-    required: true,
     maxlength: 1000
+  },
+
+  image: {
+    type: String,
+  },
+
+  imagePublicId: {
+    type: String,
   },
 
   intent: {
@@ -25,6 +32,11 @@ const postSchema = new mongoose.Schema({
   }],
 
   commentsCount: {
+    type: Number,
+    default: 0,
+  },
+
+  sharesCount: {
     type: Number,
     default: 0,
   },
