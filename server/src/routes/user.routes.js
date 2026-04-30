@@ -1,7 +1,18 @@
 import express from "express";
 import authMiddleware from "../middlewares/auth.middleware.js";
 import upload from "../middlewares/upload.middleware.js";
-import { getAllUsers, getFollowers, getFollowing, getUserProfile, searchUsers, toggleFollowUser, updateProfile, uploadAvatar, getSuggestedUsers } from "../controllers/user.controller.js";
+
+import {
+  getAllUsers,
+  getFollowers,
+  getFollowing,
+  getUserProfile,
+  searchUsers,
+  toggleFollowUser,
+  updateProfile,
+  uploadAvatar,
+  getSuggestedUsers
+} from "../controllers/user.controller.js";
 
 const userRouter = express.Router();
 
@@ -11,11 +22,11 @@ userRouter.put("/:id/follow", authMiddleware, toggleFollowUser);
 
 userRouter.get("/all", getAllUsers);
 userRouter.get("/search", searchUsers);
-userRouter.get("/suggested", authMiddleware, getSuggestedUsers); 
+userRouter.get("/suggested", authMiddleware, getSuggestedUsers); // ✅ correct
 
 userRouter.get("/:id/followers", authMiddleware, getFollowers);
 userRouter.get("/:id/following", authMiddleware, getFollowing);
 
-userRouter.get("/:username", getUserProfile); 
+userRouter.get("/:username", getUserProfile); // ✅ always last
 
 export default userRouter;
