@@ -210,11 +210,12 @@ export const searchUsers = async (req, res) => {
         }
         const users = await User.find({ $or: [{ name: { $regex: query, $options: "i" } }, { username: { $regex: query, $options: "i" } }] }).select("-password").limit(10);
         res.json({ users });
-    } catch {
-        res.status(500).json({
-            message: "Search failed"
-        });
-    }
+   } catch (error) {
+    console.error(error);
+    res.status(500).json({
+        message: "Search failed"
+    });
+}
 };
 export const getSuggestedUsers = async (req, res) => {
   try {
