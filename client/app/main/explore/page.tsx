@@ -59,6 +59,8 @@ export default function Explore() {
   const [searching, setSearching] = useState(false);
   const [open, setOpen] = useState(false);
   const [highlightedTopic, setHighlightedTopic] = useState<Intent | null>(null);
+  const [suggestedUsers, setSuggestedUsers] = useState<User[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
   const router = useRouter();
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -126,6 +128,26 @@ export default function Explore() {
       fetchTopPosts();
     }
   }, [BACKEND_URL]);
+  
+useEffect(() => {
+  const fetchSuggestedUsers = async () => {
+    try {
+      const res = await axios.get(
+        `${BACKEND_URL}/api/users/suggested`,
+        { withCredentials: true }
+      );
+      setSuggestedUsers(res.data.users || []);
+    } catch (err) {
+      console.error("Failed to fetch suggested users:", err);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  if (BACKEND_URL) {
+    fetchSuggestedUsers();
+  }
+}, [BACKEND_URL]);
 
   useEffect(() => {
     const delay = setTimeout(async () => {
@@ -383,6 +405,47 @@ export default function Explore() {
             )}
           </div>
         </div>
+        {/* SUGGESTED USERS */}
+<div className="mt-5 p-4 rounded-xl border border-white/15 bg-black/15 backdrop-blur-xl text-white">
+  <p className="flex items-center gap-2 font-semibold">
+    <Compass className="h-5 text-blue-400" />
+    Suggested users
+  </p>
+
+  <div className="mt-4 space-y-3">
+    {loadingUsers ? (
+      <p className="text-gray-300">Loading users...</p>
+    ) : suggestedUsers.length === 0 ? (
+      <p className="text-gray-300">No suggestions available</p>
+    ) : (
+      suggestedUsers.map((user) => (
+        <div
+          key={user._id}
+          className="flex items-center gap-3 p-2 rounded-md hover:bg-white/10 cursor-pointer transition"
+          onClick={() => {
+            if (!user?.username) return;
+            router.push(`/main/user/${user.username}`);
+          }}
+        >
+          <div className="h-10 w-10 rounded-full overflow-hidden bg-white/10">
+            <img
+              src={user.avatar || "/default-avatar.png"}
+              alt={user.name}
+              className="h-full w-full object-cover"
+            />
+          </div>
+
+          <div>
+            <p className="text-sm font-medium">{user.name}</p>
+            <p className="text-xs text-gray-300">
+              @{user?.username || "unknown"}
+            </p>
+          </div>
+        </div>
+      ))
+    )}
+  </div>
+</div>
 
         {/* TOP POSTS */}
         <div className="mt-5">
