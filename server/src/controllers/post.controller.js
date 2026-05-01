@@ -62,7 +62,7 @@ export const getPosts = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
-        const posts = await Post.find().sort({ createdAt: -1 }).skip(skip).limit(limit).populate("author", "username name surname avatar");
+        const posts = await Post.find().sort({ createdAt: -1 }).skip(skip).limit(limit).populate("author", "username name surname avatar").populate("likes", "username name avatar _id");
         const total = await Post.countDocuments();
         res.status(200).json({
             posts,
@@ -142,7 +142,7 @@ export const toggleLike = async (req, res) => {
 export const getPostsByUser = async (req, res) => {
     try {
         const { userId } = req.params;
-        const posts = await Post.find({ author: userId }).populate("author", "username name avatar").sort({ createdAt: -1 });
+        const posts = await Post.find({ author: userId }).populate("author", "username name avatar").populate("likes", "username name avatar _id").sort({ createdAt: -1 });
         return res.status(200).json({
             success: true,
             posts,
@@ -157,7 +157,7 @@ export const getPostsByUser = async (req, res) => {
 
 export const getSinglePost = async (req, res) => {
     try {
-        const post = await Post.findById(req.params.postId).populate("author", "username name avatar");
+        const post = await Post.findById(req.params.postId).populate("author", "username name avatar").populate("likes", "username name avatar _id");
         if (!post) {
             return res.status(404).json({ message: "Post not found" });
         }
@@ -171,7 +171,7 @@ export const getTopPostsOfWeek = async (req, res) => {
     try {
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-        const posts = await Post.find({ createdAt: { $gte: oneWeekAgo } }).populate("author", "username name surname avatar").sort({ likes: -1 }).limit(10);
+        const posts = await Post.find({ createdAt: { $gte: oneWeekAgo } }).populate("author", "username name surname avatar").populate("likes", "username name avatar _id").sort({ likes: -1 }).limit(10);
         res.status(200).json({
             success: true,
             posts
