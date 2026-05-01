@@ -390,7 +390,7 @@ export default function Explore() {
             Top posts of the month
           </p>
 
-          <div className="flex flex-col gap-5 md:flex-row items-center mt-5">
+          <div className="flex flex-col gap-5 md:flex-row flex-wrap items-stretch mt-5">
             {loading ? (
               <InlineLoader text="Loading top posts..." className="text-gray-300" />
             ) : topPosts.length === 0 ? (
@@ -404,7 +404,7 @@ export default function Explore() {
                   <div
                     onClick={() => handleClick(post)}
                     key={post._id}
-                    className="box w-[90%] md:w-[32%] h-44 border rounded-md px-5 py-4 relative cursor-pointer backdrop-blur-3xl text-white hover:bg-black/2 flex flex-col justify-between"
+                    className="box w-full md:w-[calc(33.333%-1rem)] h-44 border rounded-md px-5 py-4 relative cursor-pointer backdrop-blur-3xl text-white hover:bg-black/2 flex flex-col justify-between"
                   >
                     <p className="text-blue-300">
                       {post.likes?.length || 0} likes

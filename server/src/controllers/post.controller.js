@@ -171,7 +171,15 @@ export const getTopPostsOfWeek = async (req, res) => {
     try {
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-        const posts = await Post.find({ createdAt: { $gte: oneWeekAgo } }).populate("author", "username name surname avatar").sort({ likes: -1 }).limit(10);
+        const posts = await Post.aggregate([
+            { $match: { createdAt: { $gte: oneWeekAgo } } },
+            { $addFields: { likesCount: { $size: "$likes" } } },
+            { $sort: { likesCount: -1, createdAt: -1 } },
+            { $limit: 10 },
+            { $lookup: { from: "users", localField: "author", foreignField: "_id", as: "author" } },
+            { $unwind: "$author" },
+            { $project: { "author.password": 0, "author.email": 0 } }
+        ]);
         res.status(200).json({
             success: true,
             posts
@@ -189,10 +197,15 @@ export const getTopPostsOfMonth = async (req, res) => {
         const oneMonthAgo = new Date();
         oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
         
-        const posts = await Post.find({ createdAt: { $gte: oneMonthAgo } })
-            .populate("author", "username name surname avatar")
-            .sort({ likes: -1 })
-            .limit(10);
+        const posts = await Post.aggregate([
+            { $match: { createdAt: { $gte: oneMonthAgo } } },
+            { $addFields: { likesCount: { $size: "$likes" } } },
+            { $sort: { likesCount: -1, createdAt: -1 } },
+            { $limit: 10 },
+            { $lookup: { from: "users", localField: "author", foreignField: "_id", as: "author" } },
+            { $unwind: "$author" },
+            { $project: { "author.password": 0, "author.email": 0 } }
+        ]);
         
         res.status(200).json({
             success: true,

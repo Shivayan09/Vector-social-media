@@ -6,7 +6,7 @@ import {
     getPostsByUser, 
     getSinglePost, 
     getTopPostsOfWeek,
-    getTopPostsOfMonth,  // ADD THIS
+    getTopPostsOfMonth,
     toggleLike, 
     incrementShare 
 } from "../controllers/post.controller.js";
@@ -17,7 +17,7 @@ const postRouter = express.Router();
 
 postRouter.post("/", authMiddleware, upload.single("image"), createPost);
 postRouter.get("/top-week", getTopPostsOfWeek);
-postRouter.get("/top-month", getTopPostsOfMonth);  // ADD THIS NEW ROUTE
+postRouter.get("/top-month", getTopPostsOfMonth);
 postRouter.get("/", getPosts);
 postRouter.get("/:postId", getSinglePost);
 postRouter.put("/:id/like", authMiddleware, toggleLike);
