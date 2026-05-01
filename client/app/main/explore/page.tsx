@@ -184,24 +184,24 @@ export default function Explore() {
 
   return (
     <div className="w-full py-5 px-7">
-        <p className="text-[1.6rem] font-semibold text-center md:text-left text-white">
+        <p className="page-title text-[1.6rem]">
           Explore
         </p>
 
-        <p className="text-gray-300 text-center md:text-left">
+        <p className="page-subtitle">
           Discover people, posts and ideas
         </p>
 
         {/* SEARCH */}
         <div className="relative mt-5" ref={wrapperRef}>
-          <div className="flex items-center px-2 gap-2 bg-white/30 dark:bg-black/30 rounded-full h-10">
+          <div className="search-pill">
             <Search className="h-5" />
             <input
               type="text"
               placeholder="Search users"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="outline-0 w-full h-full bg-transparent"
+              className="h-full w-full bg-transparent outline-0 placeholder:text-muted-foreground"
             />
           </div>
 
@@ -256,14 +256,14 @@ export default function Explore() {
 
         {/* TRENDING DOMAINS */}
         <div className="mt-5">
-          <p className="font-semibold text-white">
+          <p className="font-semibold text-foreground">
             Trending domains
           </p>
 
           {loading ? (
-            <p className="text-gray-300 mt-3">Loading domains...</p>
+            <p className="surface-text-muted mt-3">Loading domains...</p>
           ) : topicCards.length === 0 ? (
-            <p className="text-gray-300 mt-3">No active domains yet</p>
+            <p className="surface-text-muted mt-3">No active domains yet</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 my-5">
               {topicCards.map((topic) => (
@@ -294,7 +294,7 @@ export default function Explore() {
         </div>
 
         {/* EXPLORE TOPICS */}
-        <div className="mt-5 p-4 rounded-xl border border-white/15 bg-black/15 backdrop-blur-xl text-white">
+        <div className="panel-card mt-5">
           <p className="flex items-center gap-2 font-semibold">
             <Compass className="h-5 text-blue-400" />
             Explore topics
@@ -306,7 +306,7 @@ export default function Explore() {
                 key={topic.intent}
                 type="button"
                 onClick={() => setHighlightedTopic(topic.intent)}
-                className="h-20 border border-white/15 rounded-md flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 transition"
+                className="glass-surface flex h-20 items-center justify-center gap-2 rounded-md transition hover:bg-accent/70"
               >
                 {topic.intent === "build" ? (
                   <Trophy className="h-4" />
@@ -320,7 +320,7 @@ export default function Explore() {
             <button
               type="button"
               onClick={handleRandomTopic}
-              className="col-span-2 md:col-span-1 h-20 border border-white/15 rounded-md flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 transition"
+              className="glass-surface col-span-2 flex h-20 items-center justify-center gap-2 rounded-md transition hover:bg-accent/70 md:col-span-1"
             >
               <Shuffle className="h-4 opacity-80" />
               <span className="text-sm">Random</span>
@@ -328,14 +328,14 @@ export default function Explore() {
           </div>
 
           {highlightedTopic && (
-            <p className="text-sm text-blue-200 mt-3">
+            <p className="mt-3 text-sm text-blue-500">
               Highlighted topic: {intentLabel[highlightedTopic]}
             </p>
           )}
         </div>
 
         {/* TRENDING TOPICS */}
-        <div className="mt-5 p-4 rounded-xl border border-white/15 bg-black/15 backdrop-blur-xl text-white">
+        <div className="panel-card mt-5">
           <p className="flex items-center gap-2 font-semibold">
             <TrendingUp className="h-5 text-blue-400" />
             Trending topics
@@ -343,9 +343,9 @@ export default function Explore() {
 
           <div className="mt-4 space-y-3">
             {loading ? (
-              <p className="text-gray-300">Loading trending topics...</p>
+              <p className="surface-text-muted">Loading trending topics...</p>
             ) : trendingTopics.length === 0 ? (
-              <p className="text-gray-300">No trending topics this month</p>
+              <p className="surface-text-muted">No trending topics this month</p>
             ) : (
               trendingTopics.map((topic) => (
                 <button
@@ -354,9 +354,9 @@ export default function Explore() {
                   onClick={() =>
                     router.push(`/main/post/${topic.id}`)
                   }
-                  className="w-full text-left flex items-start gap-3 rounded-md hover:bg-white/10 p-2 transition"
+                  className="flex w-full items-start gap-3 rounded-md p-2 text-left transition hover:bg-accent/70"
                 >
-                  <div className="h-11 w-11 rounded-md overflow-hidden bg-white/10 shrink-0">
+                  <div className="glass-surface h-11 w-11 shrink-0 overflow-hidden rounded-md">
                     <img
                       src={intentImage[topic.intent]}
                       alt={intentLabel[topic.intent]}
@@ -366,12 +366,12 @@ export default function Explore() {
 
                   <div className="flex-1 min-w-0">
                     <p className="text-sm line-clamp-2">{topic.title}</p>
-                    <p className="text-xs text-blue-200 mt-1">
+                    <p className="mt-1 text-xs text-blue-500">
                       #{intentLabel[topic.intent]}
                     </p>
                   </div>
 
-                  <p className="flex items-center gap-1 text-xs text-gray-200 pt-1">
+                  <p className="surface-text-muted flex items-center gap-1 pt-1 text-xs">
                     <Heart
                       className="text-blue-400 h-4"
                       fill="currentColor"
@@ -386,15 +386,15 @@ export default function Explore() {
 
         {/* TOP POSTS */}
         <div className="mt-5">
-          <p className="font-semibold text-white">
+          <p className="font-semibold text-foreground">
             Top posts of the month
           </p>
 
           <div className="flex flex-col gap-5 md:flex-row flex-wrap items-stretch mt-5">
             {loading ? (
-              <InlineLoader text="Loading top posts..." className="text-gray-300" />
+              <InlineLoader text="Loading top posts..." className="surface-text-muted" />
             ) : topPosts.length === 0 ? (
-              <p className="text-gray-300">
+              <p className="surface-text-muted">
                 No trending posts this month
               </p>
             ) : (
@@ -404,9 +404,9 @@ export default function Explore() {
                   <div
                     onClick={() => handleClick(post)}
                     key={post._id}
-                    className="box w-full md:w-[calc(33.333%-1rem)] h-44 border rounded-md px-5 py-4 relative cursor-pointer backdrop-blur-3xl text-white hover:bg-black/2 flex flex-col justify-between"
+                    className="content-card glass-hover box relative flex h-44 w-full cursor-pointer flex-col justify-between rounded-md md:w-[calc(33.333%-1rem)]"
                   >
-                    <p className="text-blue-300">
+                    <p className="text-blue-500">
                       {post.likes?.length || 0} likes
                     </p>
 
@@ -433,7 +433,7 @@ export default function Explore() {
                         @{post?.author?.username || "unknown"}
                       </p>
 
-                      <p className="text-gray-300 text-[0.8rem]">
+                      <p className="surface-text-muted text-[0.8rem]">
                         {new Date(
                           post.createdAt
                         ).toLocaleDateString("en-GB")}

@@ -41,7 +41,7 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
   };
 
   return (
-    <div className="px-7 py-5 h-screen overflow-y-auto">
+    <div className="page-scroll px-7 py-5">
       <div className="mb-5 md:mb-7">
 
         <div className="flex items-start gap-6 mt-5 md:mt-0">
@@ -52,10 +52,10 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
 
             <div className="flex justify-between items-start flex-wrap gap-3">
               <div className="flex flex-col">
-                <h1 className="text-xl md:text-2xl font-bold text-white">
+                <h1 className="text-xl font-bold text-foreground md:text-2xl">
                   {user.name} {user.surname}
                 </h1>
-                <p className="text-gray-300 text-shadow-lg">@{user.username}</p>
+                <p className="surface-text-muted">@{user.username}</p>
               </div>
 
               {isSelfProfile ? (
@@ -83,20 +83,20 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
         </div>
 
         <div className="mt-5 flex flex-col gap-2">
-          <p className="text-sm text-white text-shadow-lg">{user.bio}</p>
+          <p className="text-sm text-foreground">{user.bio}</p>
 
-          <p className="text-sm opacity-80 text-white text-shadow-lg">
+          <p className="surface-text-muted text-sm">
             {user.description}
           </p>
 
-          <div className="flex justify-center gap-6 font-semibold mt-2 text-white">
+          <div className="mt-2 flex justify-center gap-6 font-semibold text-foreground">
             <span>{user.followersCount ?? user.followers?.length ?? 0} Followers</span>
             <span>{user.followingCount ?? user.following?.length ?? 0} Following</span>
           </div>
         </div>
       </div>
 
-      <div className="flex justify-between md:justify-center md:gap-50 border-b-2 border-white/50 mb-6">
+      <div className="mb-6 flex justify-between border-b-2 border-border/80 md:justify-center md:gap-50">
         {["posts", "followers", "following"].map((tab) => (
           <button
             key={tab}
@@ -106,7 +106,7 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
             className={`relative pb-2 font-semibold capitalize transition cursor-pointer whitespace-nowrap ${
               activeTab === tab
                 ? "text-blue-500 dark:text-blue-300"
-                : "text-white text-shadow-lg dark:hover:text-white"
+                : "text-foreground/75 hover:text-foreground"
             }`}
           >
             {tab}

@@ -189,7 +189,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     };
 
     return (
-        <div className="border overflow-clip relative border-black/10 bg-black/10 backdrop-blur-3xl cursor-pointer hover:shadow-lg px-5 py-3 rounded-2xl transition"
+        <div className="content-card glass-hover relative overflow-clip cursor-pointer"
             onClick={openPost}>
             <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center flex-wrap sm:justify-between w-[90%]">
@@ -197,8 +197,8 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                     <div className="h-8 md:h-12 w-8 md:w-12 rounded-full transition-all duration-200" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
                         <img alt={post.author?.name || "Post author"} src={post?.author?.avatar || "/default-avatar.png"} className="h-full w-full rounded-full object-cover" />
                     </div>
-                    <span className="font-semibold ml-1 transition-all duration-200 text-white hover:text-blue-500" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>{post?.author?.name}</span>
-                    <span className="text-[0.9rem] text-white/60 transition-all duration-200 hover:text-white/80" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
+                    <span className="ml-1 font-semibold text-foreground transition-all duration-200 hover:text-blue-500" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>{post?.author?.name}</span>
+                    <span className="surface-text-muted text-[0.9rem] transition-all duration-200 hover:text-foreground" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
                         @{post?.author?.username}
                     </span>
                     </div>
@@ -215,8 +215,8 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                 </div>
 
                 <div ref={menuRef} className="relative">
-                    <button onClick={(e) => { e.stopPropagation(); setMenuOpen(prev => !prev); }} className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10">
-                        <MoreHorizontal size={20} className="text-white cursor-pointer mt-0.5" />
+                    <button onClick={(e) => { e.stopPropagation(); setMenuOpen(prev => !prev); }} className="rounded-full p-1 transition-colors hover:bg-accent/70">
+                        <MoreHorizontal size={20} className="mt-0.5 cursor-pointer text-foreground" />
                     </button>
 
                     {menuOpen && (
@@ -252,7 +252,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
             </div>
 
             {post.content && (
-                <p className="mt-2 mb-3 p-1 text-[0.9rem] md:text-[1.1rem] text-gray-100">
+                <p className="mt-2 mb-3 p-1 text-[0.9rem] text-foreground md:text-[1.1rem]">
                     {post.content}
                 </p>
             )}
@@ -262,8 +262,8 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                     <img src={post.image} alt="Post attachment" className="w-full h-full object-cover" />
                 </div>
             )}
-            <div className="flex w-full gap-x-2 sm:justify-between text-white border-t border-white/20 dark:border-white/10 pt-3">
-                <div className="flex items-center w-full gap-4 sm:justify-between sm:w-2/3 text-gray-200 dark:text-gray-300 text-sm">
+            <div className="flex w-full gap-x-2 border-t border-border/80 pt-3 text-foreground sm:justify-between">
+                <div className="surface-text-muted flex w-full items-center gap-4 text-sm sm:w-2/3 sm:justify-between">
                     <p className="flex flex-col text-center gap-2 sm:flex-row items-center cursor-pointer hover:text-blue-500 md:w-[20%] justify-center">
                         <MessageCircle className="h-4.5 md:h-5 hover:text-blue-500" />
                         {post.commentsCount || 0} {post.commentsCount === 1 ? 'Comment' : 'Comments'}
@@ -277,7 +277,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                         <button onClick={(e) => { e.stopPropagation(); handleLike() }} className="p-0 hover:text-blue-500">
                             <Heart className={`h-4.5 md:h-5 cursor-pointer transition-transform duration-300 hover:text-blue-500 ${isLiked ? "text-blue-500" : ""} ${likeAnimating ? "scale-135" : "scale-100"}`} fill={isLiked ? "currentColor" : "none"} />
                         </button>
-                        <button onClick={(e) => { e.stopPropagation(); setShowLikesModal(true) }} className="cursor-pointer hover:text-blue-500 text-gray-200 dark:text-gray-300 text-sm">
+                        <button onClick={(e) => { e.stopPropagation(); setShowLikesModal(true) }} className="cursor-pointer text-sm hover:text-blue-500">
                             {post.likes.length} {post.likes.length === 1 ? 'Like' : 'Likes'}
                         </button>
                     </div>
