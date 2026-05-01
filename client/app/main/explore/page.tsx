@@ -103,7 +103,7 @@ export default function Explore() {
     const fetchTopPosts = async () => {
       try {
         const { data } = await axios.get(
-          `${BACKEND_URL}/api/posts/top-week`,
+          `${BACKEND_URL}/api/posts/top-month`,
           { withCredentials: true }
         );
 
@@ -345,7 +345,7 @@ export default function Explore() {
             {loading ? (
               <p className="text-gray-300">Loading trending topics...</p>
             ) : trendingTopics.length === 0 ? (
-              <p className="text-gray-300">No trending topics this week</p>
+              <p className="text-gray-300">No trending topics this month</p>
             ) : (
               trendingTopics.map((topic) => (
                 <button
@@ -387,15 +387,15 @@ export default function Explore() {
         {/* TOP POSTS */}
         <div className="mt-5">
           <p className="font-semibold text-white">
-            Top posts of the week
+            Top posts of the month
           </p>
 
-          <div className="flex flex-col gap-5 md:flex-row items-center mt-5">
+          <div className="flex flex-col gap-5 md:flex-row flex-wrap items-stretch mt-5">
             {loading ? (
               <InlineLoader text="Loading top posts..." className="text-gray-300" />
             ) : topPosts.length === 0 ? (
               <p className="text-gray-300">
-                No trending posts this week
+                No trending posts this month
               </p>
             ) : (
               topPosts
@@ -404,7 +404,7 @@ export default function Explore() {
                   <div
                     onClick={() => handleClick(post)}
                     key={post._id}
-                    className="box w-[90%] md:w-[32%] h-44 border rounded-md px-5 py-4 relative cursor-pointer backdrop-blur-3xl text-white hover:bg-black/2 flex flex-col justify-between"
+                    className="box w-full md:w-[calc(33.333%-1rem)] h-44 border rounded-md px-5 py-4 relative cursor-pointer backdrop-blur-3xl text-white hover:bg-black/2 flex flex-col justify-between"
                   >
                     <p className="text-blue-300">
                       {post.likes?.length || 0} likes
