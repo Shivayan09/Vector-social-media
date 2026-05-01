@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import PostDelete from "../modals/DeleteWarning";
 import ReportPost from "../modals/ReportPost";
+import LikesModal from "../modals/LikesModal";
 import { useRouter } from "next/navigation";
 import type { Post, ReportReason } from "@/lib/types";
 import { reportPost } from "@/lib/reportApi";
@@ -31,9 +32,12 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
+    const [showLikesModal, setShowLikesModal] = useState(false);
 
     const isOwner = userData?.id === post?.author?._id;
-    const isLiked = post.likes?.map(String).includes(String(userData?.id));
+    const isLiked = post.likes?.some(like => 
+        typeof like === "object" ? like._id === userData?.id : like === userData?.id
+    );
 
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
@@ -269,10 +273,14 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                         <Forward className="h-4.5 md:h-5" />{post.sharesCount || 0} {post.sharesCount === 1 ? 'Share' : 'Shares'}
                     </p>
 
-                    <p onClick={(e) => { e.stopPropagation(); handleLike() }} className="flex flex-col text-center sm:flex-row gap-1 items-center cursor-pointer hover:text-blue-500 md:w-[20%] justify-center">
-                        <Heart className={`h-4.5 md:h-5 cursor-pointer transition-transform duration-300 hover:text-blue-500 ${isLiked ? "text-blue-500" : ""} ${likeAnimating ? "scale-135" : "scale-100"}`} fill={isLiked ? "currentColor" : "none"} />
-                        {post.likes.length} {post.likes.length === 1 ? 'Like' : 'Likes'}
-                    </p>
+                    <div className="flex flex-col text-center sm:flex-row gap-1 items-center md:w-[20%] justify-center">
+                        <button onClick={(e) => { e.stopPropagation(); handleLike() }} className="p-0 hover:text-blue-500">
+                            <Heart className={`h-4.5 md:h-5 cursor-pointer transition-transform duration-300 hover:text-blue-500 ${isLiked ? "text-blue-500" : ""} ${likeAnimating ? "scale-135" : "scale-100"}`} fill={isLiked ? "currentColor" : "none"} />
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); setShowLikesModal(true) }} className="cursor-pointer hover:text-blue-500 text-gray-200 dark:text-gray-300 text-sm">
+                            {post.likes.length} {post.likes.length === 1 ? 'Like' : 'Likes'}
+                        </button>
+                    </div>
                 </div>
 
                 <div>
@@ -293,6 +301,12 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                 open={showReportModal}
                 onClose={() => setShowReportModal(false)}
                 onSubmit={handleReport}
+            />
+
+            <LikesModal
+                open={showLikesModal}
+                onClose={() => setShowLikesModal(false)}
+                likers={post.likes}
             />
         </div>
     );

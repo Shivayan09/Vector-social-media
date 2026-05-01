@@ -11,7 +11,11 @@ export default function UserRow({ user }: { user: UserSummary }) {
     const router = useRouter();
     const { userData } = useAppContext();
     const isSelf = user._id === userData?.id;
-    const isFollowing = !!userData?.id && !!user.followers?.includes(userData.id);
+    // Check if current user is following this user
+    // Falls back to userData.following when user.followers is not populated (e.g., in LikesModal)
+    const isFollowing = !!userData?.id && (
+      user.followers?.includes(userData.id) || userData.following?.includes(user._id) || false
+    );
 
     return (
         <div className="flex relative items-center justify-between px-3 py-2 rounded-lg bg-black/10 backdrop-blur-3xl cursor-pointer">
