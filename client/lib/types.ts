@@ -30,7 +30,7 @@ export type Post = {
   content: string;
   image?: string;
   intent?: Intent;
-  likes: string[];
+  likes: (string | UserSummary)[];
   commentsCount?: number;
   sharesCount?: number;
   createdAt: string;
