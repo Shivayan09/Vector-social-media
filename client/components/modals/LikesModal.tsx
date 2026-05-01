@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useMounted } from "@/lib/useMounted";
+import { useAppContext } from "@/context/AppContext";
 import UserRow from "../profile/UserRow";
 import type { UserSummary } from "@/lib/types";
 
@@ -14,7 +15,10 @@ type LikesModalProps = {
 
 export default function LikesModal({ open, onClose, likers }: LikesModalProps) {
   const mounted = useMounted();
+  const { userData } = useAppContext();
 
+  // Backend always populates likes with full user objects (username, name, avatar, _id)
+  // Filter ensures we only render valid user objects, ignoring any legacy string IDs
   const userLikers = likers.filter(
     (liker) => typeof liker === "object"
   ) as UserSummary[];
