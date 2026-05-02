@@ -182,15 +182,15 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     };
 
     return (
-        <div className="border overflow-clip relative border-black/10 bg-zinc-100/50 dark:bg-black/10 backdrop-blur-3xl cursor-pointer hover:shadow-lg px-5 py-3 rounded-2xl transition"
+        <div className="border overflow-clip relative border-black/10 bg-black/10 backdrop-blur-3xl cursor-pointer hover:shadow-lg px-5 py-3 rounded-2xl transition"
             onClick={openPost}>
             <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                     <div className="h-8 md:h-12 w-8 md:w-12 rounded-full transition-all duration-200" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
                         <img alt={post.author?.name || "Post author"} src={post?.author?.avatar || "/default-avatar.png"} className="h-full w-full rounded-full object-cover" />
                     </div>
-                    <span className="font-semibold ml-1 transition-all duration-200 text-zinc-900 dark:text-white hover:text-blue-500" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>{post?.author?.name}</span>
-                    <span className="text-[0.9rem] text-zinc-500 dark:text-white/60 transition-all duration-200 hover:text-zinc-700 dark:hover:text-white/80" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
+                    <span className="font-semibold ml-1 transition-all duration-200 text-white hover:text-blue-500" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>{post?.author?.name}</span>
+                    <span className="text-[0.9rem] text-white/60 transition-all duration-200 hover:text-white/80" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
                         @{post?.author?.username}
                     </span>
                     <p className="absolute left-195 text-[0.9rem] font-semibold text-blue-500 flex items-center gap-1.5">
@@ -205,7 +205,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
 
                 <div ref={menuRef} className="relative">
                     <button onClick={(e) => { e.stopPropagation(); setMenuOpen(prev => !prev); }} className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10">
-                        <MoreHorizontal size={20} className="text-zinc-900 dark:text-white cursor-pointer mt-0.5" />
+                        <MoreHorizontal size={20} className="text-white cursor-pointer mt-0.5" />
                     </button>
 
                     {menuOpen && (
@@ -243,7 +243,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
             </div>
 
             {post.content && (
-                <p className="mt-2 mb-3 p-1 text-[0.9rem] md:text-[1.1rem] text-zinc-800 dark:text-gray-100">
+                <p className="mt-2 mb-3 p-1 text-[0.9rem] md:text-[1.1rem] text-gray-100">
                     {post.content}
                 </p>
             )}
@@ -254,8 +254,8 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                 </div>
             )}
 
-            <div className="flex justify-between text-zinc-900 dark:text-white border-t border-black/10 dark:border-white/10 pt-3">
-                <div className="flex items-center justify-between w-2/3 text-zinc-600 dark:text-gray-300 text-sm">
+            <div className="flex justify-between text-white border-t border-white/20 dark:border-white/10 pt-3">
+                <div className="flex items-center justify-between w-2/3 text-gray-200 dark:text-gray-300 text-sm">
                     <p className="flex gap-1 items-center cursor-pointer hover:text-blue-500 md:w-[20%] justify-center">
                         <MessageCircle className="h-4.5 md:h-5 hover:text-blue-500" />
                         {post.commentsCount || 0} {post.commentsCount === 1 ? 'Comment' : 'Comments'}

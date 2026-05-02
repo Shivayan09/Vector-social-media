@@ -54,7 +54,7 @@ export default function ReportPost({ open, onClose, onSubmit }: ReportPostProps)
           open ? "scale-100 translate-y-0" : "scale-95 translate-y-2"
         }`}
       >
-        <h2 className="text-[1.2rem] font-semibold text-zinc-900 dark:text-white mb-3">
+        <h2 className="text-[1.2rem] font-semibold text-blue-600 dark:text-white mb-3">
           Report post
         </h2>
 
@@ -65,7 +65,7 @@ export default function ReportPost({ open, onClose, onSubmit }: ReportPostProps)
         <select
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          className="w-full mb-3 text-[0.95rem] rounded-md border px-3 py-2 bg-white dark:bg-blue-950 text-zinc-900 dark:text-white"
+          className="w-full mb-3 text-[0.95rem] rounded-md border px-3 py-2 bg-transparent dark:bg-blue-950"
         >
           <option value="">Select a reason</option>
           {REPORT_REASONS.map((r) => (
@@ -80,10 +80,10 @@ export default function ReportPost({ open, onClose, onSubmit }: ReportPostProps)
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={3}
-          className="w-full rounded-md border px-3 py-2 mb-4 resize-none text-zinc-900 dark:text-white"
+          className="w-full rounded-md border px-3 py-2 mb-4 resize-none"
         />
 
-        <div className="flex justify-end gap-3 w-full text-zinc-900 dark:text-white">
+        <div className="flex justify-end gap-3 w-full">
           <button
             onClick={closeModal}
             className="w-1/2 py-1.5 rounded-md border text-sm hover:bg-black/5"
