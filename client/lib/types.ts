@@ -30,7 +30,7 @@ export type Post = {
   content: string;
   image?: string;
   intent?: Intent;
-  likes: string[];
+  likes: (string | UserSummary)[];
   commentsCount?: number;
   sharesCount?: number;
   createdAt: string;
@@ -61,6 +61,9 @@ export type Notification = {
   type: "follow" | "like" | "comment" | "message";
   sender: UserSummary;
   post?: {
+    _id: string;
+  };
+  conversation?: {
     _id: string;
   };
   isRead: boolean;

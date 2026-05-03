@@ -73,12 +73,12 @@ export default function LoginForm() {
     };
 
     return (
-        <div className="border border-black/10 dark:border-white/10 backdrop-blur-3xl rounded-lg px-10 py-5 w-80 md:w-90">
-            <p className="font-semibold text-[1rem] md:text-[1.2rem] text-white">
+        <div className="form-card w-80 md:w-90">
+            <p className="form-title">
                 Welcome back!
             </p>
 
-            <p className="mt-2 mb-5 text-[0.9rem] md:text-[1.1rem] text-gray-300">
+            <p className="form-subtitle md:text-[1.1rem]">
                 Log in to get right back in!
             </p>
 
@@ -91,32 +91,32 @@ export default function LoginForm() {
                 />
 
             <div className="relative flex items-center justify-center mt-5">
-                <div className="absolute w-full h-px bg-white/20"></div>
-                <span className="relative px-3 text-md text-white/70 backdrop-blur-3xl">
+                <div className="form-divider"></div>
+                <span className="form-divider-text backdrop-blur-3xl">
                     or
                 </span>
             </div>
 
-            <p className="font-semibold text-white">Username</p>
+            <p className="form-label">Username</p>
             <input
                 type="text"
                 placeholder="demousername09"
-                className="outline-none h-10 bg-white/30 dark:border-white/10 w-full rounded-md p-3 my-3"
+                className="form-input"
                 onChange={(e) => setUsername(e.target.value)}
             />
 
-            <p className="font-semibold text-white">Password</p>
+            <p className="form-label">Password</p>
 
             <div className="relative">
                 <input
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
-                    className="outline-none h-10 bg-white/30 dark:border-white/10 w-full rounded-md p-3 my-3 pr-10"
+                    className="form-input pr-10"
                     onChange={(e) => setPassword(e.target.value)}
                 />
 
                 <span
-                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-black/50"
+                    className="surface-text-muted absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
                     onClick={() => setShowPassword(!showPassword)}
                 >
                     {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
@@ -124,11 +124,11 @@ export default function LoginForm() {
             </div>
 
             <div className="flex items-center justify-between">
-                <p className="text-[0.9rem] text-white">
+                <p className="text-[0.9rem] text-foreground">
                     Forgot your password?
                 </p>
                 <span
-                    className="text-blue-800 underline cursor-pointer"
+                    className="cursor-pointer text-primary underline"
                     onClick={() => router.push("/auth/forgot-password")}
                 >
                     Click here
@@ -148,11 +148,11 @@ export default function LoginForm() {
             </Button>
 
             <div className="flex items-center justify-between mt-3">
-                <p className="text-[0.9rem] mt-3 text-white">
+                <p className="mt-3 text-[0.9rem] text-foreground">
                     Don&apos;t have an account?
                 </p>
                 <span
-                    className=" font-semibold underline cursor-pointer mt-1 text-white"
+                    className="mt-1 cursor-pointer font-semibold text-primary underline"
                     onClick={() => router.push("/auth/register")}
                 >
                     Register

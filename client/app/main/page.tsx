@@ -7,7 +7,7 @@ import MainQueryHandler from "./MainQueryHandler";
 
 export default function Home() {
   return (
-    <div className="overflow-y-auto h-screen">
+    <div className="page-scroll">
       <Navbar />
       <Suspense fallback={null}>
         <MainQueryHandler />
