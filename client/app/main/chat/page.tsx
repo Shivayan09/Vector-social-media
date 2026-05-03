@@ -194,7 +194,6 @@ export default function ChatListPage() {
                                     className="h-12 w-12 rounded-full object-cover"
                                 />
 
-<<<<<<< HEAD
                                 <div className="flex flex-col">
                                     <p className="font-semibold">
                                         {otherUser?.name}
@@ -226,7 +225,6 @@ export default function ChatListPage() {
                                 )}
 
                                 <ArrowRight className="ml-2 opacity-70" />
-=======
                                 <div>
                                     <p className="font-semibold text-foreground">
                                         {otherUser?.name}
@@ -245,7 +243,6 @@ export default function ChatListPage() {
                                 </div>
 
                                 <ArrowRight className="ml-auto opacity-70 text-foreground" />
->>>>>>> upstream/main
 
                                 <Trash2
                                     onClick={(e) =>
