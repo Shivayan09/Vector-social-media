@@ -5,7 +5,7 @@ import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import { Trash2 } from "lucide-react";
+import { Trash2, MessageCircle, UserPlus } from "lucide-react";
 import ConfirmModal from "./modals/DeleteWarning";
 import type { Notification } from "@/lib/types";
 
@@ -23,6 +23,8 @@ export default function NotificationPanel({ search = "" }: Props) {
   const [warningOpen, setWarningOpen] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
+  const [followLoading, setFollowLoading] = useState<Record<string, boolean>>({});
+  const [messageLoading, setMessageLoading] = useState<Record<string, boolean>>({});
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -135,6 +137,60 @@ export default function NotificationPanel({ search = "" }: Props) {
     }
   }, [BACKEND_URL, notifications]);
 
+  const isFollowingUser = (userId: string) => {
+    return userData?.following?.includes(userId) ?? false;
+  };
+
+  const handleFollowBack = async (senderId: string) => {
+    try {
+      setFollowLoading((prev) => ({ ...prev, [senderId]: true }));
+      const res = await axios.put(
+        `${BACKEND_URL}/api/users/${senderId}/follow`,
+        {},
+        { withCredentials: true }
+      );
+      if (res.data.followed) {
+        toast.success("Followed successfully");
+      } else {
+        toast.success("Unfollowed successfully");
+      }
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        toast.error(err.response?.data?.message || "Follow action failed");
+      } else {
+        toast.error("Follow action failed");
+      }
+    } finally {
+      setFollowLoading((prev) => ({ ...prev, [senderId]: false }));
+    }
+  };
+
+  const handleReplyToMessage = async (notificationId: string, senderId: string, conversationId?: string) => {
+    try {
+      setMessageLoading((prev) => ({ ...prev, [notificationId]: true }));
+
+      if (conversationId) {
+        router.push(`/main/chat/${conversationId}`);
+        return;
+      }
+
+      const { data } = await axios.post(
+        `${BACKEND_URL}/api/conversation`,
+        { receiverId: senderId },
+        { withCredentials: true }
+      );
+      router.push(`/main/chat/${data._id}`);
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        toast.error(err.response?.data?.message || "Failed to open chat");
+      } else {
+        toast.error("Failed to open chat");
+      }
+    } finally {
+      setMessageLoading((prev) => ({ ...prev, [notificationId]: false }));
+    }
+  };
+
   useEffect(() => {
     if (!userData) return;
     const timeoutId = window.setTimeout(() => {
@@ -170,7 +226,7 @@ export default function NotificationPanel({ search = "" }: Props) {
     <div className="w-full mt-5">
 
       <div className="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-3 md:gap-0">
-        <p className="font-semibold text-lg text-white">
+        <p className="text-lg font-semibold text-foreground">
           Notifications
         </p>
 
@@ -201,18 +257,18 @@ export default function NotificationPanel({ search = "" }: Props) {
       </div>
 
       {loading ? (
-        <p className="text-gray-500 text-sm">
+        <p className="surface-text-muted text-sm">
           Loading notifications...
         </p>
       ) : filteredNotifications.length === 0 ? (
-        <p className="text-gray-600 text-sm">
+        <p className="surface-text-muted text-sm">
           No notifications match your search.
         </p>
       ) : (
         <div className="flex flex-col gap-2">
           {filteredNotifications.map((n) => (
             <div key={n._id}
-              className={`flex items-center gap-3 p-4 rounded-xl transition ${!n.isRead ? "backdrop-blur-lg" : "backdrop-blur-3xl"
+              className={`notification-card ${!n.isRead ? "notification-card-unread" : ""
                 }`}>
               {selectMode && (
                 <input type="checkbox" className="h-4 w-4 cursor-pointer"
@@ -241,7 +297,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                 <img alt={n.sender.name || "Notification sender"} src={n.sender.avatar || "/default-avatar.png"} className="h-10 w-10 rounded-full object-cover" />
 
                 <div>
-                  <p className="text-white">
+                  <p className="text-foreground">
                     <span className="font-semibold">
                       {n.sender.name}
                     </span>{" "}
@@ -252,21 +308,59 @@ export default function NotificationPanel({ search = "" }: Props) {
                     {n.type === "message" && "messaged you"}
                   </p>
 
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="surface-text-muted mt-1 text-xs">
                     {new Date(n.createdAt).toLocaleString()}
                   </p>
                 </div>
 
                 {!selectMode && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteSingle(n._id);
-                    }}
-                    className="text-white ml-auto"
-                  >
-                    <Trash2 className="h-5 cursor-pointer" />
-                  </button>
+                  <div className="flex items-center gap-2 ml-auto">
+                    {n.type === "message" && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
+                        }}
+                        disabled={messageLoading[n._id]}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:opacity-70 text-white rounded-md transition"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        {messageLoading[n._id] ? "Loading..." : "Reply"}
+                      </button>
+                    )}
+                    {n.type === "follow" && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!isFollowingUser(n.sender._id)) {
+                            handleFollowBack(n.sender._id);
+                          }
+                        }}
+                        disabled={followLoading[n.sender._id] || isFollowingUser(n.sender._id)}
+                        className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-md transition ${
+                          isFollowingUser(n.sender._id)
+                            ? "bg-gray-600 text-gray-300 cursor-default"
+                            : "bg-blue-600 hover:bg-blue-700 text-white"
+                        }`}
+                      >
+                        <UserPlus className="h-4 w-4" />
+                        {followLoading[n.sender._id]
+                          ? "Loading..."
+                          : isFollowingUser(n.sender._id)
+                          ? "Following"
+                          : "Follow back"}
+                      </button>
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteSingle(n._id);
+                      }}
+                      className="p-1 text-foreground transition hover:text-red-400"
+                    >
+                      <Trash2 className="h-5 cursor-pointer" />
+                    </button>
+                  </div>
                 )}
               </div>
             </div>

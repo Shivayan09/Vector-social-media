@@ -160,8 +160,8 @@ export default function ProfileSettings() {
   };
 
   return (
-    <div className="h-screen px-5 md:px-20 py-5 md:pt-5 overflow-y-auto">
-      <h1 className="text-xl md:text-2xl mb-3 font-semibold text-white text-center md:text-left">Edit Profile</h1>
+    <div className="page-scroll px-5 py-5 md:px-20 md:pt-5">
+      <h1 className="mb-3 text-center text-xl font-semibold text-foreground md:text-left md:text-2xl">Edit Profile</h1>
 
       <div className="flex flex-col md:flex-row items-center gap-2 md:gap-6 mb-6">
         <div className="h-22 md:h-24 w-22 md:w-24 rounded-full overflow-hidden border">
@@ -172,7 +172,7 @@ export default function ProfileSettings() {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="text-blue-600 font-medium cursor-pointer"
+            className="cursor-pointer font-medium text-primary"
           >
             Change photo
           </button>
@@ -191,7 +191,7 @@ export default function ProfileSettings() {
               <button
                 type="button"
                 onClick={handleAvatarDiscard}
-                className="h-9 px-5 rounded-md bg-white text-sm cursor-pointer"
+                className="glass-surface-strong h-9 cursor-pointer rounded-md px-5 text-sm text-foreground hover:bg-accent/70"
               >
                 Discard
               </button>
@@ -202,7 +202,7 @@ export default function ProfileSettings() {
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-5 text-white">
+      <div className="grid grid-cols-1 gap-x-10 gap-y-5 md:grid-cols-2 text-foreground">
         <EditableInput
           label="Username"
           name="username"
@@ -280,9 +280,9 @@ function EditableInput({
   return (
     <div>
       <div className="flex justify-between mb-1">
-        <label className="font-medium text-shadow-lg">{label}</label>
+        <label className="font-medium text-foreground">{label}</label>
         {!editable && (
-          <button onClick={onEdit} className="text-white text-shadow-lg text-sm cursor-pointer">
+          <button onClick={onEdit} className="cursor-pointer text-sm text-primary">
             Edit
           </button>
         )}
@@ -292,7 +292,7 @@ function EditableInput({
         value={value}
         disabled={!editable}
         onChange={onChange}
-        className={`w-full px-3 py-2 rounded-lg text-white/80 ${editable ? "border-blue-500 outline-2 outline-white bg-black/10" : "bg-black/15 backdrop-blur-3xl cursor-not-allowed"
+        className={`settings-field ${editable ? "settings-field-editable" : "settings-field-disabled"
           }`}
       />
     </div>
@@ -310,9 +310,9 @@ function EditableTextarea({
   return (
     <div className="md:col-span-2">
       <div className="flex justify-between mb-1">
-        <label className="font-medium text-shadow-lg">{label}</label>
+        <label className="font-medium text-foreground">{label}</label>
         {!editable && (
-          <button onClick={onEdit} className="text-blue-600 text-sm cursor-pointer">
+          <button onClick={onEdit} className="cursor-pointer text-sm text-primary">
             Edit
           </button>
         )}
@@ -323,7 +323,7 @@ function EditableTextarea({
         disabled={!editable}
         onChange={onChange}
         rows={3}
-        className={`w-full px-3 py-2 rounded-lg text-white/80 ${editable ? "border-blue-500 outline-2 outline-white bg-black/10" : "bg-black/15 backdrop-blur-3xl cursor-not-allowed"
+        className={`settings-field ${editable ? "settings-field-editable" : "settings-field-disabled"
           }`}
       />
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";

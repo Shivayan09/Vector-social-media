@@ -2,6 +2,20 @@ import Post from "../models/post.model.js";
 import Notification from "../models/notification.model.js";
 import cloudinary from "../config/cloudinary.js";
 
+export const removePostById = async (postId) => {
+    const post = await Post.findById(postId);
+    if (!post) {
+        return null;
+    }
+
+    if (post.imagePublicId) {
+        await cloudinary.uploader.destroy(post.imagePublicId);
+    }
+
+    await post.deleteOne();
+    return post;
+};
+
 export const createPost = async (req, res) => {
     try {
         const { content, intent } = req.body;
@@ -48,7 +62,7 @@ export const getPosts = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
-        const posts = await Post.find().sort({ createdAt: -1 }).skip(skip).limit(limit).populate("author", "username name surname avatar");
+        const posts = await Post.find().sort({ createdAt: -1 }).skip(skip).limit(limit).populate("author", "username name surname avatar").populate("likes", "username name avatar _id");
         const total = await Post.countDocuments();
         res.status(200).json({
             posts,
@@ -82,12 +96,8 @@ export const deletePost = async (req, res) => {
                 message: "You are not allowed to delete this post",
             });
         }
-        
-        if (post.imagePublicId) {
-            await cloudinary.uploader.destroy(post.imagePublicId);
-        }
 
-        await post.deleteOne();
+        await removePostById(postId);
         res.status(200).json({
             success: true,
             message: "Post deleted successfully",
@@ -132,7 +142,7 @@ export const toggleLike = async (req, res) => {
 export const getPostsByUser = async (req, res) => {
     try {
         const { userId } = req.params;
-        const posts = await Post.find({ author: userId }).populate("author", "username name avatar").sort({ createdAt: -1 });
+        const posts = await Post.find({ author: userId }).populate("author", "username name avatar").populate("likes", "username name avatar _id").sort({ createdAt: -1 });
         return res.status(200).json({
             success: true,
             posts,
@@ -147,7 +157,7 @@ export const getPostsByUser = async (req, res) => {
 
 export const getSinglePost = async (req, res) => {
     try {
-        const post = await Post.findById(req.params.postId).populate("author", "username name avatar");
+        const post = await Post.findById(req.params.postId).populate("author", "username name avatar").populate("likes", "username name avatar _id");
         if (!post) {
             return res.status(404).json({ message: "Post not found" });
         }
@@ -161,7 +171,15 @@ export const getTopPostsOfWeek = async (req, res) => {
     try {
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-        const posts = await Post.find({ createdAt: { $gte: oneWeekAgo } }).populate("author", "username name surname avatar").sort({ likes: -1 }).limit(10);
+        const posts = await Post.aggregate([
+            { $match: { createdAt: { $gte: oneWeekAgo } } },
+            { $addFields: { likesCount: { $size: "$likes" } } },
+            { $sort: { likesCount: -1, createdAt: -1 } },
+            { $limit: 10 },
+            { $lookup: { from: "users", localField: "author", foreignField: "_id", as: "author" } },
+            { $unwind: "$author" },
+            { $project: { "author.password": 0, "author.email": 0 } }
+        ]);
         res.status(200).json({
             success: true,
             posts
@@ -173,6 +191,34 @@ export const getTopPostsOfWeek = async (req, res) => {
         });
     }
 };
+
+export const getTopPostsOfMonth = async (req, res) => {
+    try {
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
+        
+        const posts = await Post.aggregate([
+            { $match: { createdAt: { $gte: oneMonthAgo } } },
+            { $addFields: { likesCount: { $size: "$likes" } } },
+            { $sort: { likesCount: -1, createdAt: -1 } },
+            { $limit: 10 },
+            { $lookup: { from: "users", localField: "author", foreignField: "_id", as: "author" } },
+            { $unwind: "$author" },
+            { $project: { "author.password": 0, "author.email": 0 } }
+        ]);
+        
+        res.status(200).json({
+            success: true,
+            posts
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
 export const incrementShare = async (req, res) => {
     try {
         const post = await Post.findByIdAndUpdate(

@@ -4,41 +4,65 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import { createPortal } from "react-dom";
 import { useMounted } from "@/lib/useMounted";
+import axios from "axios";
+import type { ReportReason } from "@/lib/types";
 
 type ReportPostProps = {
   open: boolean;
   onClose: () => void;
-  onSubmit: (reason: string, note?: string) => void;
+  onSubmit: (reason: ReportReason, details?: string) => Promise<void>;
 };
 
 const REPORT_REASONS = [
-  "Spam or misleading",
-  "Hate speech or symbols",
-  "Harassment or bullying",
-  "Violence or threats",
-  "Sexual content",
-  "False information",
-  "Other",
+  { label: "Spam", value: "spam" },
+  { label: "Harassment", value: "harassment" },
+  { label: "Hate speech", value: "hate_speech" },
+  { label: "Violence", value: "violence" },
+  { label: "Nudity", value: "nudity" },
+  { label: "Misinformation", value: "misinformation" },
+  { label: "Other", value: "other" },
 ];
 
 export default function ReportPost({ open, onClose, onSubmit }: ReportPostProps) {
-  const [reason, setReason] = useState("");
-  const [note, setNote] = useState("");
+  const [reason, setReason] = useState<ReportReason | "">("");
+  const [details, setDetails] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const mounted = useMounted();
 
   if (!mounted) return null;
 
   const closeModal = () => {
+    if (submitting) return;
     onClose();
     setReason("");
-    setNote("");
+    setDetails("");
   };
 
-  const handleSubmit = () => {
-    if (!reason) return;
-    onSubmit(reason, note);
-    toast.success("Post reported!");
-    closeModal();
+  const handleSubmit = async () => {
+    if (!reason) {
+      toast.error("Please select a reason");
+      return;
+    }
+
+    if (reason === "other" && !details.trim()) {
+      toast.error("Please provide details for Other");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await onSubmit(reason, details.trim() || undefined);
+      toast.success("Post reported successfully");
+      closeModal();
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 409) {
+        toast.error("You already reported this post");
+      } else {
+        toast.error("Failed to submit report");
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return createPortal(
@@ -64,21 +88,23 @@ export default function ReportPost({ open, onClose, onSubmit }: ReportPostProps)
 
         <select
           value={reason}
-          onChange={(e) => setReason(e.target.value)}
+          onChange={(e) => setReason(e.target.value as ReportReason | "")}
+          disabled={submitting}
           className="w-full mb-3 text-[0.95rem] rounded-md border px-3 py-2 bg-transparent dark:bg-blue-950"
         >
           <option value="">Select a reason</option>
           {REPORT_REASONS.map((r) => (
-            <option key={r} value={r}>
-              {r}
+            <option key={r.value} value={r.value}>
+              {r.label}
             </option>
           ))}
         </select>
 
         <textarea
-          placeholder="Additional details (optional)"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
+          placeholder={reason === "other" ? "Additional details (required)" : "Additional details (optional)"}
+          value={details}
+          onChange={(e) => setDetails(e.target.value)}
+          disabled={submitting}
           rows={3}
           className="w-full rounded-md border px-3 py-2 mb-4 resize-none"
         />
@@ -86,21 +112,22 @@ export default function ReportPost({ open, onClose, onSubmit }: ReportPostProps)
         <div className="flex justify-end gap-3 w-full">
           <button
             onClick={closeModal}
-            className="w-1/2 py-1.5 rounded-md border text-sm hover:bg-black/5"
+            disabled={submitting}
+            className="w-1/2 py-1.5 rounded-md border text-sm hover:bg-black/5 disabled:opacity-60"
           >
             Cancel
           </button>
 
           <button
-            disabled={!reason}
+            disabled={!reason || submitting || (reason === "other" && !details.trim())}
             onClick={handleSubmit}
             className={`w-1/2 py-1.5 rounded-md cursor-pointer text-white ${
-              reason
+              reason && !submitting && !(reason === "other" && !details.trim())
                 ? "bg-blue-500 hover:bg-blue-600"
                 : "bg-blue-300 cursor-not-allowed"
             }`}
           >
-            Submit report
+            {submitting ? "Submitting..." : "Submit report"}
           </button>
         </div>
       </div>
