@@ -4,6 +4,7 @@ import "./globals.css";
 import ToastProvider from "@/components/ToastProvider";
 import Providers from "@/components/Providers";
 import GlobalLoader from "@/components/GlobalLoader";
+import { Analytics } from "@vercel/analytics/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,6 +36,7 @@ export default function RootLayout({
           <ToastProvider />
           {children}
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
