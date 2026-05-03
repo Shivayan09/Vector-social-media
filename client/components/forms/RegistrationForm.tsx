@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "../ui/button";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useRef } from "react";
 import { Eye, EyeOff, Plus } from "lucide-react";
@@ -173,6 +174,14 @@ export default function RegistrationForm() {
           <Button className="w-full text-white mt-5 cursor-pointer bg-blue-500 hover:bg-blue-600" onClick={nextStep}>
             Continue
           </Button>
+
+          <p className="mt-4 text-center text-[0.82rem] leading-6 surface-text-muted">
+            By continuing, you agree to Vector&apos;s{" "}
+            <Link href="/terms" className="text-primary underline underline-offset-4">
+              Terms & Guidelines
+            </Link>
+            .
+          </p>
         </>
       )}
 
@@ -220,6 +229,15 @@ export default function RegistrationForm() {
               {loading ? "Creating..." : "Create account"}
             </Button>
           </div>
+
+          <p className="mt-4 text-center text-[0.82rem] leading-6 surface-text-muted">
+            Creating an account means you will follow the platform rules on
+            respectful behavior, lawful posting, and safe messaging in the{" "}
+            <Link href="/terms" className="text-primary underline underline-offset-4">
+              Terms & Guidelines
+            </Link>
+            .
+          </p>
         </>
       )}
     </div>

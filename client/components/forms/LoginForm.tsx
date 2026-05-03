@@ -2,6 +2,7 @@
 
 import { Button } from "../ui/button";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { toast } from "react-toastify";
@@ -73,7 +74,7 @@ export default function LoginForm() {
     };
 
     return (
-        <div className="form-card w-80 md:w-90">
+        <div className="form-card w-80 md:w-100">
             <p className="form-title">
                 Welcome back!
             </p>
@@ -147,17 +148,25 @@ export default function LoginForm() {
                 {loading ? "Logging in" : "Log in"}
             </Button>
 
-            <div className="flex items-center justify-between mt-3">
-                <p className="mt-3 text-[0.9rem] text-foreground">
+            <div className="flex items-center justify-between gap-2 mt-5 text-sm">
+                <p className=" text-foreground">
                     Don&apos;t have an account?
                 </p>
                 <span
-                    className="mt-1 cursor-pointer font-semibold text-primary underline"
+                    className=" cursor-pointer font-semibold text-primary underline"
                     onClick={() => router.push("/auth/register")}
                 >
                     Register
                 </span>
             </div>
+
+            <p className="mt-4 text-center text-xs leading-6 surface-text-muted">
+                By Contunuing, you agree to Vector&apos;s{" "}
+                <Link href="/terms" className="text-primary underline underline-offset-4">
+                    Terms & Guidelines
+                </Link>
+                .
+            </p>
         </div>
     );
 }
