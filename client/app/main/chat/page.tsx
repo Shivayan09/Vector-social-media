@@ -200,7 +200,7 @@ export default function ChatListPage() {
                                         {otherUser?.name}
                                     </p>
 
-                                    <p className="text-sm text-gray-400 truncate max-w-[200px]">
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
                                         {convo.lastMessage
                                             ? convo.lastMessage.text ||
                                               convo.lastMessage.content ||
@@ -210,7 +210,7 @@ export default function ChatListPage() {
                                     </p>
                                 </div>
 
-                                <div className="text-xs text-gray-400 ml-auto">
+                                <div className="text-xs text-gray-500 dark:text-gray-400 ml-auto">
                                     {convo.lastMessage?.createdAt
                                         ? new Date(convo.lastMessage.createdAt).toLocaleTimeString([], {
                                               hour: "2-digit",
