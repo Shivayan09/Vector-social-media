@@ -95,10 +95,10 @@ export default function CommentsSection({ postId }: { postId: string }) {
     }
 
     return (
-        <div className="mt-3 rounded-b-xl border-t border-border/80 px-3 pt-3 md:px-5">
+        <div className="mt-3 rounded-b-xl border-t border-border/80 px-3 pt-3 pb-5 md:px-5">
             {userData && (
                 <div className="flex gap-2 my-4">
-                    <textarea value={text} onChange={(e) => setText(e.target.value)} onKeyDown={handleKeyDown} placeholder="Write a comment... (Shift+Enter for new line)" className="form-textarea mt-0 flex-1" rows={1} />
+                    <textarea value={text} onChange={(e) => setText(e.target.value)} onKeyDown={handleKeyDown} placeholder="Write a comment.." className="form-textarea mt-0 flex-1" rows={1} />
                     <button disabled={!text.trim() || buttonLoading} onClick={handlePost} className="w-20 md:w-25 h-9 md:h-10 cursor-pointer bg-blue-500 text-white rounded-md disabled:opacity-50">
                         Post
                     </button>
