@@ -4,7 +4,7 @@ import { Button } from "../ui/button";
 
 export default function HomeSidebar() {
     return (
-        <div className="hidden md:flex bg-white dark:bg-black border-black/5 w-90 h-screen flex-col py-7 px-3 font-serif">
+        <div className="glass-surface-strong hidden h-screen w-90 flex-col px-3 py-7 font-serif md:flex">
 
             <div className="flex flex-col border-b">
                 <p className="flex gap-2 items-center font-semibold"><TrendingUp className="text-blue-500" /> Top trends this week</p>

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import ProfileLayout from "@/components/profile/ProfileLayout";
+import SkeletonLoader from "@/components/loaders/SkeletonLoader";
 import type { UserSummary } from "@/lib/types";
 
 export default function UserProfilePage() {
@@ -34,11 +35,11 @@ export default function UserProfilePage() {
   }, [BACKEND_URL, username]);
 
   if (!username) {
-    return <p className="p-10">Loading...</p>;
+    return <div className="p-10"><SkeletonLoader count={1} height="h-64" /></div>;
   }
 
   if (loading) {
-    return <p className="p-10">Loading...</p>;
+    return <div className="p-10"><SkeletonLoader count={1} height="h-64" /></div>;
   }
 
   if (!user) {

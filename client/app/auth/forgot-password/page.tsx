@@ -46,20 +46,20 @@ export default function ForgotPasswordPage() {
     };
 
     return (
-        <div className="flex items-center justify-center h-screen">
-            <div className="border border-black/10 dark:border-white/10 backdrop-blur-3xl rounded-lg px-10 py-5 w-80 md:w-90">
-                <p className="font-semibold text-[1rem] md:text-[1.2rem] text-white">
+        <div className="auth-page">
+            <div className="form-card w-80 md:w-90">
+                <p className="form-title">
                     Forgot Password
                 </p>
-                <p className="mt-2 mb-5 text-[0.9rem] md:text-[1rem] text-gray-300">
+                <p className="form-subtitle">
                     Enter your email and we&apos;ll send you a reset link.
                 </p>
 
-                <p className="font-semibold text-white">Email</p>
+                <p className="form-label">Email</p>
                 <input
                     type="email"
                     placeholder="you@example.com"
-                    className="outline-none h-10 bg-white/30 dark:border-white/10 w-full rounded-md p-3 my-3"
+                    className="form-input"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                 />
@@ -76,7 +76,7 @@ export default function ForgotPasswordPage() {
 
                 <div className="flex items-center justify-center mt-4">
                     <span
-                        className="text-[0.9rem] text-white/70 underline cursor-pointer"
+                        className="surface-text-muted cursor-pointer text-[0.9rem] underline"
                         onClick={() => router.push("/auth/login")}
                     >
                         Back to Login

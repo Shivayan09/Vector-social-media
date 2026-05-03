@@ -132,20 +132,19 @@ export default function ChatListPage() {
         <div className="flex w-full h-screen">
             <div className="flex-1 h-screen overflow-y-auto hide-scrollbar">
 
-                <div className="p-4 sticky top-0 z-10 bg-white/15 dark:bg-black/25 backdrop-blur-md">
+
+                <h1 className="px-5 pt-3 text-xl font-bold text-foreground">
+                    Your chats
+                </h1>
+                <div className="p-5 pb-0">
                     <input
                         type="text"
                         placeholder="Search chats..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full p-2 rounded-lg outline-none bg-black/20 text-white"
+                        className="chat-search-input"
                     />
                 </div>
-
-                <h1 className="text-xl font-bold px-5 pt-3 text-white">
-                    Your chats
-                </h1>
-
                 <div className="flex flex-col p-5 gap-2">
                     {filteredConversations.map((convo) => {
                         const otherUser = convo.participants.find(
@@ -158,7 +157,7 @@ export default function ChatListPage() {
                                 onClick={() =>
                                     router.push(`/main/chat/${convo._id}`)
                                 }
-                                className="flex items-center gap-3 p-4 rounded-lg cursor-pointer bg-black/10 hover:bg-black/15 hover:shadow-lg text-white transition-all duration-200"
+                                className="chat-list-item cursor-pointer"
                             >
                                 <img
                                     alt={otherUser?.name || "Chat user"}
@@ -170,23 +169,23 @@ export default function ChatListPage() {
                                 />
 
                                 <div>
-                                    <p className="font-semibold">
+                                    <p className="font-semibold text-foreground">
                                         {otherUser?.name}
                                     </p>
-                                    <p className="text-sm text-gray-400">
+                                    <p className="surface-text-muted text-sm">
                                         @{otherUser?.username}
                                     </p>
                                 </div>
 
                                 <div className="w-full">
                                     {unreadCounts[convo._id] > 0 && (
-                                    <div className="ml-auto w-6 mr-2 bg-red-500 text-white rounded-full h-6 flex items-center justify-center text-xs font-bold">
-                                        {unreadCounts[convo._id]}
-                                    </div>
-                                )}
+                                        <div className="ml-auto w-6 mr-2 bg-red-500 text-white rounded-full h-6 flex items-center justify-center text-xs font-bold">
+                                            {unreadCounts[convo._id]}
+                                        </div>
+                                    )}
                                 </div>
 
-                                <ArrowRight className="ml-auto opacity-70" />
+                                <ArrowRight className="ml-auto opacity-70 text-foreground" />
 
                                 <Trash2
                                     onClick={(e) =>

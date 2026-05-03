@@ -6,6 +6,7 @@ import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import FollowButton from "../ui/FollowButton";
 import { useRouter } from "next/navigation";
+import InlineLoader from "../loaders/InlineLoader";
 
 type SuggestedUser = {
   _id: string;
@@ -41,7 +42,7 @@ export default function ActivitySidebar() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await axios.get(`${BACKEND_URL}/api/users/all`,{ withCredentials: true });
+        const res = await axios.get(`${BACKEND_URL}/api/users/suggestions`, { withCredentials: true });
         setUsers(res.data.users);
       } catch (err) {
         console.error("Failed to fetch users:", err);
@@ -85,15 +86,7 @@ export default function ActivitySidebar() {
       document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredUsers = users.filter((suggestedUser) => {
-    if (suggestedUser._id === userData?.id) {
-      return false;
-    }
-    if (userData?.following?.includes(suggestedUser._id)) {
-      return false;
-    }
-    return true;
-  });
+  const filteredUsers = users;
 
   const handleClick = (username?: string) => {
     if (!username) {
@@ -104,7 +97,7 @@ export default function ActivitySidebar() {
 
   return (
     <>
-      <button onClick={() => setOpen(true)} className="fixed top-4 right-4 z-50 lg:hidden p-2 rounded-full bg-blue-500 text-white shadow-lg">
+      <button onClick={() => setOpen(true)} className="fixed top-4 right-4 z-50 rounded-full bg-blue-500 p-2 text-white shadow-lg lg:hidden">
         <UserPlus />
       </button>
 
@@ -112,33 +105,33 @@ export default function ActivitySidebar() {
         <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" onClick={() => setOpen(false)} />
       )}
 
-      <div ref={wrapperRef} className={`h-screen md:min-h-screen md:h-fit w-fit p-5 backdrop-blur-xl fixed lg:static top-0 right-0 z-50 transform transition-transform duration-300 ${open ? "translate-x-0" : "translate-x-full"} lg:translate-x-0`}>
-        <button onClick={() => setOpen(false)} className="absolute top-4 right-4 lg:hidden">
+      <div ref={wrapperRef} className={`glass-surface-strong fixed top-0 right-0 z-50 h-screen w-fit p-5 transform transition-transform duration-300 md:min-h-screen md:h-fit lg:static ${open ? "translate-x-0" : "translate-x-full"} lg:translate-x-0`}>
+        <button onClick={() => setOpen(false)} className="absolute top-4 right-4 text-foreground lg:hidden">
           <X />
         </button>
 
-        <p className="font-semibold ml-2 text-[1.1rem] text-white">
+        <p className="ml-2 text-[1.1rem] font-semibold text-foreground">
           Search people you know
         </p>
 
-        <div className="flex gap-2 h-10 rounded-full items-center px-3 bg-white/30 dark:bg-black/30 mt-7 mb-5">
+        <div className="search-pill mt-7 mb-5">
           <Search className="h-5" />
-          <input type="text" placeholder="Search users" value={query} onChange={(e) => setQuery(e.target.value)} className="outline-0 w-full h-full bg-transparent" />
+          <input type="text" placeholder="Search users" value={query} onChange={(e) => setQuery(e.target.value)} className="h-full w-full bg-transparent outline-0 placeholder:text-muted-foreground" />
         </div>
 
-        <p className="text-[1.1rem] font-semibold flex items-center gap-2 text-white">
+        <p className="flex items-center gap-2 text-[1.1rem] font-semibold text-foreground">
           <UserPlus className="h-5 text-blue-500" />
           Suggestions
         </p>
 
         <div className="mt-5 flex flex-col gap-6 w-70 min-h-[60vh] max-h-[60vh] overflow-y-auto pr-1">
           {loading ? (
-            <p className="text-sm opacity-50">Loading users...</p>
+            <InlineLoader text="Loading users..." />
           ) : query.trim() ? (
             searching ? (
-              <p className="text-sm opacity-50">Searching...</p>
+              <p className="surface-text-muted text-sm">Searching...</p>
             ) : results.length === 0 ? (
-              <p className="text-sm opacity-50">No users found.</p>
+              <p className="surface-text-muted text-sm">No users found.</p>
             ) : (
               results.filter((user) => user._id !== userData?.id).map((user) => {
                 const isFollowing = userData?.following?.includes(user._id.toString()) ?? false;
@@ -162,7 +155,7 @@ export default function ActivitySidebar() {
               })
             )
           ) : filteredUsers.length === 0 ? (
-            <p className="text-sm opacity-50">No users found.</p>
+            <p className="surface-text-muted text-sm">No users found.</p>
           ) : (
             filteredUsers.map((suggestedUser) => {
               const isFollowing = userData?.following?.includes(suggestedUser._id.toString()) ?? false;
@@ -192,7 +185,7 @@ export default function ActivitySidebar() {
 
         </div>
 
-        <p className="text-gray-400 text-[0.8rem] text-center mt-10">
+        <p className="surface-text-muted mt-10 text-center text-[0.8rem]">
           All rights reserved @Vector 2026
         </p>
       </div>

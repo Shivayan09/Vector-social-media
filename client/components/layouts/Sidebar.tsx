@@ -90,18 +90,18 @@ export default function Sidebar() {
     <>
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className={`fixed z-50 md:hidden p-2 rounded-lg ${isMain ? "top-7.5 left-6" : "top-4 left-3"
+        className={`glass-surface-strong fixed z-50 rounded-lg p-2 md:hidden ${isMain ? "top-7.5 left-6" : "top-4 left-3"
           }`}
         aria-label="Toggle menu"
       >
-        {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6 text-white" />}
+        {open ? <X className="h-6 w-6 text-foreground" /> : <Menu className="h-6 w-6 text-foreground" />}
       </button>
 
       {open && (
         <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={() => setOpen(false)} />
       )}
 
-      <aside className={`fixed md:static top-0 left-0 z-50 h-screen overflow-y-auto hide-scrollbar text-white w-50 md:w-55 border-r border-black/5 shadow-lg flex flex-col gap-5 px-2 py-5 font-serif text-[1.1rem] backdrop-blur-3xl transform transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
+      <aside className={`sidebar-shell transform transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
         <div className="flex w-full">
           <div className="flex justify-center ml-3">
             <img
@@ -112,7 +112,7 @@ export default function Sidebar() {
 
             <div className="flex flex-col ml-3">
               <p className="font-semibold text-[1.1rem]">Hello</p>
-              <p className="text-gray-300">{userData?.name}!</p>
+              <p className="surface-text-muted">{userData?.name}!</p>
             </div>
           </div>
         </div>
@@ -171,10 +171,10 @@ export default function Sidebar() {
         />
 
         <p
-          className="flex mr-auto pl-2 md:pl-5 gap-2 mt-auto transition-all duration-300 hover:bg-black/10 w-full h-10 rounded-lg items-center cursor-pointer dark:hover:text-white/70"
+          className="sidebar-item mt-auto mr-auto h-10 items-center pl-2 md:pl-5"
           onClick={() => setLogoutOpen(true)}
         >
-          <LogOut className="opacity-60" />
+          <LogOut className="sidebar-icon opacity-60" />
           {isLoggedIn ? "Log out" : "Log in"}
         </p>
       </aside>
@@ -202,8 +202,8 @@ export default function Sidebar() {
 function SidebarItem({ icon, label, href, active, onClick, unreadCount = 0 }: SidebarItemProps) {
   if (onClick) {
     return (
-      <button onClick={onClick} className="flex gap-2 cursor-pointer transition-all duration-200 p-2 rounded-lg w-full md:pl-5 hover:bg-black/10 dark:hover:bg-blue-400/20">
-        <span className="h-4 md:h-6 text-stone-300 dark:text-white/50">
+      <button onClick={onClick} className="sidebar-item">
+        <span className="sidebar-icon h-4 md:h-6">
           {icon}
         </span>
         {label}
@@ -214,11 +214,11 @@ function SidebarItem({ icon, label, href, active, onClick, unreadCount = 0 }: Si
   return (
     <Link
       href={href!}
-      className={`relative flex gap-2 cursor-pointer transition-all duration-200 p-2 rounded-lg w-full md:pl-5 ${active
-        ? "bg-blue-500 text-white"
-        : "hover:bg-black/10 dark:hover:bg-blue-400/20 dark:hover:text-white/70"
+      className={`${active ? "sidebar-item-active" : "sidebar-item"} ${active
+        ? ""
+        : ""
         }`}>
-      <span className={`h-4 md:h-6 ${active ? "text-white" : "text-stone-300 dark:text-white/50"}`}>
+      <span className={`h-4 md:h-6 ${active ? "sidebar-icon" : "sidebar-icon"}`}>
         {icon}
       </span>
       {label}
