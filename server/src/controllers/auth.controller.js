@@ -28,7 +28,7 @@ const sendResetEmail = async (email, token) => {
 
 export const register = async (req, res) => {
     try {
-        const {
+        let {
             name,
             surname,
             phoneNumber,
@@ -81,17 +81,11 @@ export const register = async (req, res) => {
         }
 
         if (!bio) {
-            return res.json({
-                success: false,
-                message: "Please enter a bio!",
-            });
+            bio = "";
         }
 
         if (!description) {
-            return res.json({
-                success: false,
-                message: "Please enter a description!",
-            });
+            description = "";
         }
 
         // check existing email

@@ -1,9 +1,8 @@
 "use client";
 
-import { Button } from "../ui/button";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Eye, EyeOff, Mail, Lock, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
@@ -18,24 +17,22 @@ export default function LoginForm() {
     const router = useRouter();
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [rememberMe, setRememberMe] = useState(false);
 
     const { isLoggedIn, refreshAuth } = useAppContext();
-
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
     const {
         register,
         handleSubmit,
-        formState: { errors, isValid, touchedFields },
+        formState: { errors, isValid },
     } = useForm<LoginFormData>({
         resolver: zodResolver(loginSchema),
         mode: "onChange",
     });
 
     useEffect(() => {
-        if (isLoggedIn) {
-            router.replace("/main");
-        }
+        if (isLoggedIn) router.replace("/main");
     }, [isLoggedIn, router]);
 
     const onSubmit = async (formData: LoginFormData) => {
@@ -46,28 +43,20 @@ export default function LoginForm() {
                 formData,
                 { withCredentials: true }
             );
-
             if (data.success) {
                 toast.success("Logged in successfully!");
                 await refreshAuth();
-                return;
             } else {
                 toast.warn(data.message);
             }
         } catch (error: unknown) {
-            if (error instanceof Error) {
-                toast.error(error.message);
-            } else {
-                toast.error("Something went wrong");
-            }
+            toast.error(error instanceof Error ? error.message : "Something went wrong");
         } finally {
             setLoading(false);
         }
     };
 
-    const handleGoogle = async (
-        credentialResponse: GoogleCredentialResponseLite
-    ) => {
+    const handleGoogle = async (credentialResponse: GoogleCredentialResponseLite) => {
         try {
             await axios.post(
                 BACKEND_URL + "/api/auth/google",
@@ -83,211 +72,157 @@ export default function LoginForm() {
     };
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="relative w-full max-w-md mx-auto"
-        >
-            {/* Glassmorphism card */}
-            <div className="relative backdrop-blur-xl bg-white/10 dark:bg-white/5 border border-white/20 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden">
-                {/* Gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 pointer-events-none" />
-                
-                <div className="relative p-8 md:p-10">
-                    {/* Header */}
-                    <div className="text-center mb-8">
-                        <motion.h1
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 }}
-                            className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent"
-                        >
-                            Welcome Back!
-                        </motion.h1>
-                        <motion.p
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.2 }}
-                            className="mt-2 text-white/70 text-sm md:text-base"
-                        >
-                            Log in to continue your journey
-                        </motion.p>
-                    </div>
-
-                    {/* Google Login */}
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.3 }}
-                        className="mb-6"
-                    >
-                        <GoogleLogin
-                            onSuccess={handleGoogle}
-                            onError={() => toast.error("Google login failed")}
-                            theme="outline"
-                            size="large"
-                            width="100%"
-                        />
-                    </motion.div>
-
-                    {/* Divider */}
-                    <div className="relative flex items-center justify-center my-6">
-                        <div className="absolute w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
-                        <span className="relative px-4 text-sm text-white/70 bg-white/5 backdrop-blur-xl rounded-full">
-                            or continue with email
+        <div className="h-screen overflow-y-auto flex items-center justify-center px-4 py-8">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="w-full max-w-[380px]"
+            >
+                {/* Tab Switcher */}
+                <div className="flex justify-center mb-6">
+                    <div className="flex bg-white/10 backdrop-blur-sm border border-white/20 rounded-full p-1">
+                        <span className="px-7 py-2 rounded-full text-sm font-semibold bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow">
+                            Login
                         </span>
-                    </div>
-
-                    {/* Login Form */}
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-                        {/* Username Field */}
-                        <motion.div
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.4 }}
+                        <button
+                            type="button"
+                            onClick={() => router.push("/auth/register")}
+                            className="px-7 py-2 rounded-full text-sm font-medium text-white/70 hover:text-white transition-colors"
                         >
-                            <label className="block text-sm font-medium text-white/90 mb-2">
-                                Username
-                            </label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Mail className="h-5 w-5 text-white/40" />
+                            Sign Up
+                        </button>
+                    </div>
+                </div>
+
+                {/* Card */}
+                <div className="backdrop-blur-xl bg-black/30 border border-white/15 rounded-2xl shadow-2xl">
+                    <div className="p-8">
+                        <h1 className="text-3xl font-bold text-white">Welcome Back</h1>
+                        <p className="mt-1 mb-7 text-white/60 text-sm">Continue your journey with us.</p>
+
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                            {/* Username */}
+                            <div>
+                                <label className="block text-sm font-semibold text-white mb-2">
+                                    Username
+                                </label>
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-white/40 pointer-events-none" />
+                                    <input
+                                        {...register("username")}
+                                        type="text"
+                                        placeholder="Enter your username"
+                                        className="w-full h-12 pl-10 pr-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-white/40 outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 transition-all"
+                                    />
                                 </div>
-                                <input
-                                    {...register("username")}
-                                    type="text"
-                                    placeholder="Enter your username"
-                                    className={`w-full h-12 pl-10 pr-10 bg-white/10 border ${
-                                        errors.username
-                                            ? "border-red-400/50 focus:border-red-400"
-                                            : touchedFields.username && !errors.username
-                                            ? "border-green-400/50 focus:border-green-400"
-                                            : "border-white/20 focus:border-blue-400"
-                                    } rounded-xl text-white placeholder:text-white/40 outline-none focus:ring-2 focus:ring-blue-400/30 transition-all duration-200`}
-                                />
-                                {touchedFields.username && !errors.username && (
-                                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                                        <CheckCircle2 className="h-5 w-5 text-green-400" />
-                                    </div>
-                                )}
                                 {errors.username && (
-                                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                                        <AlertCircle className="h-5 w-5 text-red-400" />
-                                    </div>
+                                    <p className="mt-1.5 text-xs text-red-400">{errors.username.message}</p>
                                 )}
                             </div>
-                            {errors.username && (
-                                <motion.p
-                                    initial={{ opacity: 0, y: -5 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="mt-2 text-sm text-red-400 flex items-center gap-1"
-                                >
-                                    <AlertCircle className="h-4 w-4" />
-                                    {errors.username.message}
-                                </motion.p>
-                            )}
-                        </motion.div>
 
-                        {/* Password Field */}
-                        <motion.div
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.5 }}
-                        >
-                            <label className="block text-sm font-medium text-white/90 mb-2">
-                                Password
-                            </label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Lock className="h-5 w-5 text-white/40" />
+                            {/* Password */}
+                            <div>
+                                <label className="block text-sm font-semibold text-white mb-2">
+                                    Password
+                                </label>
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-white/40 pointer-events-none" />
+                                    <input
+                                        {...register("password")}
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="••••••••"
+                                        className="w-full h-12 pl-10 pr-10 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-white/40 outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 transition-all"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80 transition-colors"
+                                    >
+                                        {showPassword ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
+                                    </button>
                                 </div>
-                                <input
-                                    {...register("password")}
-                                    type={showPassword ? "text" : "password"}
-                                    placeholder="Enter your password"
-                                    className={`w-full h-12 pl-10 pr-10 bg-white/10 border ${
-                                        errors.password
-                                            ? "border-red-400/50 focus:border-red-400"
-                                            : touchedFields.password && !errors.password
-                                            ? "border-green-400/50 focus:border-green-400"
-                                            : "border-white/20 focus:border-blue-400"
-                                    } rounded-xl text-white placeholder:text-white/40 outline-none focus:ring-2 focus:ring-blue-400/30 transition-all duration-200`}
-                                />
+                                {errors.password && (
+                                    <p className="mt-1.5 text-xs text-red-400">{errors.password.message}</p>
+                                )}
+                            </div>
+
+                            {/* Remember me + Forgot password */}
+                            <div className="flex items-center justify-between">
+                                <label className="flex items-center gap-2 cursor-pointer select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={rememberMe}
+                                        onChange={(e) => setRememberMe(e.target.checked)}
+                                        className="w-4 h-4 rounded accent-purple-500"
+                                    />
+                                    <span className="text-sm text-white/70">Remember me</span>
+                                </label>
                                 <button
                                     type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-white/60 hover:text-white/90 transition-colors"
+                                    onClick={() => router.push("/auth/forgot-password")}
+                                    className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
                                 >
-                                    {showPassword ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
+                                    Forgot password?
                                 </button>
                             </div>
-                            {errors.password && (
-                                <motion.p
-                                    initial={{ opacity: 0, y: -5 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="mt-2 text-sm text-red-400 flex items-center gap-1"
-                                >
-                                    <AlertCircle className="h-4 w-4" />
-                                    {errors.password.message}
-                                </motion.p>
-                            )}
-                        </motion.div>
 
-                        {/* Forgot Password */}
-                        <div className="flex justify-end">
+                            {/* Submit */}
+                            <button
+                                type="submit"
+                                disabled={loading || !isValid}
+                                className="w-full h-12 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                            >
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="h-5 w-5 animate-spin" />
+                                        Logging in...
+                                    </>
+                                ) : (
+                                    "Login"
+                                )}
+                            </button>
+                        </form>
+
+                        {/* Divider */}
+                        <div className="flex items-center gap-3 my-6">
+                            <div className="flex-1 h-px bg-white/20" />
+                            <span className="text-sm text-white/50">or login with</span>
+                            <div className="flex-1 h-px bg-white/20" />
+                        </div>
+
+                        {/* Social Buttons */}
+                        <div className="space-y-3">
+                            <div className="w-full overflow-hidden rounded-xl">
+                                <GoogleLogin
+                                    onSuccess={handleGoogle}
+                                    onError={() => toast.error("Google login failed")}
+                                    theme="outline"
+                                    size="large"
+                                    width="340"
+                                    text="continue_with"
+                                />
+                            </div>
                             <button
                                 type="button"
-                                onClick={() => router.push("/auth/forgot-password")}
-                                className="text-sm text-blue-400 hover:text-blue-300 transition-colors duration-200"
+                                onClick={() => toast.info("GitHub login coming soon")}
+                                className="w-full h-12 flex items-center justify-center gap-3 bg-white/5 border border-white/20 rounded-xl text-white font-semibold hover:bg-white/10 transition-all"
                             >
-                                Forgot password?
+                                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
+                                </svg>
+                                Continue with GitHub
                             </button>
                         </div>
 
-                        {/* Submit Button */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.6 }}
-                        >
-                            <Button
-                                type="submit"
-                                disabled={loading || !isValid}
-                                className="w-full h-12 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
-                            >
-                                {loading ? (
-                                    <span className="flex items-center gap-2">
-                                        <Loader2 className="h-5 w-5 animate-spin" />
-                                        Logging in...
-                                    </span>
-                                ) : (
-                                    "Log In"
-                                )}
-                            </Button>
-                        </motion.div>
-                    </form>
-
-                    {/* Sign Up Link */}
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.7 }}
-                        className="mt-6 text-center"
-                    >
-                        <p className="text-sm text-white/70">
-                            Don&apos;t have an account?{" "}
-                            <button
-                                type="button"
-                                onClick={() => router.push("/auth/register")}
-                                className="font-semibold text-blue-400 hover:text-blue-300 transition-colors duration-200"
-                            >
-                                Sign up
-                            </button>
+                        {/* Footer */}
+                        <p className="mt-6 text-center text-xs text-white/40">
+                            Protected by reCAPTCHA and subject to the{" "}
+                            <span className="text-purple-400 cursor-pointer hover:underline">Privacy Policy</span>
                         </p>
-                    </motion.div>
+                    </div>
                 </div>
-            </div>
-        </motion.div>
+            </motion.div>
+        </div>
     );
 }
