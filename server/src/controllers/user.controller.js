@@ -147,13 +147,19 @@ export const toggleFollowUser = async (req, res) => {
 export const getUserProfile = async (req, res) => {
     try {
         const { username } = req.params;
-        const user = await User.findOne({ username }).select("name surname username avatar bio description followersCount followingCount").lean();
+        const user = await User.findOne({ username }).select("_id name surname username avatar bio description followersCount followingCount followers").lean();
         if (!user) {
             return res.status(404).json({
                 message: "User not found"
             });
         }
-        res.json(user);
+        
+        const response = { ...user };
+        if (req.user) {
+            response.isFollowedByCurrentUser = user.followers.includes(req.user._id);
+        }
+        
+        res.json(response);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
