@@ -16,7 +16,7 @@ const optionalAuth = async (req, res, next) => {
       const user = await User.findById(decoded.id);
       if (user) req.user = user;
     }
-  } catch (error) {
+  } catch {
     // Silently ignore - user is just not authenticated
   }
   next();
