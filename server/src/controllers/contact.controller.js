@@ -31,6 +31,7 @@ export const submitContact = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "Message submitted successfully",
+      contactId: contact._id,
     });
   } catch (error) {
     const message = error.name === "ValidationError" ? error.message : "Failed to submit message";
