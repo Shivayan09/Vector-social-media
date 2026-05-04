@@ -4,10 +4,20 @@ export const submitContact = async (req, res) => {
   try {
     const { name, email, subject, message } = req.body;
 
-    if (!name || !email || !subject || !message) {
+    // Validate all fields are strings and not empty
+    if (
+      typeof name !== "string" ||
+      typeof email !== "string" ||
+      typeof subject !== "string" ||
+      typeof message !== "string" ||
+      !name.trim() ||
+      !email.trim() ||
+      !subject.trim() ||
+      !message.trim()
+    ) {
       return res.status(400).json({
         success: false,
-        message: "All fields are required",
+        message: "All fields are required and must be valid",
       });
     }
 
@@ -21,13 +31,12 @@ export const submitContact = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "Message submitted successfully",
-      contact,
     });
   } catch (error) {
-    return res.status(500).json({
+    const message = error.name === "ValidationError" ? error.message : "Failed to submit message";
+    return res.status(400).json({
       success: false,
-      message: "Failed to submit message",
-      error: error.message,
+      message,
     });
   }
 };

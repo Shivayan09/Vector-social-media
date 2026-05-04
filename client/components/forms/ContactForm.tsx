@@ -52,8 +52,13 @@ export default function ContactForm() {
       } else {
         toast.error(data.message || "Failed to send message");
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Something went wrong");
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message || "Something went wrong"
+        : error instanceof Error
+          ? error.message
+          : "Something went wrong";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
