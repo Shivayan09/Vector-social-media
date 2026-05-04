@@ -3,16 +3,18 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useAppContext } from "@/context/AppContext";
 import ProfileLayout from "@/components/profile/ProfileLayout";
 import SkeletonLoader from "@/components/loaders/SkeletonLoader";
 import type { UserSummary } from "@/lib/types";
 
+type UserSummaryWithFollowState = UserSummary & {
+  isFollowedByCurrentUser?: boolean;
+};
+
 export default function UserProfilePage() {
   const params = useParams();
   const username = typeof params.username === "string" ? params.username : undefined;
-  const { userData } = useAppContext();
-  const [user, setUser] = useState<UserSummary | null>(null);
+  const [user, setUser] = useState<UserSummaryWithFollowState | null>(null);
   const [loading, setLoading] = useState(true);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
@@ -49,7 +51,7 @@ export default function UserProfilePage() {
   return (
     <ProfileLayout
       user={user}
-      isFollowing={(user as any).isFollowedByCurrentUser ?? false}
+      isFollowing={user.isFollowedByCurrentUser ?? false}
     />
   );
 }
