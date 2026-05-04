@@ -46,12 +46,10 @@ export default function UserProfilePage() {
     return <p className="p-10">User not found, please reload the page and click on profile again</p>;
   }
 
-  const isFollowing = !!userData && Array.isArray(user.followers) && user.followers.includes(userData.id);
-
   return (
     <ProfileLayout
       user={user}
-      isFollowing={isFollowing}
+      isFollowing={(user as any).isFollowedByCurrentUser ?? false}
     />
   );
 }
