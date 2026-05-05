@@ -56,78 +56,358 @@
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --foreground: oklch(0.22 0.02 255);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.22 0.02 255);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.22 0.02 255);
+  --primary: oklch(0.56 0.19 257);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.96 0 0);
+  --secondary-foreground: oklch(0.3 0.02 255);
+  --muted: oklch(0.96 0 0);
+  --muted-foreground: oklch(0.48 0.018 255);
+  --accent: oklch(0.95 0 0);
+  --accent-foreground: oklch(0.24 0.02 255);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: oklch(0.9 0 0);
+  --input: oklch(0.92 0 0);
+  --ring: oklch(0.62 0.12 255);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.24 0.02 255);
+  --sidebar-primary: oklch(0.56 0.19 257);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-accent: oklch(0.96 0 0);
+  --sidebar-accent-foreground: oklch(0.24 0.02 255);
+  --sidebar-border: oklch(0.9 0 0);
+  --sidebar-ring: oklch(0.62 0.12 255);
+  --surface: rgba(255, 255, 255, 0.82);
+  --surface-strong: rgba(255, 255, 255, 0.94);
+  --surface-hover: rgba(250, 250, 250, 0.98);
+  --surface-border: rgba(0, 0, 0, 0.08);
+  --surface-shadow: 0 18px 45px rgba(0, 0, 0, 0.08);
+  --soft-text: rgba(42, 52, 74, 0.72);
+  --page-gradient: linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(255, 255, 255, 1));
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: oklch(0 0 0);
+  --foreground: oklch(0.96 0.01 248);
+  --card: oklch(0.16 0 0);
+  --card-foreground: oklch(0.96 0.01 248);
+  --popover: oklch(0.16 0 0);
+  --popover-foreground: oklch(0.96 0.01 248);
+  --primary: oklch(0.72 0.16 255);
+  --primary-foreground: oklch(0.12 0 0);
+  --secondary: oklch(0.2 0 0);
+  --secondary-foreground: oklch(0.96 0.01 248);
+  --muted: oklch(0.2 0 0);
+  --muted-foreground: oklch(0.75 0.015 248);
+  --accent: oklch(0.22 0 0);
+  --accent-foreground: oklch(0.96 0.01 248);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.14);
+  --ring: oklch(0.72 0.14 255);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar: oklch(0.08 0 0);
+  --sidebar-foreground: oklch(0.96 0.01 248);
+  --sidebar-primary: oklch(0.72 0.16 255);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-accent: oklch(0.18 0 0);
+  --sidebar-accent-foreground: oklch(0.96 0.01 248);
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: oklch(0.72 0.14 255);
+  --surface: rgba(10, 10, 10, 0.72);
+  --surface-strong: rgba(0, 0, 0, 0.88);
+  --surface-hover: rgba(24, 24, 24, 0.92);
+  --surface-border: rgba(255, 255, 255, 0.12);
+  --surface-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  --soft-text: rgba(226, 232, 240, 0.74);
+  --page-gradient: linear-gradient(180deg, rgba(0, 0, 0, 1), rgba(8, 8, 8, 1));
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    @apply h-full;
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply min-h-screen bg-background text-foreground antialiased;
+    background-image: var(--page-gradient);
+    background-attachment: fixed;
+  }
+}
+
+@layer components {
+  .app-body {
+    @apply h-screen overflow-hidden;
+  }
+
+  .app-shell {
+    @apply flex h-screen overflow-hidden;
+  }
+
+  .app-main {
+    @apply flex-1 min-h-0 overflow-y-auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .page-scroll {
+    @apply h-screen overflow-y-auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .auth-page {
+    @apply flex min-h-screen items-center justify-center px-4 py-10;
+  }
+
+  .glass-surface {
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    box-shadow: var(--surface-shadow);
+    @apply backdrop-blur-3xl;
+  }
+
+  .glass-surface-strong {
+    background: var(--surface-strong);
+    border: 1px solid var(--surface-border);
+    box-shadow: var(--surface-shadow);
+    @apply backdrop-blur-3xl;
+  }
+
+  .glass-hover {
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  }
+
+  .glass-hover:hover {
+    background: var(--surface-hover);
+  }
+
+  .surface-text-muted {
+    color: var(--soft-text);
+  }
+
+  .form-card {
+    background: var(--surface-strong);
+    border: 1px solid var(--surface-border);
+    box-shadow: var(--surface-shadow);
+    @apply rounded-2xl px-5 py-6 backdrop-blur-3xl md:px-10;
+  }
+
+  .form-title {
+    @apply text-[1rem] font-semibold md:text-[1.2rem] text-foreground;
+  }
+
+  .form-subtitle {
+    @apply mt-2 mb-5 text-[0.9rem] md:text-[1rem];
+    color: var(--soft-text);
+  }
+
+  .form-label {
+    @apply font-semibold text-foreground;
+  }
+
+  .form-input {
+    @apply my-2 h-10 w-full rounded-md border px-3 text-[0.95rem] text-foreground placeholder:text-muted-foreground/80;
+    background: color-mix(in srgb, var(--card) 84%, transparent);
+  }
+
+  .form-textarea {
+    @apply mt-2 w-full rounded-md border px-3 py-2 text-foreground placeholder:text-muted-foreground/80 resize-none;
+    background: color-mix(in srgb, var(--card) 84%, transparent);
+  }
+
+  .form-inline-input {
+    @apply my-3 flex h-10 items-center gap-2 rounded-lg border px-3 text-foreground;
+    background: color-mix(in srgb, var(--card) 84%, transparent);
+  }
+
+  .form-divider {
+    @apply absolute h-px w-full;
+    background: color-mix(in srgb, var(--foreground) 14%, transparent);
+  }
+
+  .form-divider-text {
+    @apply relative px-3 text-sm;
+    color: var(--soft-text);
+  }
+
+  .avatar-upload {
+    @apply relative flex items-center justify-center overflow-hidden rounded-full border transition-all duration-200 cursor-pointer;
+    background: color-mix(in srgb, var(--card) 76%, transparent);
+  }
+
+  .top-nav {
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    box-shadow: var(--surface-shadow);
+    @apply mx-auto my-5 flex w-[90vw] items-center justify-center rounded-full px-6 py-4 backdrop-blur-3xl md:w-[70vw] md:justify-between md:px-10;
+  }
+
+  .top-nav-link {
+    @apply cursor-pointer transition-colors duration-200 hover:text-primary;
+    color: var(--soft-text);
+  }
+
+  .page-title {
+    @apply text-center text-[1.4rem] font-semibold text-foreground md:text-left;
+  }
+
+  .page-subtitle {
+    @apply text-center md:text-left;
+    color: var(--soft-text);
+  }
+
+  .search-pill {
+    @apply flex h-10 items-center gap-2 rounded-full px-2;
+    background: color-mix(in srgb, var(--card) 82%, transparent);
+    border: 1px solid var(--surface-border);
+  }
+
+  .panel-card {
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    box-shadow: var(--surface-shadow);
+    @apply rounded-xl p-4 text-foreground backdrop-blur-3xl;
+  }
+
+  .sidebar-shell {
+    @apply fixed top-0 left-0 z-50 flex h-screen w-50 flex-col gap-5 overflow-y-auto px-2 py-5 text-[1.1rem] font-serif shadow-lg md:static md:w-55;
+    color: var(--sidebar-foreground);
+    background: var(--surface-strong);
+    border-right: 1px solid var(--surface-border);
+    box-shadow: var(--surface-shadow);
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    @apply backdrop-blur-3xl;
+  }
+
+  .sidebar-item {
+    @apply relative flex w-full cursor-pointer gap-2 rounded-lg p-2 transition-all duration-200 md:pl-5;
+    color: var(--sidebar-foreground);
+  }
+
+  .sidebar-item:hover {
+    background: color-mix(in srgb, var(--accent) 68%, transparent);
+  }
+
+  .sidebar-item-active {
+    @apply relative flex w-full cursor-pointer gap-2 rounded-lg p-2 text-primary-foreground transition-all duration-200 md:pl-5;
+    background: var(--primary);
+  }
+
+  .sidebar-icon {
+    color: color-mix(in srgb, var(--sidebar-foreground) 62%, transparent);
+  }
+
+  .sidebar-item-active .sidebar-icon {
+    color: currentColor;
+  }
+
+  .content-card {
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    box-shadow: var(--surface-shadow);
+    @apply rounded-2xl px-5 py-3 backdrop-blur-3xl;
+  }
+
+  .chat-header {
+    background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
+    border-bottom: 1px solid var(--surface-border);
+    @apply flex items-center px-5 py-3 backdrop-blur-3xl;
+  }
+
+  .chat-searchbar {
+    background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
+    border-bottom: 1px solid var(--surface-border);
+    @apply sticky top-0 z-10 p-4 backdrop-blur-3xl;
+  }
+
+  .chat-search-input {
+    @apply w-full rounded-xl px-3 py-2 text-foreground outline-none placeholder:text-muted-foreground;
+    background: color-mix(in srgb, var(--card) 88%, transparent);
+    border: 1px solid var(--surface-border);
+  }
+
+  .chat-list-item {
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    border: 1px solid var(--surface-border);
+    @apply flex items-center gap-3 rounded-xl p-4 text-foreground transition-all duration-200;
+  }
+
+  .chat-list-item:hover {
+    background: var(--surface-hover);
+    box-shadow: var(--surface-shadow);
+  }
+
+  .chat-bubble-self {
+    @apply relative max-w-[70%] rounded-2xl rounded-br-md px-4 py-2 text-white;
+    background: var(--primary);
+  }
+
+  .chat-bubble-other {
+    @apply relative max-w-[70%] rounded-2xl rounded-bl-md px-4 py-2 text-foreground;
+    background: color-mix(in srgb, var(--card) 92%, transparent);
+    border: 1px solid var(--surface-border);
+  }
+
+  .chat-date-pill {
+    @apply rounded-full px-3 py-1 text-xs;
+    background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
+    border: 1px solid var(--surface-border);
+    color: var(--soft-text);
+  }
+
+  .chat-composer {
+    background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
+    border-top: 1px solid var(--surface-border);
+    @apply flex gap-2 px-7 pb-6 pt-4 backdrop-blur-3xl;
+  }
+
+  .chat-composer-input {
+    @apply flex-1 rounded-xl px-3 py-2 text-foreground outline-none placeholder:text-muted-foreground disabled:opacity-50;
+    background: color-mix(in srgb, var(--card) 88%, transparent);
+    border: 1px solid var(--surface-border);
+  }
+
+  .settings-field {
+    @apply w-full rounded-lg px-3 py-2 text-foreground;
+    border: 1px solid var(--surface-border);
+  }
+
+  .settings-field-editable {
+    background: color-mix(in srgb, var(--card) 90%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 55%, transparent);
+  }
+
+  .settings-field-disabled {
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    color: color-mix(in srgb, var(--foreground) 70%, transparent);
+    @apply cursor-not-allowed backdrop-blur-3xl;
+  }
+
+  .notification-card {
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    border: 1px solid var(--surface-border);
+    @apply rounded-xl p-4 transition backdrop-blur-3xl;
+  }
+
+  .notification-card-unread {
+    background: color-mix(in srgb, var(--accent) 60%, var(--surface) 40%);
   }
 }
 

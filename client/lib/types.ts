@@ -30,7 +30,7 @@ export type Post = {
   content: string;
   image?: string;
   intent?: Intent;
-  likes: string[];
+  likes: (string | UserSummary)[];
   commentsCount?: number;
   sharesCount?: number;
   createdAt: string;
@@ -63,6 +63,9 @@ export type Notification = {
   post?: {
     _id: string;
   };
+  conversation?: {
+    _id: string;
+  };
   isRead: boolean;
   createdAt: string;
 };
@@ -78,4 +81,44 @@ export type ProfileFormData = {
 
 export type GoogleCredentialResponseLite = {
   credential?: string;
+};
+
+export type ReportReason =
+  | "spam"
+  | "harassment"
+  | "hate_speech"
+  | "violence"
+  | "nudity"
+  | "misinformation"
+  | "other";
+
+export type ReportStatus = "open" | "in_review" | "resolved" | "rejected" | "actioned";
+
+export type ReportAction = "none" | "post_deleted";
+
+export type ModerationActionRequest = "post_deleted";
+
+export type ReportTargetPost = {
+  _id: string;
+  content: string;
+  image?: string;
+  createdAt: string;
+  author?: UserSummary;
+};
+
+export type Report = {
+  _id: string;
+  targetType: "post";
+  targetId: ReportTargetPost | string;
+  reportedBy: UserSummary;
+  postAuthor: UserSummary;
+  reason: ReportReason;
+  details?: string;
+  status: ReportStatus;
+  reviewedBy?: UserSummary;
+  reviewedAt?: string;
+  moderatorNotes?: string;
+  actionTaken: ReportAction;
+  createdAt: string;
+  updatedAt: string;
 };
