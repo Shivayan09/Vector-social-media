@@ -2,7 +2,7 @@
 
 Vector is a full-stack social media platform built with a Next.js frontend and an Express/MongoDB backend. It supports account creation, Google OAuth, profile setup, a post feed, likes, comments, following, notifications, and real-time direct messaging with Socket.IO.
 
-# <img src="https://www.nsoc.in/_next/image?url=%2Flogo.png&w=64&q=75" width="25" align="center" /> Nexus Spring of Code
+# <img src="https://www.nsoc.in/_next/image?url=%2Flogo.png&w=64&q=75" width="45" align="center" /> Nexus Spring of Code
 
 > This project is listed in **Nexus Spring of Code 2026**
 
