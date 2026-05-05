@@ -101,7 +101,7 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                     {/* Intent Selector */}
                     <div className="mb-6">
                         <label className="text-sm font-semibold text-foreground/80 mb-3 block">
-                            What's the intent of this post?
+                            What&apos;s the intent of this post?
                         </label>
                         <div className="flex flex-wrap gap-2">
                             {intents.map((item) => (
@@ -125,7 +125,7 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                     {/* Content Area */}
                     <div className="relative group">
                         <textarea 
-                            placeholder="What's on your mind? Share your thoughts..." 
+                            placeholder="What&apos;s on your mind? Share your thoughts..." 
                             value={content} 
                             onChange={(e) => setContent(e.target.value)} 
                             className={cn(
