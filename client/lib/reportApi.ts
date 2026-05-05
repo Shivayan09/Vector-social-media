@@ -10,3 +10,11 @@ export const reportPost = async (postId: string, reason: ReportReason, details?:
     { withCredentials: true }
   );
 };
+
+export const reportComment = async (commentId: string, reason: ReportReason, details?: string) => {
+  return axios.post(
+    `${BACKEND_URL}/api/reports/comments`,
+    { commentId, reason, details },
+    { withCredentials: true }
+  );
+};

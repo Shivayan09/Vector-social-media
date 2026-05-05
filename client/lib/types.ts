@@ -108,7 +108,7 @@ export type ReportTargetPost = {
 
 export type Report = {
   _id: string;
-  targetType: "post";
+  targetType: "post" | "comment";
   targetId: ReportTargetPost | string;
   reportedBy: UserSummary;
   postAuthor: UserSummary;

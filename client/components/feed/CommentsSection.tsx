@@ -5,10 +5,13 @@ import { useEffect, useState } from "react";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import { Trash2 } from "lucide-react";
+import { Flag, MoreHorizontal, Trash2 } from "lucide-react";
 import DeleteWarning from "@/components/modals/DeleteWarning";
 import InlineLoader from "../loaders/InlineLoader";
 import type { Comment } from "@/lib/types";
+import ReportPost from "../modals/ReportPost";
+import type { ReportReason } from "@/lib/types";
+import { reportComment } from "@/lib/reportApi";
 
 export default function CommentsSection({ postId }: { postId: string }) {
     const { userData } = useAppContext();
@@ -18,7 +21,9 @@ export default function CommentsSection({ postId }: { postId: string }) {
     const router = useRouter();
     const [buttonLoading, setButtonLoading] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
     const [selectedComment, setSelectedComment] = useState<Comment | null>(null);
+    const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
 
     function timeAgo(dateString: string) {
         const now = new Date().getTime();
@@ -90,6 +95,12 @@ export default function CommentsSection({ postId }: { postId: string }) {
         }
     };
 
+    const handleReportComment = async (reason: ReportReason, details?: string) => {
+        if (!selectedComment?._id) return;
+        await reportComment(selectedComment._id, reason, details);
+        setMenuOpenId(null);
+    };
+
     if (loading) {
         return <div className="py-2"><InlineLoader text="Loading comments..." /></div>;
     }
@@ -132,16 +143,51 @@ export default function CommentsSection({ postId }: { postId: string }) {
                                         {c.author?.name}
                                     </p>
 
-                                    {isOwner && (
-                                        <Trash2
-                                            size={16}
-                                            className="surface-text-muted ml-auto cursor-pointer"
+                                    <div className="ml-auto relative">
+                                        <button
+                                            type="button"
+                                            className="surface-text-muted cursor-pointer"
                                             onClick={() => {
-                                                setSelectedComment(c);
-                                                setShowDeleteModal(true);
+                                                setMenuOpenId((prev) => (prev === c._id ? null : c._id));
                                             }}
-                                        />
-                                    )}
+                                        >
+                                            <MoreHorizontal size={16} />
+                                        </button>
+
+                                        {menuOpenId === c._id && (
+                                            <div className="absolute right-0 top-6 z-20 w-36 overflow-hidden rounded-md border border-black/10 bg-white shadow-lg dark:border-white/10 dark:bg-blue-950">
+                                                {!isOwner && (
+                                                    <button
+                                                        type="button"
+                                                        className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-black/3 dark:hover:bg-white/5"
+                                                        onClick={() => {
+                                                            setSelectedComment(c);
+                                                            setShowReportModal(true);
+                                                            setMenuOpenId(null);
+                                                        }}
+                                                    >
+                                                        <Flag size={14} />
+                                                        Report comment
+                                                    </button>
+                                                )}
+
+                                                {isOwner && (
+                                                    <button
+                                                        type="button"
+                                                        className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-black/3 dark:hover:bg-white/5"
+                                                        onClick={() => {
+                                                            setSelectedComment(c);
+                                                            setShowDeleteModal(true);
+                                                            setMenuOpenId(null);
+                                                        }}
+                                                    >
+                                                        <Trash2 size={14} />
+                                                        Delete comment
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <p className="surface-text-muted text-[0.9rem] wrap-break-word">
@@ -166,6 +212,16 @@ export default function CommentsSection({ postId }: { postId: string }) {
                 }}
                 onConfirm={handleDeleteComment}
                 content={selectedComment?.content}
+            />
+
+            <ReportPost
+                open={showReportModal}
+                onClose={() => {
+                    setShowReportModal(false);
+                    setSelectedComment(null);
+                }}
+                onSubmit={handleReportComment}
+                targetLabel="comment"
             />
         </div>
     );
