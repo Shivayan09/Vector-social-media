@@ -206,7 +206,7 @@ export default function Explore() {
           </div>
 
           {open && (
-            <div className="absolute w-full mt-2 bg-white border rounded-xl shadow-lg max-h-75 overflow-y-auto z-50">
+            <div className="absolute w-full mt-2 bg-card border-border rounded-xl shadow-lg max-h-75 overflow-y-auto z-50">
               {searching ? (
                 <p className="p-4 text-sm opacity-50">
                   Searching...
@@ -239,11 +239,11 @@ export default function Explore() {
                       </div>
 
                       <div>
-                        <p className="text-sm font-medium">
+                        <p className="text-sm font-medium text-foreground">
                           {user.name}
                         </p>
 
-                        <p className="text-xs opacity-50">
+                        <p className="text-xs text-muted-foreground">
                           @{user?.username || "unknown"}
                         </p>
                       </div>
