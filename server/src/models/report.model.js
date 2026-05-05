@@ -4,13 +4,17 @@ const reportSchema = new mongoose.Schema(
   {
     targetType: {
       type: String,
-      enum: ["post"],
-      default: "post",
+      enum: ["post", "comment"],
       required: true,
     },
     targetId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Post",
+      refPath: "targetModel",
+      required: true,
+    },
+    targetModel: {
+      type: String,
+      enum: ["Post", "Comment"],
       required: true,
     },
     reportedBy: {
@@ -35,7 +39,7 @@ const reportSchema = new mongoose.Schema(
   }
 );
 
-reportSchema.index({ targetId: 1, reportedBy: 1 });
+reportSchema.index({ targetType: 1, targetId: 1, reportedBy: 1 }, { unique: true });
 
 const Report = mongoose.model("Report", reportSchema);
 
