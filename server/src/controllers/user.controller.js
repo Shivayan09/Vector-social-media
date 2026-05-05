@@ -155,9 +155,16 @@ export const getUserProfile = async (req, res) => {
         }
         
         const response = { ...user };
+        
+        // Check if current user is following this profile
         if (req.user) {
-            response.isFollowedByCurrentUser = user.followers.includes(req.user._id);
+            response.isFollowedByCurrentUser = user.followers.some(follower => 
+                follower.toString() === req.user._id.toString()
+            );
         }
+        
+        // Don't expose the followers array in the response
+        delete response.followers;
         
         res.json(response);
     } catch (error) {
