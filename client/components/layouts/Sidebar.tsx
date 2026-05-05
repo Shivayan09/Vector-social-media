@@ -112,7 +112,7 @@ export default function Sidebar() {
 
             <div className="flex flex-col ml-3">
               <p className="font-semibold text-[1.1rem]">Hello</p>
-              <p className="surface-text-muted">{userData?.name}!</p>
+              <p className="surface-text-muted">{userData?.name}</p>
             </div>
           </div>
         </div>
