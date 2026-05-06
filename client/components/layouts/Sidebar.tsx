@@ -102,7 +102,7 @@ export default function Sidebar() {
       )}
 
       <aside className={`sidebar-shell transform transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
-        <div className="flex w-full">
+        <Link href={`/main/user/${userData?.username}`}>
           <div className="flex justify-center ml-3">
             <img
               alt={userData?.name || "User avatar"}
@@ -115,7 +115,7 @@ export default function Sidebar() {
               <p className="surface-text-muted">{userData?.name}</p>
             </div>
           </div>
-        </div>
+        </Link>
 
         <div className="w-full flex items-center gap-2 md:pl-5">
           <Themetoggle />
