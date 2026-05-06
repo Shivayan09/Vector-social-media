@@ -103,14 +103,14 @@ export default function Sidebar() {
 
       <aside className={`sidebar-shell transform transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
         {userData?.username && (<Link href={`/main/user/${userData.username}`}>
-          <div className="flex justify-center ml-3">
+          <div className="flex items-center gap-3 ml-3">
             <img
               alt={userData?.name || "User avatar"}
               src={userData?.avatar || "/default-avatar.png"}
               className="h-12 w-12 rounded-full object-cover border shrink-0"
             />
 
-            <div className="flex flex-col ml-3">
+            <div className="flex flex-col">
               <p className="font-semibold text-[1.1rem]">Hello</p>
               <p className="surface-text-muted">{userData?.name}</p>
             </div>
