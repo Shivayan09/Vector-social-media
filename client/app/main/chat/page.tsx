@@ -7,6 +7,7 @@ import { useAppContext } from "@/context/AppContext";
 import { ArrowRight, Trash2 } from "lucide-react";
 import ConfirmModal from "@/components/modals/DeleteWarning";
 import { toast } from "react-toastify";
+import SkeletonLoader from "@/components/loaders/SkeletonLoader";
 import type { Conversation, UserSummary } from "@/lib/types";
 
 export default function ChatListPage() {
@@ -19,12 +20,15 @@ export default function ChatListPage() {
     const [chatToDelete, setChatToDelete] = useState<Conversation | null>(null);
     const [hasMessages, setHasMessages] = useState(false);
     const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+    const [loading, setLoading] = useState(true);
 
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
     useEffect(() => {
         const fetchConversations = async () => {
-            const { data: allConvos } = await axios.get(
+            try {
+                setLoading(true);
+                const { data: allConvos } = await axios.get(
                 `${BACKEND_URL}/api/conversation`,
                 { withCredentials: true }
             );
@@ -60,9 +64,16 @@ export default function ChatListPage() {
             const counts = Object.fromEntries(unreadCountEntries) as Record<string, number>;
             setUnreadCounts(counts);
             setFilteredConversations(validConvos);
+            } catch {
+                setConversations([]);
+                setFilteredConversations([]);
+                setUnreadCounts({});
+            } finally {
+                setLoading(false);
+            }
         };
 
-        if (userData?.id) fetchConversations();
+        if (userData?.id) void fetchConversations();
     }, [BACKEND_URL, userData]);
 
     useEffect(() => {
@@ -147,57 +158,63 @@ export default function ChatListPage() {
                 </h1>
 
                 <div className="flex flex-col p-5 gap-2">
-                    {filteredConversations.map((convo) => {
-                        const otherUser = convo.participants.find(
-                            (p: UserSummary) => p._id !== userData?.id
-                        );
+                    {loading ? (
+                        <SkeletonLoader count={5} height="h-16" />
+                    ) : filteredConversations.length > 0 ? (
+                        filteredConversations.map((convo) => {
+                            const otherUser = convo.participants.find(
+                                (p: UserSummary) => p._id !== userData?.id
+                            );
 
-                        return (
-                            <div
-                                key={convo._id}
-                                onClick={() =>
-                                    router.push(`/main/chat/${convo._id}`)
-                                }
-                                className="flex items-center gap-3 p-4 rounded-lg cursor-pointer bg-black/10 hover:bg-black/15 hover:shadow-lg text-white transition-all duration-200"
-                            >
-                                <img
-                                    alt={otherUser?.name || "Chat user"}
-                                    src={
-                                        otherUser?.avatar ||
-                                        "/default-avatar.png"
+                            return (
+                                <div
+                                    key={convo._id}
+                                    onClick={() =>
+                                        router.push(`/main/chat/${convo._id}`)
                                     }
-                                    className="h-12 w-12 rounded-full object-cover"
-                                />
+                                    className="flex items-center gap-3 p-4 rounded-lg cursor-pointer bg-black/10 hover:bg-black/15 hover:shadow-lg text-white transition-all duration-200"
+                                >
+                                    <img
+                                        alt={otherUser?.name || "Chat user"}
+                                        src={
+                                            otherUser?.avatar ||
+                                            "/default-avatar.png"
+                                        }
+                                        className="h-12 w-12 rounded-full object-cover"
+                                    />
 
-                                <div>
-                                    <p className="font-semibold">
-                                        {otherUser?.name}
-                                    </p>
-                                    <p className="text-sm text-gray-400">
-                                        @{otherUser?.username}
-                                    </p>
-                                </div>
-
-                                <div className="w-full">
-                                    {unreadCounts[convo._id] > 0 && (
-                                    <div className="ml-auto w-6 mr-2 bg-red-500 text-white rounded-full h-6 flex items-center justify-center text-xs font-bold">
-                                        {unreadCounts[convo._id]}
+                                    <div>
+                                        <p className="font-semibold">
+                                            {otherUser?.name}
+                                        </p>
+                                        <p className="text-sm text-gray-400">
+                                            @{otherUser?.username}
+                                        </p>
                                     </div>
-                                )}
+
+                                    <div className="w-full">
+                                        {unreadCounts[convo._id] > 0 && (
+                                        <div className="ml-auto w-6 mr-2 bg-red-500 text-white rounded-full h-6 flex items-center justify-center text-xs font-bold">
+                                            {unreadCounts[convo._id]}
+                                        </div>
+                                    )}
+                                    </div>
+
+                                    <ArrowRight className="ml-auto opacity-70" />
+
+                                    <Trash2
+                                        onClick={(e) =>
+                                            handleDeleteClick(e, convo)
+                                        }
+                                        className="ml-2 text-red-500 opacity-70 hover:opacity-100 hover:scale-110 transition-transform"
+                                        size={20}
+                                    />
                                 </div>
-
-                                <ArrowRight className="ml-auto opacity-70" />
-
-                                <Trash2
-                                    onClick={(e) =>
-                                        handleDeleteClick(e, convo)
-                                    }
-                                    className="ml-2 text-red-500 opacity-70 hover:opacity-100 hover:scale-110 transition-transform"
-                                    size={20}
-                                />
-                            </div>
-                        );
-                    })}
+                            );
+                        })
+                    ) : (
+                        <p className="text-gray-500 px-5">No conversations found.</p>
+                    )}
                 </div>
             </div>
 
