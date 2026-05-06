@@ -67,12 +67,12 @@ export default function ProfileForm() {
 
 
     return (
-        <div className="flex flex-col items-center justify-center mx-auto border border-black/10 backdrop-blur-3xl rounded-2xl w-[90vw] md:w-[40vw] px-10 py-5">
-            <p className="font-bold text-center text-[1.8rem] text-white">Set up your profile</p>
+        <div className="form-card mx-auto flex w-[90vw] flex-col items-center justify-center md:w-[40vw]">
+            <p className="text-foreground text-center text-[1.8rem] font-bold">Set up your profile</p>
 
             <div>
                 <div className="flex items-center gap-10 my-5">
-                    <div onClick={() => fileRef.current?.click()} className="h-25 md:h-35 w-25 md:w-35 relative group flex items-center justify-center border border-black/10 rounded-full mx-auto outline-2 outline-neutral-200 bg-white/10 transition-all duration-200 hover:outline-4 cursor-pointer overflow-hidden">
+                    <div onClick={() => fileRef.current?.click()} className="avatar-upload group mx-auto h-25 w-25 outline-2 outline-neutral-200 hover:outline-4 md:h-35 md:w-35">
                         {preview ? (
                             <img src={preview} alt="pfp preview" className="h-full w-full object-cover rounded-full" />
                         ) : (
@@ -83,7 +83,7 @@ export default function ProfileForm() {
                         <Button className="h-10 cursor-pointer bg-blue-500 text-white hover:bg-blue-600" onClick={() => fileRef.current?.click()}>
                             Upload picture
                         </Button>
-                        <Button onClick={handleRemove} className="h-10 cursor-pointer bg-black/70 dark:bg-white dark:hover:bg-white/70">
+                        <Button onClick={handleRemove} className="glass-surface-strong h-10 cursor-pointer text-foreground hover:bg-accent/70">
                             Discard picture
                         </Button>
                     </div>
@@ -99,17 +99,17 @@ export default function ProfileForm() {
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
             <div className="w-full">
-                <p className="font-semibold text-left text-white">Set a username</p>
-                <div className="my-3 border-black/10 dark:border-white/10 bg-white/30 flex items-center px-3 h-10 rounded-lg gap-2">
+                <p className="form-label text-left">Set a username</p>
+                <div className="form-inline-input">
                     <p>@</p>
                     <input type="text" placeholder="demouser09" className="h-full w-full outline-none"
                         onChange={(e) => setUsername(e.target.value)} />
                 </div>
-                <p className="font-semibold text-white">Set a bio</p>
-                <textarea placeholder="Enter your bio (30 words max)" className="w-full outline-0 px-3 py-1 rounded-md mt-2 h-10 bg-white/30"
+                <p className="form-label">Set a bio</p>
+                <textarea placeholder="Enter your bio (30 words max)" className="form-textarea h-10 py-1"
                     onChange={(e) => setBio(e.target.value)} />
-                <p className="font-semibold mt-3 text-white">Set a description</p>
-                <textarea placeholder="Enter your bio (200 words max)" className="w-full outline-0 px-3 py-1 rounded-md mt-2 h-20 bg-white/30"
+                <p className="form-label mt-3">Set a description</p>
+                <textarea placeholder="Enter your bio (200 words max)" className="form-textarea h-20 py-1"
                     onChange={(e) => setDescription(e.target.value)} />
                 <Button disabled={loading} className={`h-10 mt-2 w-full ${loading ? 'cursor-not-allowed bg-blue-400' : 'cursor-pointer bg-blue-500 hover:bg-blue-600'}`} onClick={handleSubmit}>
                     {loading ? 'Setting your profile..' : 'Continue'}

@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "../ui/button";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useRef } from "react";
 import { Eye, EyeOff, Plus } from "lucide-react";
@@ -102,66 +103,66 @@ export default function RegistrationForm() {
   };
 
   return (
-    <div className="border border-black/10 dark:border-white/10 backdrop-blur-3xl rounded-lg px-5 md:px-10 py-6 w-80 md:w-fit">
+    <div className="form-card w-80 md:w-fit">
 
-      <div className="w-full h-0.75 bg-white/10 rounded-full mb-5">
+      <div className="mb-5 h-0.75 w-full rounded-full bg-border/70">
         <div className={`h-full bg-blue-500 transition-all duration-300 ${step === 1 ? "w-1/2" : "w-full"}`} />
       </div>
 
       {step === 1 && (
         <>
-          <p className="font-semibold text-[1rem] md:text-[1.2rem] text-white">
+          <p className="form-title">
             Welcome to Vector!
           </p>
 
-          <p className="mt-2 mb-5 text-[0.9rem] md:text-[1rem] text-gray-300">
+          <p className="form-subtitle">
             Register to start posting right away!
           </p>
 
           <div className="flex flex-col md:flex-row gap-2 md:gap-5">
             <div className="w-full">
-              <p className="font-semibold text-white">First Name</p>
-              <input type="text" placeholder="demo" className="outline-none h-10 bg-white/30 w-full rounded-md p-3 my-2 text-[0.95rem]" onChange={(e) => setName(e.target.value)} />
+              <p className="form-label">First Name</p>
+              <input type="text" placeholder="demo" className="form-input" onChange={(e) => setName(e.target.value)} />
             </div>
 
             <div className="w-full">
-              <p className="font-semibold text-white">Last Name</p>
-              <input type="text" placeholder="user" className="outline-none h-10 bg-white/30 w-full rounded-md p-3 my-2 text-[0.95rem]" onChange={(e) => setSurname(e.target.value)} />
+              <p className="form-label">Last Name</p>
+              <input type="text" placeholder="user" className="form-input" onChange={(e) => setSurname(e.target.value)} />
             </div>
           </div>
 
           <div className="flex flex-col md:flex-row gap-2 md:gap-5">
             <div className="w-full">
-              <p className="font-semibold text-white">Email</p>
-              <input type="email" placeholder="demo@gmail.com" className="outline-none h-10 bg-white/30 w-full rounded-md p-3 my-2 text-[0.95rem]" onChange={(e) => setEmail(e.target.value)} />
+              <p className="form-label">Email</p>
+              <input type="email" placeholder="demo@gmail.com" className="form-input" onChange={(e) => setEmail(e.target.value)} />
             </div>
 
             <div className="w-full">
-              <p className="font-semibold text-white">Phone number</p>
-              <input type="tel" placeholder="+00 00000 00000" className="outline-none h-10 bg-white/30 w-full rounded-md p-3 my-2 text-[0.95rem]" onChange={(e) => setPhone(e.target.value)} />
+              <p className="form-label">Phone number</p>
+              <input type="tel" placeholder="+00 00000 00000" className="form-input" onChange={(e) => setPhone(e.target.value)} />
             </div>
           </div>
 
-          <p className="font-semibold text-white mt-2">
+          <p className="form-label mt-2">
             Set a password
           </p>
 
           <div className="relative">
-            <input type={showPassword ? "text" : "password"} placeholder="Enter a password" className="outline-none h-10 bg-white/30 w-full rounded-md p-3 my-2 pr-10" onChange={(e) => setPassword(e.target.value)} />
+            <input type={showPassword ? "text" : "password"} placeholder="Enter a password" className="form-input pr-10" onChange={(e) => setPassword(e.target.value)} />
 
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-white/60" onClick={() => setShowPassword(!showPassword)}>
+            <span className="surface-text-muted absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer" onClick={() => setShowPassword(!showPassword)}>
               {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
             </span>
           </div>
 
-          <p className="font-semibold text-white">
+          <p className="form-label">
             Confirm your password
           </p>
 
           <div className="relative">
-            <input type={showConfirmPassword ? "text" : "password"} placeholder="Confirm your password" className="outline-none h-10 bg-white/30 w-full rounded-md p-3 my-2 pr-10" onChange={(e) => setConfirmPassword(e.target.value)} />
+            <input type={showConfirmPassword ? "text" : "password"} placeholder="Confirm your password" className="form-input pr-10" onChange={(e) => setConfirmPassword(e.target.value)} />
 
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-white/60" onClick={() => setShowConfirmPassword(!showConfirmPassword)} >
+            <span className="surface-text-muted absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer" onClick={() => setShowConfirmPassword(!showConfirmPassword)} >
               {showConfirmPassword ? (
                 <Eye size={18} />
               ) : (
@@ -173,17 +174,25 @@ export default function RegistrationForm() {
           <Button className="w-full text-white mt-5 cursor-pointer bg-blue-500 hover:bg-blue-600" onClick={nextStep}>
             Continue
           </Button>
+
+          <p className="mt-4 text-center text-[0.82rem] leading-6 surface-text-muted">
+            By continuing, you agree to Vector&apos;s{" "}
+            <Link href="/terms" className="text-primary underline underline-offset-4">
+              Terms & Guidelines
+            </Link>
+            .
+          </p>
         </>
       )}
 
       {step === 2 && (
         <>
-          <p className="font-bold text-center text-[1.2rem] text-white mb-4">
+          <p className="mb-4 text-center text-[1.2rem] font-bold text-foreground">
             Set up your profile
           </p>
 
           <div className="flex justify-center my-5">
-            <div onClick={() => fileRef.current?.click()} className="h-28 w-28 relative group flex items-center justify-center border border-black/10 rounded-full outline-2 outline-neutral-200 bg-white/10 transition-all duration-200 hover:outline-4 cursor-pointer overflow-hidden" >
+            <div onClick={() => fileRef.current?.click()} className="avatar-upload h-28 w-28 outline-2 outline-neutral-200 hover:outline-4" >
               {preview ? (
                 <img alt="Profile preview" src={preview} className="h-full w-full object-cover rounded-full" />
               ) : (
@@ -194,22 +203,22 @@ export default function RegistrationForm() {
 
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
-          <p className="font-semibold text-white">Set a username</p>
+          <p className="form-label">Set a username</p>
 
-          <div className="my-3 bg-white/30 flex items-center px-3 h-10 rounded-lg gap-2">
+          <div className="form-inline-input">
             <p>@</p>
             <input placeholder="demouser09" className="h-full w-full outline-none bg-transparent" onChange={(e) => setUsername(e.target.value)} />
           </div>
 
-          <p className="font-semibold text-white">Set a bio</p>
+          <p className="form-label">Set a bio</p>
 
-          <textarea placeholder="Enter your bio (30 words max)" className="w-full md:w-90 outline-0 px-3 py-2 rounded-md mt-2 h-12 bg-white/30 resize-none" onChange={(e) => setBio(e.target.value)} />
+          <textarea placeholder="Enter your bio (30 words max)" className="form-textarea h-12 md:w-90" onChange={(e) => setBio(e.target.value)} />
 
-          <p className="font-semibold mt-3 text-white">
+          <p className="form-label mt-3">
             Set a description
           </p>
 
-          <textarea placeholder="Enter your bio (200 words max)" className="w-full outline-0 px-3 py-2 rounded-md mt-2 h-24 bg-white/30 resize-none" onChange={(e) => setDescription(e.target.value)} />
+          <textarea placeholder="Enter your bio (200 words max)" className="form-textarea h-24" onChange={(e) => setDescription(e.target.value)} />
 
           <div className="flex justify-between gap-2 mt-4">
             <Button className="bg-white/80 text-black hover:bg-white" onClick={() => setStep(1)}>
@@ -220,6 +229,15 @@ export default function RegistrationForm() {
               {loading ? "Creating..." : "Create account"}
             </Button>
           </div>
+
+          <p className="mt-4 text-center text-[0.82rem] leading-6 surface-text-muted">
+            Creating an account means you will follow the platform rules on
+            respectful behavior, lawful posting, and safe messaging in the{" "}
+            <Link href="/terms" className="text-primary underline underline-offset-4">
+              Terms & Guidelines
+            </Link>
+            .
+          </p>
         </>
       )}
     </div>

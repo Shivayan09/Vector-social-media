@@ -143,20 +143,19 @@ export default function ChatListPage() {
         <div className="flex w-full h-screen">
             <div className="flex-1 h-screen overflow-y-auto hide-scrollbar">
 
-                <div className="p-4 sticky top-0 z-10 bg-white/15 dark:bg-black/25 backdrop-blur-md">
+
+                <h1 className="px-5 pt-3 text-xl font-bold text-foreground">
+                    Your chats
+                </h1>
+                <div className="p-5 pb-0">
                     <input
                         type="text"
                         placeholder="Search chats..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full p-2 rounded-lg outline-none bg-black/20 text-white"
+                        className="chat-search-input"
                     />
                 </div>
-
-                <h1 className="text-xl font-bold px-5 pt-3 text-white">
-                    Your chats
-                </h1>
-
                 <div className="flex flex-col p-5 gap-2">
                     {loading ? (
                         <SkeletonLoader count={5} height="h-16" />
@@ -198,9 +197,9 @@ export default function ChatListPage() {
                                             {unreadCounts[convo._id]}
                                         </div>
                                     )}
-                                    </div>
+                                </div>
 
-                                    <ArrowRight className="ml-auto opacity-70" />
+                                <ArrowRight className="ml-auto opacity-70 text-foreground" />
 
                                     <Trash2
                                         onClick={(e) =>

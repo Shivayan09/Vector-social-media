@@ -38,7 +38,7 @@ export default function NotificationBell() {
   if (!userData) return null;
 
   return (
-    <button onClick={() => router.push("/main/activity")} className="relative p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10">
+    <button onClick={() => router.push("/main/activity")} className="relative rounded-full p-2 transition-colors hover:bg-accent/70">
       <Bell className="h-5 w-5 cursor-pointer" />
       {unreadCount > 0 && (
         <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 text-[10px] bg-red-500 text-white rounded-full flex items-center justify-center">
