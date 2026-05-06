@@ -176,7 +176,7 @@ export default function RegistrationForm() {
           </Button>
            
           
-          // Navigation option to return to login page
+          
           <div className="flex items-center justify-between gap-2 mt-5 text-sm">
               <p className="text-foreground">
                   Already have an account?
