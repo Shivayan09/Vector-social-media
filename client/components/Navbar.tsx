@@ -21,9 +21,8 @@ export default function Navbar() {
         <p onClick={() => router.push("/main/support")} className="top-nav-link">
           Support
         </p>
-        </div>
-        <NotificationBell />
       </div>
+      <NotificationBell />
     </div>
   );
 }
