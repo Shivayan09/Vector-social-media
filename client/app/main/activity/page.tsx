@@ -11,18 +11,18 @@ export default function Activity() {
   return (
     <div className="flex h-screen">
       <div className="w-full py-5 px-7 flex flex-col">
-        <p className="text-[1.4rem] font-semibold text-center md:text-left text-white">
+        <p className="page-title">
           Activity Panel
         </p>
 
-        <div className="flex items-center px-2 gap-2 mt-5 bg-white/30 dark:bg-black/30 rounded-full h-10">
+        <div className="search-pill mt-5">
           <Search className="h-5" />
           <input
             type="text"
             placeholder="Search notifications"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="outline-0 w-full h-full bg-transparent"
+            className="h-full w-full bg-transparent outline-0 placeholder:text-muted-foreground"
           />
         </div>
 
