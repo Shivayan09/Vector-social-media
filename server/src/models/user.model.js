@@ -96,6 +96,13 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+
+    isPrivate: {
+      type: Boolean,
+      default: false,
+    },
+
+    followRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
   {
     timestamps: true,
