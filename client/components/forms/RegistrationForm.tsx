@@ -30,6 +30,7 @@ export default function RegistrationForm() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,7 +79,7 @@ export default function RegistrationForm() {
     }
     try {
       setLoading(true);
-      const { data } = await axios.post(BACKEND_URL + "/api/auth/register", { name, surname, email, phoneNumber, password, username, bio, description }, { withCredentials: true });
+      const { data } = await axios.post(BACKEND_URL + "/api/auth/register", { name, surname, email, phoneNumber, password, username, bio, description, isPrivate }, { withCredentials: true });
       if (!data.success) {
         toast.warn(data.message);
         return;
@@ -219,6 +220,16 @@ export default function RegistrationForm() {
           </p>
 
           <textarea placeholder="Enter your bio (200 words max)" className="form-textarea h-24" onChange={(e) => setDescription(e.target.value)} />
+
+          <div className="flex items-center gap-2 mt-4 cursor-pointer" onClick={() => setIsPrivate(!isPrivate)}>
+            <input 
+              type="checkbox" 
+              checked={isPrivate} 
+              onChange={(e) => setIsPrivate(e.target.checked)} 
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
+            />
+            <p className="text-sm font-medium text-foreground">Private Account</p>
+          </div>
 
           <div className="flex justify-between gap-2 mt-4">
             <Button className="bg-white/80 text-black hover:bg-white" onClick={() => setStep(1)}>
