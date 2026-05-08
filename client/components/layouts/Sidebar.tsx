@@ -22,7 +22,7 @@ interface SidebarItemProps {
 }
 
 export default function Sidebar() {
-  const [open, setOpen] = useState<boolean>(false);
+  const [open, setOpen] = useState<boolean>(true);
   const [createOpen, setCreateOpen] = useState<boolean>(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const pathname = usePathname();
@@ -32,13 +32,6 @@ export default function Sidebar() {
 
   const { isLoggedIn, setIsLoggedIn, setUserData, userData, setPosts } = useAppContext();
   const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      setOpen(false);
-    }, 0);
-    return () => window.clearTimeout(timeoutId);
-  }, [pathname]);
 
   const handleLogout = async () => {
     try {
