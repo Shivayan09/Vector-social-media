@@ -147,13 +147,26 @@ export const toggleFollowUser = async (req, res) => {
 export const getUserProfile = async (req, res) => {
     try {
         const { username } = req.params;
-        const user = await User.findOne({ username }).select("name surname username avatar bio description followersCount followingCount").lean();
+        const user = await User.findOne({ username }).select("_id name surname username avatar bio description followersCount followingCount followers").lean();
         if (!user) {
             return res.status(404).json({
                 message: "User not found"
             });
         }
-        res.json(user);
+        
+        const response = { ...user };
+        
+        // Check if current user is following this profile
+        if (req.user) {
+            response.isFollowedByCurrentUser = user.followers.some(follower => 
+                follower.toString() === req.user._id.toString()
+            );
+        }
+        
+        // Don't expose the followers array in the response
+        delete response.followers;
+        
+        res.json(response);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

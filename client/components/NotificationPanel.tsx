@@ -226,7 +226,7 @@ export default function NotificationPanel({ search = "" }: Props) {
     <div className="w-full mt-5">
 
       <div className="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-3 md:gap-0">
-        <p className="font-semibold text-lg text-white">
+        <p className="text-lg font-semibold text-foreground">
           Notifications
         </p>
 
@@ -257,18 +257,18 @@ export default function NotificationPanel({ search = "" }: Props) {
       </div>
 
       {loading ? (
-        <p className="text-gray-500 text-sm">
+        <p className="surface-text-muted text-sm">
           Loading notifications...
         </p>
       ) : filteredNotifications.length === 0 ? (
-        <p className="text-gray-600 text-sm">
+        <p className="surface-text-muted text-sm">
           No notifications match your search.
         </p>
       ) : (
         <div className="flex flex-col gap-2">
           {filteredNotifications.map((n) => (
             <div key={n._id}
-              className={`flex items-center gap-3 p-4 rounded-xl transition ${!n.isRead ? "backdrop-blur-lg" : "backdrop-blur-3xl"
+              className={`notification-card ${!n.isRead ? "notification-card-unread" : ""
                 }`}>
               {selectMode && (
                 <input type="checkbox" className="h-4 w-4 cursor-pointer"
@@ -288,6 +288,8 @@ export default function NotificationPanel({ search = "" }: Props) {
                   if (!selectMode) {
                     if (n.post?._id) {
                       router.push(`/main/post/${n.post._id}`);
+                    } else if (n.type === "message") {
+                      void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
                     } else {
                       router.push(`/main/user/${n.sender.username}`);
                     }
@@ -297,7 +299,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                 <img alt={n.sender.name || "Notification sender"} src={n.sender.avatar || "/default-avatar.png"} className="h-10 w-10 rounded-full object-cover" />
 
                 <div>
-                  <p className="text-white">
+                  <p className="text-foreground">
                     <span className="font-semibold">
                       {n.sender.name}
                     </span>{" "}
@@ -308,7 +310,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                     {n.type === "message" && "messaged you"}
                   </p>
 
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="surface-text-muted mt-1 text-xs">
                     {new Date(n.createdAt).toLocaleString()}
                   </p>
                 </div>
@@ -356,7 +358,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                         e.stopPropagation();
                         deleteSingle(n._id);
                       }}
-                      className="text-white p-1 hover:text-red-400 transition"
+                      className="p-1 text-foreground transition hover:text-red-400"
                     >
                       <Trash2 className="h-5 cursor-pointer" />
                     </button>

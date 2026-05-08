@@ -7,8 +7,8 @@ export default function Navbar() {
   const router = useRouter();
 
   return (
-    <div className="flex items-center justify-center md:justify-between py-4 px-6 md:px-10 bg-black/10 backdrop-blur-3xl w-[90vw] md:w-[70vw] mx-auto border border-black/10 dark:border-white/20 rounded-full my-5">
-      <p onClick={() => router.push("/main")} className="font-extrabold text-[1.1rem] font-serif text-white cursor-pointer">
+    <div className="top-nav">
+      <p onClick={() => router.push("/main")} className="cursor-pointer font-serif text-[1.1rem] font-extrabold text-foreground">
         Vector
       </p>
       <div className="hidden md:flex justify-around text-gray-200 items-center w-[90%]">
@@ -25,6 +25,7 @@ export default function Navbar() {
         </div>
         <NotificationBell />
       </div>
+      <NotificationBell />
     </div>
   );
 }

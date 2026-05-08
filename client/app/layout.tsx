@@ -4,6 +4,7 @@ import "./globals.css";
 import ToastProvider from "@/components/ToastProvider";
 import Providers from "@/components/Providers";
 import GlobalLoader from "@/components/GlobalLoader";
+import { Analytics } from "@vercel/analytics/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,13 +29,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen overflow-hidden bg-[url('/vector-home-bg.jpg')] dark:bg-[url('/vector-home-bg-dark.png')] bg-cover bg-center bg-no-repeat`}
+        className={`${geistSans.variable} ${geistMono.variable} app-body`}
       >
         <Providers>
           <GlobalLoader /> {/* ✅ Global loader */}
           <ToastProvider />
           {children}
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
