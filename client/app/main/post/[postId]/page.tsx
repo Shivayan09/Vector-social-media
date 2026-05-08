@@ -35,17 +35,17 @@ export default function PostPage() {
   }, [BACKEND_URL, postId]);
 
   if (loading) return <div className="p-10"><SkeletonLoader count={1} height="h-64" /></div>;
-  if (!post) return <p className="p-10">Post not found</p>;
+if (!post) return <p className="p-10">Post not found</p>;
 
-  return (
-    <div className="overflow-y-auto h-screen">
-      <Navbar />
-      <div className="px-5 md:px-10">
-        <PostCard post={post} setPost={setPost} />
-        <div className="mt-6">
-          <CommentsSection postId={post._id} />
-        </div>
+return (
+  <div className="overflow-y-auto h-screen">
+    <Navbar />
+    <div className="px-5 md:px-10">
+      <PostCard post={post} setPost={setPost} />
+      <div className="mt-6">
+        <CommentsSection postId={post._id} />
       </div>
     </div>
-  );
+  </div>
+);
 }
