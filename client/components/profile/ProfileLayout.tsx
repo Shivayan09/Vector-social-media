@@ -1,6 +1,6 @@
 "use client";
 
-import { Edit } from "lucide-react";
+import { Edit, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import PostsDisplay from "./PostsDisplay";
@@ -14,15 +14,17 @@ import type { UserSummary } from "@/lib/types";
 type ProfileLayoutProps = {
   user: UserSummary;
   isFollowing?: boolean;
+  isRequested?: boolean;
 };
 
-export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps) {
+export default function ProfileLayout({ user, isFollowing, isRequested }: ProfileLayoutProps) {
   const [activeTab, setActiveTab] = useState<"posts" | "followers" | "following">("posts");
 
   const router = useRouter();
   const { userData } = useAppContext();
   const isSelfProfile = userData?.id === user._id;
   const [following, setFollowing] = useState<boolean>(isFollowing ?? false);
+  const [requested, setRequested] = useState<boolean>(isRequested ?? false);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
@@ -39,6 +41,8 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
       console.error("Failed to start chat", error);
     }
   };
+
+  const canSeeContent = isSelfProfile || !user.isPrivate || following;
 
   return (
     <div className="page-scroll px-7 py-5">
@@ -70,6 +74,7 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
                   <FollowButton
                     userId={user._id}
                     isFollowing={following}
+                    isRequested={requested}
                     onFollowChange={setFollowing}
                   />
 
@@ -119,37 +124,47 @@ export default function ProfileLayout({ user, isFollowing }: ProfileLayoutProps)
       </div>
 
       <div className="mt-4">
-        {activeTab === "posts" && (
-          <PostsDisplay
-            userId={user._id}
-            emptyText={
-              isSelfProfile
-                ? "You haven&apos;t posted anything yet."
-                : "This user hasn&apos;t posted yet."
-            }
-          />
-        )}
+        {!canSeeContent ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center border-t border-dashed border-border/50">
+            <Lock className="h-12 w-12 mb-3 opacity-30 text-foreground" />
+            <h3 className="text-lg font-semibold text-foreground">This account is private</h3>
+            <p className="text-sm surface-text-muted">Follow this account to see their posts and followers.</p>
+          </div>
+        ) : (
+          <>
+            {activeTab === "posts" && (
+              <PostsDisplay
+                userId={user._id}
+                emptyText={
+                  isSelfProfile
+                    ? "You haven&apos;t posted anything yet."
+                    : "This user hasn&apos;t posted yet."
+                }
+              />
+            )}
 
-        {activeTab === "followers" && (
-          <FollowersDisplay
-            userId={user._id}
-            emptyText={
-              isSelfProfile
-                ? "You have no followers yet."
-                : "No followers yet."
-            }
-          />
-        )}
+            {activeTab === "followers" && (
+              <FollowersDisplay
+                userId={user._id}
+                emptyText={
+                  isSelfProfile
+                    ? "You have no followers yet."
+                    : "No followers yet."
+                }
+              />
+            )}
 
-        {activeTab === "following" && (
-          <FollowingDisplay
-            userId={user._id}
-            emptyText={
-              isSelfProfile
-                ? "You are not following anyone yet."
-                : "Not following anyone."
-            }
-          />
+            {activeTab === "following" && (
+              <FollowingDisplay
+                userId={user._id}
+                emptyText={
+                  isSelfProfile
+                    ? "You are not following anyone yet."
+                    : "Not following anyone."
+                }
+              />
+            )}
+          </>
         )}
       </div>
     </div>
