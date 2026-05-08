@@ -288,6 +288,8 @@ export default function NotificationPanel({ search = "" }: Props) {
                   if (!selectMode) {
                     if (n.post?._id) {
                       router.push(`/main/post/${n.post._id}`);
+                    } else if (n.type === "message") {
+                      void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
                     } else {
                       router.push(`/main/user/${n.sender.username}`);
                     }
