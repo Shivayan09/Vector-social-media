@@ -59,6 +59,7 @@ export default function ProfileSettings() {
         phoneNumber: userData.phoneNumber || "",
         bio: userData.bio || "",
         description: userData.description || "",
+        isPrivate: userData.isPrivate || false,
       };
       setFormData(data);
       setInitialData(data);
@@ -256,6 +257,21 @@ export default function ProfileSettings() {
           onEdit={() => toggleEdit("description")}
           onChange={handleChange}
         />
+
+        <div className="md:col-span-2 mt-2">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setFormData(prev => prev ? { ...prev, isPrivate: !prev.isPrivate } : prev)}>
+            <input 
+              type="checkbox" 
+              checked={formData.isPrivate} 
+              onChange={(e) => setFormData({ ...formData, isPrivate: e.target.checked })} 
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
+            />
+            <div className="flex flex-col">
+              <p className="font-medium text-foreground">Private Account</p>
+              <p className="text-xs text-muted-foreground">Only your followers will see your posts and lists.</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="flex justify-end gap-4 mt-7">

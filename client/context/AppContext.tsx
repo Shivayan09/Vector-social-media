@@ -28,6 +28,7 @@ export type User = {
   signupStep?: number;
   followers?: string[];
   following?: string[];
+  isPrivate?: boolean;
 };
 
 type AppContextType = {
