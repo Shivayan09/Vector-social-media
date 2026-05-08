@@ -125,22 +125,96 @@ export const toggleFollowUser = async (req, res) => {
                 followed: false
             });
         } else {
-            await User.findByIdAndUpdate(currentUserId, { $addToSet: { following: targetUserId }, $inc: { followingCount: 1 } });
-            await User.findByIdAndUpdate(targetUserId, { $addToSet: { followers: currentUserId }, $inc: { followersCount: 1 }, });
-            await Notification.create({
-                recipient: targetUser._id,
-                sender: req.user._id,
-                type: "follow",
-            });
-            return res.json({
-                followed: true
-            });
+            if (targetUser.isPrivate) {
+                const hasRequested = targetUser.followRequests.includes(currentUserId);
+                if (hasRequested) {
+                    await User.findByIdAndUpdate(targetUserId, { $pull: { followRequests: currentUserId } });
+                    return res.json({ requested: false });
+                } else {
+                    await User.findByIdAndUpdate(targetUserId, { $addToSet: { followRequests: currentUserId } });
+                    await Notification.create({
+                        recipient: targetUser._id,
+                        sender: req.user._id,
+                        type: "follow_request",
+                    });
+                    return res.json({ requested: true });
+                }
+            } else {
+                await User.findByIdAndUpdate(currentUserId, { $addToSet: { following: targetUserId }, $inc: { followingCount: 1 } });
+                await User.findByIdAndUpdate(targetUserId, { $addToSet: { followers: currentUserId }, $inc: { followersCount: 1 }, });
+                await Notification.create({
+                    recipient: targetUser._id,
+                    sender: req.user._id,
+                    type: "follow",
+                });
+                return res.json({
+                    followed: true
+                });
+            }
         }
     } catch (error) {
         res.status(500).json({
             success: false,
             message: error.message
         });
+    }
+};
+
+export const getFollowRequests = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).populate("followRequests", "name username avatar");
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        res.status(200).json(user.followRequests);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+export const acceptFollowRequest = async (req, res) => {
+    try {
+        const currentUserId = req.user.id;
+        const requesterId = req.params.id;
+        const user = await User.findById(currentUserId);
+        
+        if (!user.followRequests.includes(requesterId)) {
+            return res.status(400).json({ message: "No follow request from this user" });
+        }
+
+        await User.findByIdAndUpdate(currentUserId, { 
+            $pull: { followRequests: requesterId },
+            $addToSet: { followers: requesterId },
+            $inc: { followersCount: 1 }
+        });
+        await User.findByIdAndUpdate(requesterId, {
+            $addToSet: { following: currentUserId },
+            $inc: { followingCount: 1 }
+        });
+        await Notification.create({
+            recipient: requesterId,
+            sender: currentUserId,
+            type: "follow_request_accepted",
+        });
+
+        res.json({ success: true, message: "Follow request accepted" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+export const rejectFollowRequest = async (req, res) => {
+    try {
+        const currentUserId = req.user.id;
+        const requesterId = req.params.id;
+
+        await User.findByIdAndUpdate(currentUserId, { 
+            $pull: { followRequests: requesterId }
+        });
+
+        res.json({ success: true, message: "Follow request rejected" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
     }
 };
 
