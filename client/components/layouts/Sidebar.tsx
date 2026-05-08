@@ -91,17 +91,17 @@ export default function Sidebar() {
       <button
         onClick={() => setOpen((prev) => !prev)}
         className={`fixed z-60 p-2 rounded-lg ${open? "top-4 left-38":isMain ? "top-7.5 left-6" : "top-4 left-3"
-          } transition-all duration-300 ease-in-out`}
+          } text-slate-900 dark:text-white transition-all duration-300 ease-in-out`}
         aria-label="Toggle menu"
       >
-        {open ? <X className="size-7 text-white cursor-pointer" /> : <Menu className="size-7 text-white cursor-pointer" />}
+        {open ? <X className="size-7 cursor-pointer" /> : <Menu className="size-7 cursor-pointer" />}
       </button>
 
       {open && (
         <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={() => setOpen(false)} />
       )}
 
-      <aside className={`fixed md:static top-0 left-0 z-50 h-screen overflow-y-auto hide-scrollbar text-white 
+      <aside className={`fixed md:static top-0 left-0 z-50 h-screen overflow-y-auto hide-scrollbar text-slate-900 dark:text-white 
   ${open ? "w-50 md:w-55" : "w-0 md:w-16"} 
   border-r border-black/5 shadow-lg flex flex-col gap-5 px-2 py-5 font-serif text-[1.1rem] backdrop-blur-3xl 
   transform transition-all duration-300 ${open ? "translate-x-0" : "-translate-x-full"}`}>
@@ -115,7 +115,7 @@ export default function Sidebar() {
 
             <div className="flex flex-col ml-3">
               <p className="font-semibold text-[1.1rem]">Hello</p>
-              <p className="text-gray-300">{userData?.name}!</p>
+              <p className="text-slate-600 dark:text-gray-300">{userData?.name}!</p>
             </div>
           </div>
         </div>
@@ -174,7 +174,7 @@ export default function Sidebar() {
         />
 
         <p
-          className="flex mr-auto pl-2 md:pl-5 gap-2 mt-auto transition-all duration-300 hover:bg-black/10 w-full h-10 rounded-lg items-center cursor-pointer dark:hover:text-white/70"
+          className="flex mr-auto pl-2 md:pl-5 gap-2 mt-auto transition-all duration-300 hover:bg-black/10 w-full h-10 rounded-lg items-center cursor-pointer text-slate-700 hover:text-slate-900 dark:text-white dark:hover:text-white/70"
           onClick={() => setLogoutOpen(true)}
         >
           <LogOut className="opacity-60" />
@@ -205,8 +205,8 @@ export default function Sidebar() {
 function SidebarItem({ icon, label, href, active, onClick, unreadCount = 0 }: SidebarItemProps) {
   if (onClick) {
     return (
-      <button onClick={onClick} className="flex gap-2 cursor-pointer transition-all duration-200 p-2 rounded-lg w-full md:pl-5 hover:bg-black/10 dark:hover:bg-blue-400/20">
-        <span className="h-4 md:h-6 text-stone-300 dark:text-white/50">
+      <button onClick={onClick} className="flex gap-2 cursor-pointer transition-all duration-200 p-2 rounded-lg w-full md:pl-5 text-slate-700 hover:bg-black/10 hover:text-slate-900 dark:text-white dark:hover:bg-blue-400/20 dark:hover:text-white/70">
+        <span className="h-4 md:h-6 text-slate-500 dark:text-white/50">
           {icon}
         </span>
         {label}
@@ -219,9 +219,9 @@ function SidebarItem({ icon, label, href, active, onClick, unreadCount = 0 }: Si
       href={href!}
       className={`relative flex gap-2 cursor-pointer transition-all duration-200 p-2 rounded-lg w-full md:pl-5 ${active
         ? "bg-blue-500 text-white"
-        : "hover:bg-black/10 dark:hover:bg-blue-400/20 dark:hover:text-white/70"
+        : "text-slate-700 hover:bg-black/10 hover:text-slate-900 dark:text-white dark:hover:bg-blue-400/20 dark:hover:text-white/70"
         }`}>
-      <span className={`h-4 md:h-6 ${active ? "text-white" : "text-stone-300 dark:text-white/50"}`}>
+      <span className={`h-4 md:h-6 ${active ? "text-white" : "text-slate-500 dark:text-white/50"}`}>
         {icon}
       </span>
       {label}
