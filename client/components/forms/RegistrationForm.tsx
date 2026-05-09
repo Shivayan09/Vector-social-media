@@ -173,9 +173,20 @@ export default function RegistrationForm() {
           </div>
 
           <Button className="w-full text-white mt-5 cursor-pointer bg-blue-500 hover:bg-blue-600" onClick={nextStep}>
-            Continue
+             Continue
           </Button>
-
+          <div className="flex items-center justify-between gap-2 mt-5 text-sm">
+              <p className="text-foreground">
+                  Already have an account?
+              </p>
+              <span
+                  className="cursor-pointer font-semibold text-primary underline"
+                  onClick={() => router.push("/auth/login")}
+              >
+                  Login
+              </span>
+          </div>    
+          
           <p className="mt-4 text-center text-[0.82rem] leading-6 surface-text-muted">
             By continuing, you agree to Vector&apos;s{" "}
             <Link href="/terms" className="text-primary underline underline-offset-4">
