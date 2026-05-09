@@ -23,6 +23,7 @@ export type UserSummary = {
   followersCount?: number;
   followingCount?: number;
   isPrivate?: boolean;
+  followRequests?: string[] | UserSummary[];
 };
 
 export type Post = {
@@ -59,7 +60,7 @@ export type Message = {
 
 export type Notification = {
   _id: string;
-  type: "follow" | "like" | "comment" | "message" | "follow_request";
+  type: "follow" | "like" | "comment" | "message" | "follow_request" | "follow_request_accepted";
   sender: UserSummary;
   post?: {
     _id: string;

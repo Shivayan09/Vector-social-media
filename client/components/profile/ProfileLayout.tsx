@@ -24,7 +24,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
   const { userData } = useAppContext();
   const isSelfProfile = userData?.id === user._id;
   const [following, setFollowing] = useState<boolean>(isFollowing ?? false);
-  const [requested, _setRequested] = useState<boolean>(isRequested ?? false);
+  const [requested] = useState<boolean>(isRequested ?? false);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 

@@ -5,8 +5,9 @@ import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import { Trash2, MessageCircle, UserPlus } from "lucide-react";
+import { Trash2, MessageCircle, UserPlus, ArrowRight } from "lucide-react";
 import ConfirmModal from "./modals/DeleteWarning";
+import FollowRequestsModal from "./modals/FollowRequestsModal";
 import type { Notification } from "@/lib/types";
 
 type Props = {
@@ -25,6 +26,7 @@ export default function NotificationPanel({ search = "" }: Props) {
   const [selected, setSelected] = useState<string[]>([]);
   const [followLoading, setFollowLoading] = useState<Record<string, boolean>>({});
   const [messageLoading, setMessageLoading] = useState<Record<string, boolean>>({});
+  const [modalOpen, setModalOpen] = useState(false);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -258,9 +260,11 @@ export default function NotificationPanel({ search = "" }: Props) {
     comment: "comment commented",
     message: "message messaged",
     follow_request: "follow request requested",
+    follow_request_accepted: "accepted your follow request",
   };
 
   const filteredNotifications = notifications.filter((n) => {
+    if (n.type === "follow_request") return false;
     const query = search.toLowerCase();
     const searchable = `${n.sender.name} ${n.sender.username} ${typeText[n.type]}`.toLowerCase();
     return searchable.includes(query);
@@ -299,6 +303,21 @@ export default function NotificationPanel({ search = "" }: Props) {
           )}
         </div>
       </div>
+
+      {userData?.isPrivate && (userData?.followRequests?.length || 0) > 0 && (
+        <div 
+          onClick={() => setModalOpen(true)} 
+          className="mb-4 p-3 rounded-lg border border-border/50 bg-secondary/50 cursor-pointer flex justify-between items-center transition hover:bg-secondary"
+        >
+          <div>
+            <p className="font-medium text-foreground text-sm">Pending follow requests</p>
+            <p className="text-xs text-muted-foreground">{userData.followRequests?.length} requests waiting for approval</p>
+          </div>
+          <ArrowRight className="h-4 w-4 text-muted-foreground" />
+        </div>
+      )}
+
+      <FollowRequestsModal open={modalOpen} onClose={() => setModalOpen(false)} />
 
       {loading ? (
         <p className="surface-text-muted text-sm">

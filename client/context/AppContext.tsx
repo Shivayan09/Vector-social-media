@@ -29,6 +29,7 @@ export type User = {
   followers?: string[];
   following?: string[];
   isPrivate?: boolean;
+  followRequests?: string[];
 };
 
 type AppContextType = {
