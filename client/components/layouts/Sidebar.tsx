@@ -96,7 +96,7 @@ export default function Sidebar() {
 
       <aside className={`fixed md:static top-0 left-0 z-50 h-screen overflow-y-auto hide-scrollbar text-slate-900 dark:text-white 
   ${open ? "w-50 md:w-55" : "w-0 md:w-16"} 
-  border-r border-black/5 shadow-lg flex flex-col gap-5 px-2 py-5 font-serif text-[1.1rem] backdrop-blur-3xl 
+  border-r border-border shadow-lg flex flex-col gap-5 px-2 py-5 font-serif text-[1.1rem] backdrop-blur-3xl 
   transform transition-all duration-300 ${open ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex w-full">
           <div className="flex justify-center ml-3">
