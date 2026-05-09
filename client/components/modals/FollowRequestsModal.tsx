@@ -15,25 +15,25 @@ export default function FollowRequestsModal({ open, onClose }: Props) {
   const [requests, setRequests] = useState<UserSummary[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (open) {
-      fetchRequests();
-    }
-  }, [open]);
-
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     try {
       setLoading(true);
       const { data } = await axios.get(`${BACKEND_URL}/api/users/follow-requests`, {
         withCredentials: true,
       });
       setRequests(data);
-    } catch (err: unknown) {
+    } catch {
       toast.error("Failed to fetch follow requests");
     } finally {
       setLoading(false);
     }
-  };
+  }, [BACKEND_URL]);
+
+  useEffect(() => {
+    if (open) {
+      fetchRequests();
+    }
+  }, [open, fetchRequests]);
 
   const handleAccept = async (id: string) => {
     try {
@@ -46,7 +46,7 @@ export default function FollowRequestsModal({ open, onClose }: Props) {
             followRequests: userData.followRequests?.filter((rId) => rId !== id)
         });
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to accept request");
     }
   };
@@ -62,7 +62,7 @@ export default function FollowRequestsModal({ open, onClose }: Props) {
             followRequests: userData.followRequests?.filter((rId) => rId !== id)
         });
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to reject request");
     }
   };
