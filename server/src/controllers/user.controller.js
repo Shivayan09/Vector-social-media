@@ -1,6 +1,7 @@
 import cloudinary from "../config/cloudinary.js";
 import User from "../models/user.model.js";
 import Notification from "../models/notification.model.js";
+import Post from "../models/post.model.js";
 
 export const uploadAvatar = async (req, res) => {
     try {
@@ -364,16 +365,45 @@ export const getSuggestedUsers = async (req, res) => {
 };
 
 export const searchUsers = async (req, res) => {
-    try {
-        const { query } = req.query;
-        if (!query) {
-            return res.json({ users: [] });
-        }
-        const users = await User.find({ $or: [{ name: { $regex: query, $options: "i" } }, { username: { $regex: query, $options: "i" } }] }).select("-password").limit(10);
-        res.json({ users });
-    } catch {
-        res.status(500).json({
-            message: "Search failed"
+try {
+const { query } = req.query;
+
+
+    if (!query) {
+        return res.json({
+            users: [],
+            posts: []
         });
     }
+
+    const users = await User.find({
+        $or: [
+            { name: { $regex: query, $options: "i" } },
+            { username: { $regex: query, $options: "i" } }
+        ]
+    })
+    .select("-password")
+    .limit(10);
+
+    const posts = await Post.find({
+        $or: [
+            { content: { $regex: query, $options: "i" } },
+            { intent: { $regex: query, $options: "i" } }
+        ]
+    })
+    .populate("author", "username")
+    .limit(10);
+
+    res.json({
+        users,
+        posts
+    });
+
+} catch {
+    res.status(500).json({
+        message: "Search failed"
+    });
+}
+
 };
+
