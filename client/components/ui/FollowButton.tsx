@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useState } from "react";
+import { UserCheck, UserPlus } from "lucide-react";
 
 type FollowButtonProps = {
   userId: string;
@@ -32,12 +33,16 @@ export default function FollowButton({ userId, isFollowing, onFollowChange }: Fo
     <button
       disabled={loading}
       onClick={toggleFollow}
-      className={`w-25 md:w-30 h-9 rounded-md cursor-pointer transition-all duration-200 font-medium ${
+      className={`w-25 md:w-30 h-9 rounded-md cursor-pointer transition-all duration-200 font-medium flex items-center justify-center gap-2 ${
         following
-          ? "border-2 bg-black/10 text-(--text) hover:bg-black/5 dark:hover:bg-white/2"
-          : "bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700 text-white"
+          ? "border border-surface-border bg-surface-strong text-foreground hover:bg-surface-hover"
+          : "bg-primary text-primary-foreground hover:bg-primary/90"
       }`}>
-      {following ? "Following" : "Follow"}
+      {following ? (
+        <><UserCheck className="w-4 h-4" /> Following</>
+      ) : (
+        <><UserPlus className="w-4 h-4" /> Follow</>
+      )}
     </button>
   );
 }

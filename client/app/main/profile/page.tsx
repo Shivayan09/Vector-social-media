@@ -4,7 +4,7 @@ import ProfilePage from "@/components/profile/ProfilePage";
 
 export default function Profile() {
     return (
-        <div className="h-screen overflow-y-auto">
+        <div className="page-scroll">
             <ProfilePage/>
         </div>
     );

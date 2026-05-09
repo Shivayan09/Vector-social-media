@@ -262,29 +262,30 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                     <img src={post.image} alt="Post attachment" className="w-full h-full object-cover" />
                 </div>
             )}
-            <div className="flex w-full gap-x-2 border-t border-border/80 pt-3 text-foreground sm:justify-between">
-                <div className="surface-text-muted flex w-full items-center gap-4 text-sm sm:w-2/3 sm:justify-between">
-                    <p className="flex flex-col text-center gap-2 sm:flex-row items-center cursor-pointer hover:text-blue-500 md:w-[20%] justify-center">
-                        <MessageCircle className="h-4.5 md:h-5 hover:text-blue-500" />
-                        {post.commentsCount || 0} {post.commentsCount === 1 ? 'Comment' : 'Comments'}
+            <div className="flex w-full items-center justify-between border-t border-surface-border pt-4 mt-2 surface-text-muted text-[0.9rem]">
+                <div className="flex flex-wrap items-center gap-4 sm:gap-8">
+                    <p className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors">
+                        <MessageCircle className="h-4 w-4" />
+                        {post.commentsCount || 0} Comments
                     </p>
 
-                    <p onClick={handleShare} className="flex flex-col text-center sm:flex-row gap-1 items-center cursor-pointer hover:text-blue-500 md:w-[20%] justify-center">
-                        <Forward className="h-4.5 md:h-5" />{post.sharesCount || 0} {post.sharesCount === 1 ? 'Share' : 'Shares'}
+                    <p onClick={handleShare} className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors">
+                        <Share2 className="h-4 w-4" />
+                        {post.sharesCount || 0} {post.sharesCount === 1 ? 'Share' : 'Shares'}
                     </p>
 
-                    <div className="flex flex-col text-center sm:flex-row gap-1 items-center md:w-[20%] justify-center">
-                        <button onClick={(e) => { e.stopPropagation(); handleLike() }} className="p-0 hover:text-blue-500">
-                            <Heart className={`h-4.5 md:h-5 cursor-pointer transition-transform duration-300 hover:text-blue-500 ${isLiked ? "text-blue-500" : ""} ${likeAnimating ? "scale-135" : "scale-100"}`} fill={isLiked ? "currentColor" : "none"} />
+                    <div className="flex items-center gap-2">
+                        <button onClick={(e) => { e.stopPropagation(); handleLike() }} className="p-0 hover:text-primary transition-colors">
+                            <Heart className={`h-4 w-4 cursor-pointer transition-transform duration-300 ${isLiked ? "text-primary" : ""} ${likeAnimating ? "scale-135" : "scale-100"}`} fill={isLiked ? "currentColor" : "none"} />
                         </button>
-                        <button onClick={(e) => { e.stopPropagation(); setShowLikesModal(true) }} className="cursor-pointer text-sm hover:text-blue-500">
+                        <button onClick={(e) => { e.stopPropagation(); setShowLikesModal(true) }} className="cursor-pointer hover:text-primary transition-colors">
                             {post.likes.length} {post.likes.length === 1 ? 'Like' : 'Likes'}
                         </button>
                     </div>
                 </div>
 
                 <div>
-                    <p className="text-sm sm:text-md">{timeAgo(post.createdAt)}</p>
+                    <p>{timeAgo(post.createdAt)}</p>
                 </div>
             </div>
 
