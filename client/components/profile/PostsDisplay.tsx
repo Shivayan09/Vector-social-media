@@ -58,7 +58,7 @@ export default function PostsDisplay({ userId, emptyText }: PostsDisplayProps) {
             {visibleCount < posts.length && (
                 <button 
                     onClick={handleLoadMore} 
-                    className="mt-2 w-full py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition duration-200 font-medium cursor-pointer"
+                    className="mt-2 w-fit self-end px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition duration-200 font-medium cursor-pointer"
                 >
                     Load More
                 </button>
