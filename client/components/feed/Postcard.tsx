@@ -33,11 +33,11 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
     const [showLikesModal, setShowLikesModal] = useState(false);
+    const getLikeUserId = (like: string | { _id?: string }) =>
+        typeof like === "string" ? like : like._id;
 
     const isOwner = userData?.id === post?.author?._id;
-    const isLiked = post.likes?.some(like => 
-        typeof like === "object" ? like._id === userData?.id : like === userData?.id
-    );
+    const isLiked = post.likes?.some((like) => getLikeUserId(like) === userData?.id);
 
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
@@ -80,8 +80,8 @@ export default function PostCard({ post, setPost }: PostCardProps) {
             }
 
             const updatedLikes = isLiked
-                ? post.likes.filter(id => String(id) !== String(userData.id))
-                : [...post.likes, userData.id]; // ✅ now always string
+                ? post.likes.filter((like) => getLikeUserId(like) !== userData.id)
+                : [...post.likes, userData.id];
 
             // ✅ update local state safely
             if (setPost) {
