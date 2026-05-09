@@ -94,6 +94,7 @@ export const updateProfile = async (req, res) => {
                 isProfileComplete: user.isProfileComplete,
                 signupStep: user.signupStep,
                 isPrivate: user.isPrivate,
+                followRequests: user.followRequests.map(id => id.toString()),
             },
             message: "Profile updated successfully!"
         });

@@ -170,6 +170,7 @@ export const getMe = (req, res) => {
             followers: user.followers.map(id => id.toString()),
             following: user.following.map(id => id.toString()),
             isPrivate: user.isPrivate,
+            followRequests: user.followRequests.map(id => id.toString()),
         },
     });
 };
