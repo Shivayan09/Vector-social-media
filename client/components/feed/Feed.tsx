@@ -68,6 +68,9 @@ export default function Feed() {
                     <SkeletonLoader count={3} height="h-40" />
                 </div>
             )}
+            {!loading && !hasMoreRef.current && posts.length > 0 && (
+                <p className="text-center text-sm text-muted-foreground py-4">All caught up</p>
+            )}
             <div ref={observerTarget} className="h-10" />
             <CreatePostPopup />
         </div>
