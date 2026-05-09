@@ -69,7 +69,16 @@ export default function Feed() {
                 </div>
             )}
             {!loading && !hasMoreRef.current && posts.length > 0 && (
-                <p className="text-center text-sm text-muted-foreground py-4">All caught up</p>
+                <div className="flex flex-col items-center gap-3 py-10 select-none all-caught-up">
+                    <div className="checkmark-circle">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                    </div>
+                    <p className="text-sm font-semibold tracking-wide">You're all caught up!</p>
+                    <p className="text-xs opacity-50">New posts will appear when you come back</p>
+                    <div className="gradient-divider" />
+               </div>
             )}
             <div ref={observerTarget} className="h-10" />
             <CreatePostPopup />

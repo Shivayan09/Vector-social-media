@@ -431,3 +431,39 @@
 ::-webkit-scrollbar-thumb {
   background-color: rgba(0, 0, 0, 0.3);
 }
+
+.all-caught-up {
+    animation: caught-up-fade 0.5s ease forwards;
+    color: var(--muted-foreground);
+}
+
+@keyframes caught-up-fade {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.checkmark-circle {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+}
+
+@keyframes pop-in {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.gradient-divider {
+    width: 120px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #6366f1, transparent);
+    opacity: 0.5;
+    margin-top: 4px;
+}
