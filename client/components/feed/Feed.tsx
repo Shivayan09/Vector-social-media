@@ -75,7 +75,7 @@ export default function Feed() {
                             <polyline points="20 6 9 17 4 12" />
                         </svg>
                     </div>
-                    <p className="text-sm font-semibold tracking-wide">You're all caught up!</p>
+                    <p className="text-sm font-semibold tracking-wide">You&apos;re all caught up!</p>
                     <p className="text-xs opacity-50">New posts will appear when you come back</p>
                     <div className="gradient-divider" />
                </div>
