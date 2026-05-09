@@ -60,6 +60,7 @@ export default function ProfileSettings() {
         phoneNumber: userData.phoneNumber || "",
         bio: userData.bio || "",
         description: userData.description || "",
+        isPrivate: userData.isPrivate || false,
       };
       setFormData(data);
       setInitialData(data);

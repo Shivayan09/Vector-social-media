@@ -30,6 +30,7 @@ export default function RegistrationForm() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,7 +79,7 @@ export default function RegistrationForm() {
     }
     try {
       setLoading(true);
-      const { data } = await axios.post(BACKEND_URL + "/api/auth/register", { name, surname, email, phoneNumber, password, username, bio, description }, { withCredentials: true });
+      const { data } = await axios.post(BACKEND_URL + "/api/auth/register", { name, surname, email, phoneNumber, password, username, bio, description, isPrivate }, { withCredentials: true });
       if (!data.success) {
         toast.warn(data.message);
         return;
@@ -172,9 +173,20 @@ export default function RegistrationForm() {
           </div>
 
           <Button className="w-full text-white mt-5 cursor-pointer bg-blue-500 hover:bg-blue-600" onClick={nextStep}>
-            Continue
+             Continue
           </Button>
-
+          <div className="flex items-center justify-between gap-2 mt-5 text-sm">
+              <p className="text-foreground">
+                  Already have an account?
+              </p>
+              <span
+                  className="cursor-pointer font-semibold text-primary underline"
+                  onClick={() => router.push("/auth/login")}
+              >
+                  Login
+              </span>
+          </div>    
+          
           <p className="mt-4 text-center text-[0.82rem] leading-6 surface-text-muted">
             By continuing, you agree to Vector&apos;s{" "}
             <Link href="/terms" className="text-primary underline underline-offset-4">
@@ -219,6 +231,16 @@ export default function RegistrationForm() {
           </p>
 
           <textarea placeholder="Enter your bio (200 words max)" className="form-textarea h-24" onChange={(e) => setDescription(e.target.value)} />
+
+          <div className="flex items-center gap-2 mt-4 cursor-pointer" onClick={() => setIsPrivate(!isPrivate)}>
+            <input 
+              type="checkbox" 
+              checked={isPrivate} 
+              onChange={(e) => setIsPrivate(e.target.checked)} 
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
+            />
+            <p className="text-sm font-medium text-foreground">Private Account</p>
+          </div>
 
           <div className="flex justify-between gap-2 mt-4">
             <Button className="bg-white/80 text-black hover:bg-white" onClick={() => setStep(1)}>

@@ -9,6 +9,7 @@ import type { UserSummary } from "@/lib/types";
 
 type UserSummaryWithFollowState = UserSummary & {
   isFollowedByCurrentUser?: boolean;
+  isRequestedByCurrentUser?: boolean;
 };
 
 export default function UserProfilePage() {
@@ -52,6 +53,7 @@ export default function UserProfilePage() {
     <ProfileLayout
       user={user}
       isFollowing={user.isFollowedByCurrentUser ?? false}
+      isRequested={user.isRequestedByCurrentUser ?? false}
     />
   );
 }

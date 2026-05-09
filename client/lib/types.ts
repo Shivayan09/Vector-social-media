@@ -22,6 +22,7 @@ export type UserSummary = {
   following?: string[];
   followersCount?: number;
   followingCount?: number;
+  isPrivate?: boolean;
 };
 
 export type Post = {
@@ -58,7 +59,7 @@ export type Message = {
 
 export type Notification = {
   _id: string;
-  type: "follow" | "like" | "comment" | "message";
+  type: "follow" | "like" | "comment" | "message" | "follow_request";
   sender: UserSummary;
   post?: {
     _id: string;
@@ -77,6 +78,7 @@ export type ProfileFormData = {
   phoneNumber: string;
   bio: string;
   description: string;
+  isPrivate: boolean;
 };
 
 export type GoogleCredentialResponseLite = {

@@ -37,8 +37,9 @@ export const register = async (req, res) => {
             username,
             bio,
             description,
+            isPrivate,
         } = req.body;
-
+        
         // basic validations
         if (!name) {
             return res.json({ success: false, message: "Please enter your name!" });
@@ -123,6 +124,7 @@ export const register = async (req, res) => {
             username,
             bio,
             description,
+            isPrivate: isPrivate === true,
             isProfileComplete: true,
         });
 
@@ -167,6 +169,7 @@ export const getMe = (req, res) => {
             avatar: user.avatar,
             followers: user.followers.map(id => id.toString()),
             following: user.following.map(id => id.toString()),
+            isPrivate: user.isPrivate,
         },
     });
 };
