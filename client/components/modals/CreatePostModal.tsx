@@ -25,7 +25,9 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
     const router = useRouter();
 
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
-    
+    const MAX_CHARS = 500;
+    const charsLeft = MAX_CHARS - content.length;
+
     const handleClose = () => {
         setVisible(false);
         setTimeout(onClose, 200);
@@ -134,6 +136,14 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                                 "text-foreground placeholder:text-foreground/40 text-lg leading-relaxed"
                             )} 
                         />
+                        <div className={cn(
+                            "text-xs mt-1 text-right font-medium transition-colors",
+                            charsLeft < 0 ? "text-red-500" :
+                            charsLeft < 100 ? "text-yellow-500" :
+                            "text-foreground/40"
+                        )}>
+                            {charsLeft} / {MAX_CHARS}
+                        </div>
                     </div>
 
                     {/* Image Preview */}
@@ -179,7 +189,7 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                                 Cancel
                             </Button>
                             <Button 
-                                disabled={loading || !intent || (!content.trim() && !imageFile)} 
+                                disabled={loading || !intent || (!content.trim() && !imageFile) || charsLeft < 0} 
                                 onClick={handlePost} 
                                 className={cn(
                                     "rounded-xl px-8 font-bold shadow-lg transition-all active:scale-95",
