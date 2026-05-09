@@ -172,7 +172,7 @@ export default function RegistrationForm() {
           </div>
 
           <Button className="w-full text-white mt-5 cursor-pointer bg-blue-500 hover:bg-blue-600" onClick={nextStep}>
-            Continue
+             Continue
           </Button>
           <div className="flex items-center justify-between gap-2 mt-5 text-sm">
               <p className="text-foreground">
