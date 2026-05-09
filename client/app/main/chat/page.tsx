@@ -171,7 +171,7 @@ export default function ChatListPage() {
                                     onClick={() =>
                                         router.push(`/main/chat/${convo._id}`)
                                     }
-                                    className="flex items-center gap-3 p-4 rounded-lg cursor-pointer bg-black/10 hover:bg-black/15 hover:shadow-lg text-white transition-all duration-200"
+                                    className="flex items-center gap-3 p-4 rounded-lg cursor-pointer bg-black/10 dark:bg-white/5 hover:bg-black/15 hover:shadow-lg text-white transition-all duration-200"
                                 >
                                     <img
                                         alt={otherUser?.name || "Chat user"}
