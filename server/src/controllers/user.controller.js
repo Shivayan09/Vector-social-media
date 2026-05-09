@@ -196,7 +196,7 @@ export const acceptFollowRequest = async (req, res) => {
         const requesterId = req.params.id;
         const user = await User.findById(currentUserId);
         
-        if (!user.followRequests.includes(requesterId)) {
+        if (!user.followRequests.some(id => id.toString() === requesterId)) {
             return res.status(400).json({ message: "No follow request from this user" });
         }
 
@@ -225,6 +225,11 @@ export const rejectFollowRequest = async (req, res) => {
     try {
         const currentUserId = req.user.id;
         const requesterId = req.params.id;
+        const user = await User.findById(currentUserId);
+
+        if (!user.followRequests.some(id => id.toString() === requesterId)) {
+            return res.status(400).json({ message: "No follow request from this user" });
+        }
 
         await User.findByIdAndUpdate(currentUserId, { 
             $pull: { followRequests: requesterId }

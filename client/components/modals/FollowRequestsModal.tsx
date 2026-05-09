@@ -1,6 +1,10 @@
+"use client";
+
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { createPortal } from "react-dom";
+import { useMounted } from "@/lib/useMounted";
 import { UserSummary } from "@/lib/types";
 import { useAppContext } from "@/context/AppContext";
 
@@ -10,10 +14,11 @@ type Props = {
 };
 
 export default function FollowRequestsModal({ open, onClose }: Props) {
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
   const { userData, setUserData } = useAppContext();
   const [requests, setRequests] = useState<UserSummary[]>([]);
   const [loading, setLoading] = useState(false);
+  const mounted = useMounted();
 
   const fetchRequests = useCallback(async () => {
     try {
@@ -67,9 +72,9 @@ export default function FollowRequestsModal({ open, onClose }: Props) {
     }
   };
 
-  if (!open) return null;
+  if (!mounted || !open) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
@@ -120,6 +125,8 @@ export default function FollowRequestsModal({ open, onClose }: Props) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
+

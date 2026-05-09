@@ -260,10 +260,11 @@ export default function NotificationPanel({ search = "" }: Props) {
     comment: "comment commented",
     message: "message messaged",
     follow_request: "follow request requested",
+    follow_request_accepted: "accepted your follow request",
   };
 
   const filteredNotifications = notifications.filter((n) => {
-    if (n.type === "follow_request" || n.type === "follow_request_accepted") return false;
+    if (n.type === "follow_request") return false;
     const query = search.toLowerCase();
     const searchable = `${n.sender.name} ${n.sender.username} ${typeText[n.type]}`.toLowerCase();
     return searchable.includes(query);
