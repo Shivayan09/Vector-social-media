@@ -83,11 +83,17 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
 
+    isPrivate: {
+      type: Boolean,
+      default: false, // Default is Public
+    },
+    
     resetToken: String,
     resetTokenExpiry: Date,
 
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    followRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
     followersCount: { type: Number, default: 0 },
     followingCount: { type: Number, default: 0 },
@@ -96,13 +102,6 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-
-    isPrivate: {
-      type: Boolean,
-      default: false,
-    },
-
-    followRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
   {
     timestamps: true,
