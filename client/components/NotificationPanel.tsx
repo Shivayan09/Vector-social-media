@@ -167,6 +167,49 @@ export default function NotificationPanel({ search = "" }: Props) {
     }
   };
 
+  const handleAcceptRequest = async (senderId: string) => {
+    try {
+      setFollowLoading((prev) => ({ ...prev, [senderId]: true }));
+      await axios.put(
+        `${BACKEND_URL}/api/users/${senderId}/accept`,
+        {},
+        { withCredentials: true }
+      );
+      toast.success("Follow request accepted");
+      // Update local state to remove the request notification or change its type
+      setNotifications(prev => prev.map(n => 
+        (n.sender._id === senderId && n.type === "follow_request") 
+        ? { ...n, type: "follow" as const } 
+        : n
+      ));
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        toast.error(err.response?.data?.message || "Action failed");
+      }
+    } finally {
+      setFollowLoading((prev) => ({ ...prev, [senderId]: false }));
+    }
+  };
+
+  const handleRejectRequest = async (senderId: string) => {
+    try {
+      setFollowLoading((prev) => ({ ...prev, [senderId]: true }));
+      await axios.put(
+        `${BACKEND_URL}/api/users/${senderId}/reject`,
+        {},
+        { withCredentials: true }
+      );
+      toast.success("Follow request rejected");
+      setNotifications(prev => prev.filter(n => !(n.sender._id === senderId && n.type === "follow_request")));
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        toast.error(err.response?.data?.message || "Action failed");
+      }
+    } finally {
+      setFollowLoading((prev) => ({ ...prev, [senderId]: false }));
+    }
+  };
+
   const handleReplyToMessage = async (notificationId: string, senderId: string, conversationId?: string) => {
     try {
       setMessageLoading((prev) => ({ ...prev, [notificationId]: true }));
@@ -216,6 +259,7 @@ export default function NotificationPanel({ search = "" }: Props) {
     like: "like liked",
     comment: "comment commented",
     message: "message messaged",
+    follow_request: "follow request requested",
   };
 
   const filteredNotifications = notifications.filter((n) => {
@@ -322,6 +366,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                       {n.sender.name}
                     </span>{" "}
                     {n.type === "follow" && "followed you"}
+                    {n.type === "follow_request" && "wants to follow you"}
                     {n.type === "like" && "liked your post"}
                     {n.type === "comment" &&
                       "commented on your post"}
@@ -347,6 +392,30 @@ export default function NotificationPanel({ search = "" }: Props) {
                         <MessageCircle className="h-4 w-4" />
                         {messageLoading[n._id] ? "Loading..." : "Reply"}
                       </button>
+                    )}
+                    {n.type === "follow_request" && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAcceptRequest(n.sender._id);
+                          }}
+                          disabled={followLoading[n.sender._id]}
+                          className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
+                        >
+                          {followLoading[n.sender._id] ? "..." : "Accept"}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRejectRequest(n.sender._id);
+                          }}
+                          disabled={followLoading[n.sender._id]}
+                          className="px-3 py-1.5 text-sm bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-foreground rounded-md transition"
+                        >
+                          {followLoading[n.sender._id] ? "..." : "Reject"}
+                        </button>
+                      </div>
                     )}
                     {n.type === "follow" && (
                       <button

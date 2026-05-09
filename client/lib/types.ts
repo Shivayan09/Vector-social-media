@@ -79,6 +79,7 @@ export type ProfileFormData = {
   phoneNumber: string;
   bio: string;
   description: string;
+  isPrivate: boolean;
 };
 
 export type GoogleCredentialResponseLite = {

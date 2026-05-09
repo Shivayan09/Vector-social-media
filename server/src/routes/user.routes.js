@@ -32,6 +32,8 @@ userRouter.put("/:id/reject-request", authMiddleware, rejectFollowRequest);
 userRouter.get("/all", getAllUsers);
 userRouter.get("/search", searchUsers);
 userRouter.get("/:username", optionalAuth, getUserProfile);
+userRouter.put("/:requestId/accept", authMiddleware, acceptFollowRequest);
+userRouter.put("/:requestId/reject", authMiddleware, rejectFollowRequest);
 userRouter.get("/:id/followers", authMiddleware, getFollowers);
 userRouter.get("/:id/following", authMiddleware, getFollowing);
 
