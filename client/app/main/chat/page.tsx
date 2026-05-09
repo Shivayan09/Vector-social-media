@@ -29,41 +29,41 @@ export default function ChatListPage() {
             try {
                 setLoading(true);
                 const { data: allConvos } = await axios.get(
-                `${BACKEND_URL}/api/conversation`,
-                { withCredentials: true }
-            );
+                    `${BACKEND_URL}/api/conversation`,
+                    { withCredentials: true }
+                );
 
-            const results = await Promise.all(
-                allConvos.map(async (convo: Conversation) => {
-                    const { data: messages } = await axios.get(
-                        `${BACKEND_URL}/api/messages/${convo._id}`,
-                        { withCredentials: true }
-                    );
-                    return messages.length > 0 ? convo : null;
-                })
-            );
-
-            const validConvos = results.filter(Boolean);
-
-            setConversations(validConvos);
-
-            const unreadCountEntries = await Promise.all(
-                validConvos.map(async (convo: Conversation) => {
-                    try {
-                        const { data } = await axios.get(
-                            `${BACKEND_URL}/api/messages/${convo._id}/unread-count`,
+                const results = await Promise.all(
+                    allConvos.map(async (convo: Conversation) => {
+                        const { data: messages } = await axios.get(
+                            `${BACKEND_URL}/api/messages/${convo._id}`,
                             { withCredentials: true }
                         );
-                        return [convo._id, data.unreadCount] as const;
-                    } catch {
-                        return [convo._id, 0] as const;
-                    }
-                })
-            );
+                        return messages.length > 0 ? convo : null;
+                    })
+                );
 
-            const counts = Object.fromEntries(unreadCountEntries) as Record<string, number>;
-            setUnreadCounts(counts);
-            setFilteredConversations(validConvos);
+                const validConvos = results.filter(Boolean);
+
+                setConversations(validConvos);
+
+                const unreadCountEntries = await Promise.all(
+                    validConvos.map(async (convo: Conversation) => {
+                        try {
+                            const { data } = await axios.get(
+                                `${BACKEND_URL}/api/messages/${convo._id}/unread-count`,
+                                { withCredentials: true }
+                            );
+                            return [convo._id, data.unreadCount] as const;
+                        } catch {
+                            return [convo._id, 0] as const;
+                        }
+                    })
+                );
+
+                const counts = Object.fromEntries(unreadCountEntries) as Record<string, number>;
+                setUnreadCounts(counts);
+                setFilteredConversations(validConvos);
             } catch {
                 setConversations([]);
                 setFilteredConversations([]);
@@ -183,23 +183,21 @@ export default function ChatListPage() {
                                     />
 
                                     <div>
-                                        <p className="font-semibold">
+                                        <p className="font-semibold text-gray-600 dark:text-white">
                                             {otherUser?.name}
                                         </p>
-                                        <p className="text-sm text-gray-400">
+                                        <p className="text-sm text-black/30 dark:text-white/40">
                                             @{otherUser?.username}
                                         </p>
                                     </div>
 
                                     <div className="w-full">
                                         {unreadCounts[convo._id] > 0 && (
-                                        <div className="ml-auto w-6 mr-2 bg-red-500 text-white rounded-full h-6 flex items-center justify-center text-xs font-bold">
-                                            {unreadCounts[convo._id]}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <ArrowRight className="ml-auto opacity-70 text-foreground" />
+                                            <div className="ml-auto w-6 mr-2 bg-red-500 text-white rounded-full h-6 flex items-center justify-center text-xs font-bold">
+                                                {unreadCounts[convo._id]}
+                                            </div>
+                                        )}
+                                    </div>
 
                                     <Trash2
                                         onClick={(e) =>
@@ -208,6 +206,8 @@ export default function ChatListPage() {
                                         className="ml-2 text-red-500 opacity-70 hover:opacity-100 hover:scale-110 transition-transform"
                                         size={20}
                                     />
+
+                                    <ArrowRight className="ml-3 opacity-70 text-foreground" />
                                 </div>
                             );
                         })
