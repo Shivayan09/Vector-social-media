@@ -14,6 +14,7 @@ type PostsDisplayProps = {
 export default function PostsDisplay({ userId, emptyText }: PostsDisplayProps) {
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
+    const [visibleCount, setVisibleCount] = useState(5);
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
     useEffect(() => {
@@ -44,11 +45,24 @@ export default function PostsDisplay({ userId, emptyText }: PostsDisplayProps) {
         );
     }
 
+    const handleLoadMore = () => {
+        setVisibleCount((prev) => prev + 5);
+    };
+
     return (
         <div className="flex flex-col gap-3">
-            {posts.map((post) => (
+            {posts.slice(0, visibleCount).map((post) => (
                 <PostCard key={post._id} post={post} />
             ))}
+            
+            {visibleCount < posts.length && (
+                <button 
+                    onClick={handleLoadMore} 
+                    className="mt-2 w-fit self-end px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition duration-200 font-medium cursor-pointer"
+                >
+                    Load More
+                </button>
+            )}
         </div>
     );
 }
