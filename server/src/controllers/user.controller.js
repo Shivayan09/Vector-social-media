@@ -117,6 +117,12 @@ export const toggleFollowUser = async (req, res) => {
                 message: "User not found"
             });
         }
+        
+        if (currentUser.blockedUsers?.some(id => id.toString() === targetUserId) || targetUser.blockedUsers?.some(id => id.toString() === currentUserId)) {
+            return res.status(403).json({
+                message: "Action not allowed due to blocking"
+            });
+        }
         const isFollowing = currentUser.following.includes(targetUserId);
         if (isFollowing) {
             await User.findByIdAndUpdate(currentUserId, { $pull: { following: targetUserId }, $inc: { followingCount: -1 } });
@@ -147,12 +153,25 @@ export const toggleFollowUser = async (req, res) => {
 export const getUserProfile = async (req, res) => {
     try {
         const { username } = req.params;
-        const user = await User.findOne({ username }).select("name surname username avatar bio description followersCount followingCount").lean();
+        const user = await User.findOne({ username }).select("name surname username avatar bio description followersCount followingCount blockedUsers").lean();
         if (!user) {
             return res.status(404).json({
                 message: "User not found"
             });
         }
+        
+        if (req.user) {
+            const isBlockedByTarget = user.blockedUsers?.some(id => id.toString() === req.user._id.toString());
+            const hasBlockedTarget = req.user.blockedUsers?.some(id => id.toString() === user._id.toString());
+            
+            if (isBlockedByTarget || hasBlockedTarget) {
+                return res.status(404).json({
+                    message: "User not found"
+                });
+            }
+        }
+        delete user.blockedUsers; // Don't expose this field
+
         res.json(user);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -188,7 +207,13 @@ export const getAllUsers = async (req, res) => {
         const page = Number(req.query.page) || 1;
         const limit = 10;
         const skip = (page - 1) * limit;
-        const users = await User.find().select("-password").limit(limit).skip(skip);
+        
+        const query = {};
+        if (req.user) {
+            query._id = { $nin: [...(req.user.blockedUsers || []), ...(req.user.blockedBy || [])] };
+        }
+        
+        const users = await User.find(query).select("-password").limit(limit).skip(skip);
         res.status(200).json({
             success: true,
             users
@@ -208,11 +233,68 @@ export const searchUsers = async (req, res) => {
         if (!query) {
             return res.json({ users: [] });
         }
-        const users = await User.find({ $or: [{ name: { $regex: query, $options: "i" } }, { username: { $regex: query, $options: "i" } }] }).select("-password").limit(10);
+        const queryObj = { 
+            $or: [{ name: { $regex: query, $options: "i" } }, { username: { $regex: query, $options: "i" } }] 
+        };
+        if (req.user) {
+            queryObj._id = { $nin: [...(req.user.blockedUsers || []), ...(req.user.blockedBy || [])] };
+        }
+        const users = await User.find(queryObj).select("-password").limit(10);
         res.json({ users });
     } catch {
         res.status(500).json({
             message: "Search failed"
         });
+    }
+};
+
+export const blockUser = async (req, res) => {
+    try {
+        const currentUserId = req.user.id;
+        const targetUserId = req.params.id;
+        
+        if (currentUserId === targetUserId) {
+            return res.status(400).json({ message: "You cannot block yourself" });
+        }
+        
+        const targetUser = await User.findById(targetUserId);
+        if (!targetUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        
+        // Add to block lists
+        await User.findByIdAndUpdate(currentUserId, { $addToSet: { blockedUsers: targetUserId } });
+        await User.findByIdAndUpdate(targetUserId, { $addToSet: { blockedBy: currentUserId } });
+        
+        // Remove from follows if existing
+        const currentUser = await User.findById(currentUserId);
+        const isFollowing = currentUser.following.some(id => id.toString() === targetUserId);
+        if (isFollowing) {
+            await User.findByIdAndUpdate(currentUserId, { $pull: { following: targetUserId }, $inc: { followingCount: -1 } });
+            await User.findByIdAndUpdate(targetUserId, { $pull: { followers: currentUserId }, $inc: { followersCount: -1 } });
+        }
+        const isFollowedBy = currentUser.followers.some(id => id.toString() === targetUserId);
+        if (isFollowedBy) {
+            await User.findByIdAndUpdate(currentUserId, { $pull: { followers: targetUserId }, $inc: { followersCount: -1 } });
+            await User.findByIdAndUpdate(targetUserId, { $pull: { following: currentUserId }, $inc: { followingCount: -1 } });
+        }
+        
+        return res.json({ success: true, message: "User blocked successfully" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const unblockUser = async (req, res) => {
+    try {
+        const currentUserId = req.user.id;
+        const targetUserId = req.params.id;
+        
+        await User.findByIdAndUpdate(currentUserId, { $pull: { blockedUsers: targetUserId } });
+        await User.findByIdAndUpdate(targetUserId, { $pull: { blockedBy: currentUserId } });
+        
+        return res.json({ success: true, message: "User unblocked successfully" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 };

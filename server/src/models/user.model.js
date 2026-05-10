@@ -92,6 +92,9 @@ const userSchema = new mongoose.Schema(
     followersCount: { type: Number, default: 0 },
     followingCount: { type: Number, default: 0 },
 
+    blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    blockedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+
     isProfileComplete: {
       type: Boolean,
       default: true,

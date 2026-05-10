@@ -1,6 +1,7 @@
 import Message from "../models/message.model.js";
 import Conversation from "../models/conversation.model.js";
 import Notification from "../models/notification.model.js";
+import User from "../models/user.model.js";
 import { getIO, onlineUsers } from "../socket/socket.js";
 
 export const getMessages = async (req, res) => {
@@ -33,6 +34,20 @@ export const sendMessage = async (req, res) => {
     if (!conversation) {
       return res.status(404).json({ message: "Conversation not found" });
     }
+    
+    const receiverId = conversation.participants.find(
+      (id) => id.toString() !== req.user._id.toString()
+    );
+
+    if (receiverId) {
+      const receiver = await User.findById(receiverId);
+      const sender = await User.findById(req.user._id);
+
+      if (receiver?.blockedUsers?.some(id => id.toString() === req.user._id.toString()) || 
+          sender?.blockedUsers?.some(id => id.toString() === receiverId.toString())) {
+        return res.status(403).json({ message: "Cannot send message due to blocking" });
+      }
+    }
 
     const message = await Message.create({
       conversation: conversationId,
@@ -44,10 +59,6 @@ export const sendMessage = async (req, res) => {
     const populated = await message.populate(
       "sender",
       "username name avatar"
-    );
-
-    const receiverId = conversation.participants.find(
-      (id) => id.toString() !== req.user._id.toString()
     );
 
     if (receiverId) {
