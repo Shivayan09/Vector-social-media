@@ -2,7 +2,6 @@ import User from "../models/user.model.js"
 import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "../validators/user.validator.js";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import validator from 'validator';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 
