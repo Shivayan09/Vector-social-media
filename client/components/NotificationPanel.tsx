@@ -9,6 +9,7 @@ import { Trash2, MessageCircle, UserPlus, ArrowRight } from "lucide-react";
 import ConfirmModal from "./modals/DeleteWarning";
 import FollowRequestsModal from "./modals/FollowRequestsModal";
 import type { Notification, UserSummary } from "@/lib/types";
+import { socket } from "@/socket/socket";
 
 function notificationWithSender(
   n: Notification
@@ -35,27 +36,31 @@ export default function NotificationPanel({ search = "" }: Props) {
   const [deleteLoading, setDeleteLoading] = useState<Record<string, boolean>>({});
   const [modalOpen, setModalOpen] = useState(false);
 
-  const fetchNotifications = useCallback(async () => {
-    try {
-      setLoading(true);
-      const { data } = await axios.get<Notification[]>(
-        `${BACKEND_URL}/api/notifications`,
-        { withCredentials: true }
-      );
-      setNotifications(data);
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        toast.error(
-          err.response?.data?.message ||
-            "Failed to fetch notifications"
+  const fetchNotifications = useCallback(
+    async (opts?: { silent?: boolean }) => {
+      const silent = opts?.silent === true;
+      try {
+        if (!silent) setLoading(true);
+        const { data } = await axios.get<Notification[]>(
+          `${BACKEND_URL}/api/notifications`,
+          { withCredentials: true }
         );
-      } else {
-        toast.error("Failed to fetch notifications");
+        setNotifications(data);
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err)) {
+          toast.error(
+            err.response?.data?.message ||
+              "Failed to fetch notifications"
+          );
+        } else {
+          toast.error("Failed to fetch notifications");
+        }
+      } finally {
+        if (!silent) setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [BACKEND_URL]);
+    },
+    [BACKEND_URL]
+  );
 
   const deleteSingle = async (id: string) => {
     if (deleteLoading[id]) return;
@@ -259,6 +264,17 @@ export default function NotificationPanel({ search = "" }: Props) {
       void fetchNotifications();
     }, 0);
     return () => window.clearTimeout(timeoutId);
+  }, [fetchNotifications, userData]);
+
+  useEffect(() => {
+    if (!userData) return;
+    const handleNotification = () => {
+      void fetchNotifications({ silent: true });
+    };
+    socket.on("notification:new", handleNotification);
+    return () => {
+      socket.off("notification:new", handleNotification);
+    };
   }, [fetchNotifications, userData]);
 
   useEffect(() => {
