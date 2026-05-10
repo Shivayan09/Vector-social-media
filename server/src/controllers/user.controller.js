@@ -120,6 +120,11 @@ export const toggleFollowUser = async (req, res) => {
         }
         const currentUser = await User.findById(currentUserId);
         const targetUser = await User.findById(targetUserId);
+        if (!currentUser) {
+            return res.status(404).json({
+                message: "Current user not found"
+            });
+        }
         if (!targetUser) {
             return res.status(404).json({
                 message: "User not found"
