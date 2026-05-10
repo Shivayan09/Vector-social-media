@@ -68,12 +68,13 @@ export const updateProfile = async (req, res) => {
             user.phoneNumber = phoneNumber;
         }
         if (bio !== undefined) {
+            if (bio.length > 30) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Bio length exceeds word limit!"
+                });
+            }
             user.bio = bio;
-        }
-        if (bio.length > 30) {
-            return res.json({
-                message: "Bio length exceeds word limit!"
-            })
         }
         if (description !== undefined) {
             user.description = description;
