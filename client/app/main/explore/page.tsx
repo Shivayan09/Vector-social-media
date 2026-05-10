@@ -24,6 +24,15 @@ type User = {
   avatar?: string;
 };
 
+type SearchPost = {
+  _id: string;
+  content: string;
+  intent: Intent;
+  author?: {
+    username?: string;
+  };
+};
+
 type TopPost = {
   _id: string;
   content: string;
@@ -56,6 +65,7 @@ export default function Explore() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<User[]>([]);
+  const [postResults, setPostResults] = useState<SearchPost[]>([]);
   const [searching, setSearching] = useState(false);
   const [open, setOpen] = useState(false);
   const [highlightedTopic, setHighlightedTopic] = useState<Intent | null>(null);
@@ -131,6 +141,7 @@ export default function Explore() {
     const delay = setTimeout(async () => {
       if (!query.trim()) {
         setResults([]);
+        setPostResults([]);
         setOpen(false);
         return;
       }
@@ -145,6 +156,7 @@ export default function Explore() {
         );
 
         setResults(res.data.users || []);
+        setPostResults(res.data.posts || []);
         setOpen(true);
       } catch (err) {
         console.error("Search failed:", err);
@@ -198,7 +210,7 @@ export default function Explore() {
             <Search className="h-5" />
             <input
               type="text"
-              placeholder="Search users"
+              placeholder="Search users and posts"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="h-full w-full bg-transparent outline-0 placeholder:text-muted-foreground"
@@ -232,39 +244,71 @@ export default function Explore() {
                   </div>
                 </div>
               ) : (
-                results
-                  .filter((user) => user?._id)
-                  .map((user) => (
-                    <div
-                      key={user._id}
-                      className="flex items-center gap-3 p-3 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition"
-                      onClick={() => {
-                        if (!user?.username) return;
-                        router.push(`/main/user/${user.username}`);
-                      }}
-                    >
-                      <div className="h-10 w-10 rounded-full overflow-hidden bg-black/5 dark:bg-white/5">
-                        <img
-                          src={
-                            user.avatar ||
-                            "/default-avatar.png"
-                          }
-                          alt={user.name}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
+                <>
+                  {results
+                    .filter((user) => user?._id)
+                    .map((user) => (
+                      <div
+                        key={user._id}
+                        className="flex items-center gap-3 p-3 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition"
+                        onClick={() => {
+                          if (!user?.username) return;
+                          router.push(`/main/user/${user.username}`);
+                        }}
+                      >
+                        <div className="h-10 w-10 rounded-full overflow-hidden bg-black/5 dark:bg-white/5">
+                          <img
+                            src={
+                              user.avatar ||
+                              "/default-avatar.png"
+                            }
+                            alt={user.name}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
 
-                      <div>
-                        <p className="text-sm font-medium text-foreground">
-                          {user.name}
-                        </p>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            {user.name}
+                          </p>
 
-                        <p className="text-xs text-muted-foreground">
-                          @{user?.username || "unknown"}
-                        </p>
+                          <p className="text-xs text-muted-foreground">
+                            @{user?.username || "unknown"}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    ))}
+
+                  {postResults.length > 0 && (
+                    <>
+                      <p className="px-3 pt-2 text-xs font-semibold text-muted-foreground">
+                        Posts
+                      </p>
+
+                      {postResults.map((post) => (
+                        <div
+                          key={post._id}
+                          className="p-3 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition border-t border-border"
+                          onClick={() => {
+                            router.push(`/main/post/${post._id}`);
+                          }}
+                        >
+                          <p className="text-sm line-clamp-2">
+                            {post.content}
+                          </p>
+
+                          <p className="text-xs text-blue-500 mt-1">
+                            #{post.intent}
+                          </p>
+
+                          <p className="text-xs text-muted-foreground">
+                            @{post.author?.username || "unknown"}
+                          </p>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </>
               )}
             </div>
           )}
