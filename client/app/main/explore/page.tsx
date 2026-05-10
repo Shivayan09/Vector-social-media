@@ -223,10 +223,26 @@ export default function Explore() {
                 <p className="p-4 text-sm opacity-50">
                   Searching...
                 </p>
-              ) : results.length === 0 && postResults.length === 0 ? (
-                <p className="p-4 text-sm opacity-50">
-                  No results found.
-                </p>
+              ) : results.length === 0 ? (
+                <div className="p-4 text-center">
+                  <p className="text-sm font-medium text-foreground">
+                    No users found for &quot;{query}&quot;
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1 mb-3">
+                    Try searching something else or explore by intent
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {(["ask", "build", "share", "discuss", "reflect"] as const).map((intent) => (
+                      <button
+                        key={intent}
+                        onClick={() => { setQuery(intent); }}
+                        className="px-3 py-1 text-xs rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-foreground/70 transition capitalize"
+                      >
+                        #{intent}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ) : (
                 <>
                   {results
