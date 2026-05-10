@@ -3,9 +3,23 @@ import jwt from "jsonwebtoken";
 import authMiddleware from "../middlewares/auth.middleware.js";
 import optionalAuthMiddleware from "../middlewares/optionalAuth.middleware.js";
 import upload from "../middlewares/upload.middleware.js";
-import { getAllUsers, getFollowers, getFollowing, getUserProfile, searchUsers, toggleFollowUser, updateProfile, uploadAvatar, blockUser, unblockUser } from "../controllers/user.controller.js";
+import { 
+    getAllUsers, 
+    getFollowers, 
+    getFollowing, 
+    getUserProfile, 
+    searchUsers, 
+    toggleFollowUser, 
+    updateProfile, 
+    uploadAvatar, 
+    blockUser, 
+    unblockUser,
+    getSuggestedUsers, 
+    getFollowRequests, 
+    acceptFollowRequest, 
+    rejectFollowRequest 
+} from "../controllers/user.controller.js";
 import User from "../models/user.model.js";
-import { getAllUsers, getFollowers, getFollowing, getUserProfile, searchUsers, toggleFollowUser, updateProfile, uploadAvatar, getSuggestedUsers, getFollowRequests, acceptFollowRequest, rejectFollowRequest } from "../controllers/user.controller.js";
 
 const userRouter = express.Router();
 
@@ -31,17 +45,12 @@ userRouter.post("/:id/block", authMiddleware, blockUser);
 userRouter.post("/:id/unblock", authMiddleware, unblockUser);
 userRouter.get("/all", optionalAuthMiddleware, getAllUsers);
 userRouter.get("/search", optionalAuthMiddleware, searchUsers);
-userRouter.get("/:username", optionalAuthMiddleware, getUserProfile);
 userRouter.get("/suggestions", authMiddleware, getSuggestedUsers);
 userRouter.get("/follow-requests", authMiddleware, getFollowRequests);
 userRouter.put("/:id/accept-request", authMiddleware, acceptFollowRequest);
 userRouter.put("/:id/reject-request", authMiddleware, rejectFollowRequest);
-userRouter.get("/all", getAllUsers);
-userRouter.get("/search", searchUsers);
-userRouter.get("/:username", optionalAuth, getUserProfile);
-userRouter.put("/:requestId/accept", authMiddleware, acceptFollowRequest);
-userRouter.put("/:requestId/reject", authMiddleware, rejectFollowRequest);
 userRouter.get("/:id/followers", authMiddleware, getFollowers);
 userRouter.get("/:id/following", authMiddleware, getFollowing);
+userRouter.get("/:username", optionalAuth, getUserProfile);
 
 export default userRouter;
