@@ -48,6 +48,7 @@ export type Comment = {
 export type Conversation = {
   _id: string;
   participants: UserSummary[];
+  lastMessage?: Message;
 };
 
 export type Message = {

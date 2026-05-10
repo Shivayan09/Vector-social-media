@@ -1,4 +1,5 @@
 import Conversation from "../models/conversation.model.js";
+import Message from "../models/message.model.js";
 
 export const createConversation = async (req, res) => {
     try {
@@ -36,7 +37,21 @@ export const getUserConversations = async (req, res) => {
       .populate("participants", "username name avatar")
       .sort({ updatedAt: -1 });
 
-    res.json(conversations);
+    const conversationsWithLastMessage = await Promise.all(
+      conversations.map(async (convo) => {
+        const lastMessage = await Message.findOne({ conversation: convo._id })
+          .sort({ createdAt: -1 });
+        
+        if (!lastMessage) return null;
+
+        return {
+          ...convo.toObject(),
+          lastMessage
+        };
+      })
+    );
+
+    res.json(conversationsWithLastMessage.filter(Boolean));
 
   } catch (error) {
     res.status(500).json({

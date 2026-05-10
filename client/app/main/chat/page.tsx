@@ -28,22 +28,10 @@ export default function ChatListPage() {
         const fetchConversations = async () => {
             try {
                 setLoading(true);
-                const { data: allConvos } = await axios.get(
+                const { data: validConvos } = await axios.get(
                     `${BACKEND_URL}/api/conversation`,
                     { withCredentials: true }
                 );
-
-                const results = await Promise.all(
-                    allConvos.map(async (convo: Conversation) => {
-                        const { data: messages } = await axios.get(
-                            `${BACKEND_URL}/api/messages/${convo._id}`,
-                            { withCredentials: true }
-                        );
-                        return messages.length > 0 ? convo : null;
-                    })
-                );
-
-                const validConvos = results.filter(Boolean);
 
                 setConversations(validConvos);
 
@@ -182,21 +170,27 @@ export default function ChatListPage() {
                                         className="h-12 w-12 rounded-full object-cover"
                                     />
 
-                                    <div>
-                                        <p className="font-semibold text-gray-600 dark:text-white">
-                                            {otherUser?.name}
-                                        </p>
-                                        <p className="text-sm text-black/30 dark:text-white/40">
-                                            @{otherUser?.username}
-                                        </p>
-                                    </div>
-
-                                    <div className="w-full">
-                                        {unreadCounts[convo._id] > 0 && (
-                                            <div className="ml-auto w-6 mr-2 bg-red-500 text-white rounded-full h-6 flex items-center justify-center text-xs font-bold">
-                                                {unreadCounts[convo._id]}
-                                            </div>
-                                        )}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between items-baseline">
+                                            <p className="font-semibold text-gray-600 dark:text-white truncate">
+                                                {otherUser?.name}
+                                            </p>
+                                            {convo.lastMessage && (
+                                                <span className="text-xs text-black/40 dark:text-white/40 ml-2">
+                                                    {new Date(convo.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <p className="text-sm text-black/30 dark:text-white/40 truncate pr-2">
+                                                {convo.lastMessage?.content || `@${otherUser?.username}`}
+                                            </p>
+                                            {unreadCounts[convo._id] > 0 && (
+                                                <div className="min-w-[1.25rem] px-1 bg-red-500 text-white rounded-full h-5 flex items-center justify-center text-[10px] font-bold">
+                                                    {unreadCounts[convo._id]}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <Trash2
