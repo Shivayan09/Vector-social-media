@@ -26,6 +26,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
     const [showReportModal, setShowReportModal] = useState(false);
     const [selectedComment, setSelectedComment] = useState<Comment | null>(null);
     const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+    const [visibleCount, setVisibleCount] = useState(5);
 
     function timeAgo(dateString: string) {
         const now = new Date().getTime();
@@ -127,7 +128,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
                     </p>
                 )}
 
-                {comments.map((c) => {
+                {comments.slice(0, visibleCount).map((c) => {
                     const isOwner =
                         String(c.author?._id) === String(userData?.id);
 
@@ -206,6 +207,15 @@ export default function CommentsSection({ postId }: { postId: string }) {
                         </div>
                     );
                 })}
+
+                {comments.length > visibleCount && (
+                    <button
+                        onClick={() => setVisibleCount(prev => prev + 5)}
+                        className="mt-3 w-full text-sm text-blue-500 hover:text-blue-600 font-medium transition"
+                    >
+                        Load more comments ({comments.length - visibleCount} remaining)
+                    </button>
+                )}
             </div>
 
             <DeleteWarning
