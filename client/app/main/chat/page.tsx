@@ -17,6 +17,7 @@ export default function ChatListPage() {
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [filteredConversations, setFilteredConversations] = useState<Conversation[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
+    const [allUserResults, setAllUserResults] = useState<UserSummary[]>([]);
     const [chatToDelete, setChatToDelete] = useState<Conversation | null>(null);
     const [hasMessages, setHasMessages] = useState(false);
     const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
@@ -95,6 +96,48 @@ export default function ChatListPage() {
         setFilteredConversations(filtered);
     }, [searchTerm, conversations, userData]);
 
+    useEffect(() => {
+        if (!searchTerm.trim()) {
+            setAllUserResults([]);
+            return;
+        }
+
+        const timeout = setTimeout(async () => {
+            try {
+                const { data } = await axios.get(
+                    `${BACKEND_URL}/api/users/search?query=${encodeURIComponent(searchTerm)}`,
+                    { withCredentials: true }
+                );
+                const existingParticipantIds = new Set(
+                    conversations.flatMap((c) =>
+                        c.participants.map((p: UserSummary) => p._id)
+                    )
+                );
+                const newUsers = (data.users as UserSummary[]).filter(
+                    (u) => u._id !== userData?.id && !existingParticipantIds.has(u._id)
+                );
+                setAllUserResults(newUsers);
+            } catch {
+                setAllUserResults([]);
+            }
+        }, 300);
+
+        return () => clearTimeout(timeout);
+    }, [searchTerm, BACKEND_URL, conversations, userData]);
+
+    const handleNewUserClick = async (user: UserSummary) => {
+        try {
+            const { data } = await axios.post(
+                `${BACKEND_URL}/api/conversation`,
+                { receiverId: user._id },
+                { withCredentials: true }
+            );
+            router.push(`/main/chat/${data._id}`);
+        } catch (error) {
+            console.error("Failed to open chat", error);
+        }
+    };
+
     const handleDeleteClick = async (
         e: React.MouseEvent,
         convo: Conversation
@@ -142,7 +185,6 @@ export default function ChatListPage() {
     return (
         <div className="flex w-full h-screen">
             <div className="flex-1 h-screen overflow-y-auto hide-scrollbar">
-
 
                 <h1 className="px-5 pt-3 text-xl font-bold text-foreground">
                     Your chats
@@ -213,6 +255,29 @@ export default function ChatListPage() {
                         })
                     ) : (
                         <p className="text-gray-500 px-5">No conversations found.</p>
+                    )}
+                    {allUserResults.length > 0 && (
+                        <>
+                            <p className="text-xs text-gray-400 px-1 pt-2">Other users</p>
+                            {allUserResults.map((user) => (
+                                <div
+                                    key={user._id}
+                                    onClick={() => handleNewUserClick(user)}
+                                    className="flex items-center gap-3 p-4 rounded-lg cursor-pointer bg-black/10 hover:bg-black/15 hover:shadow-lg text-white transition-all duration-200"
+                                >
+                                    <img
+                                        alt={user.name || "User"}
+                                        src={user.avatar || "/default-avatar.png"}
+                                        className="h-12 w-12 rounded-full object-cover"
+                                    />
+                                    <div>
+                                        <p className="font-semibold">{user.name}</p>
+                                        <p className="text-sm text-gray-400">@{user.username}</p>
+                                    </div>
+                                    <ArrowRight className="ml-auto opacity-70 text-foreground" />
+                                </div>
+                            ))}
+                        </>
                     )}
                 </div>
             </div>
