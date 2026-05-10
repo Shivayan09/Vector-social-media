@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import type { Post, ReportReason } from "@/lib/types";
 import { reportPost } from "@/lib/reportApi";
 import Linkify from "../ui/Linkify";
+import Avatar from "../ui/Avatar";
 
 
 type PostCardProps = {
@@ -208,7 +209,11 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                 <div className="flex items-center flex-wrap sm:justify-between w-[90%]">
                     <div className="flex items-center gap-2">
                     <div className="h-8 md:h-12 w-8 md:w-12 rounded-full transition-all duration-200" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
-                        <img alt={post.author?.name || "Post author"} src={post?.author?.avatar || "/default-avatar.png"} className="h-full w-full rounded-full object-cover" />
+                        <Avatar 
+                            src={post.author?.avatar} 
+                            alt={post.author?.name || "Post author"} 
+                            className="h-full w-full" 
+                        />
                     </div>
                     <span className="ml-1 font-semibold text-foreground transition-all duration-200 hover:text-blue-500" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>{post?.author?.name}</span>
                     <span className="surface-text-muted text-[0.9rem] transition-all duration-200 hover:text-foreground" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
