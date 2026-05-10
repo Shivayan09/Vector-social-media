@@ -12,6 +12,7 @@ import LikesModal from "../modals/LikesModal";
 import { useRouter } from "next/navigation";
 import type { Post, ReportReason } from "@/lib/types";
 import { reportPost } from "@/lib/reportApi";
+import SkeletonLoader from "@/components/loaders/SkeletonLoader";
 
 type PostCardProps = {
     post: Post;
@@ -42,6 +43,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
     const [likeAnimating, setLikeAnimating] = useState(false);
+    const [imageLoaded, setImageLoaded] = useState(false);
 
     function timeAgo(dateString: string) {
         const now = new Date().getTime();
@@ -194,23 +196,23 @@ export default function PostCard({ post, setPost }: PostCardProps) {
             <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center flex-wrap sm:justify-between w-[90%]">
                     <div className="flex items-center gap-2">
-                    <div className="h-8 md:h-12 w-8 md:w-12 rounded-full transition-all duration-200" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
-                        <img alt={post.author?.name || "Post author"} src={post?.author?.avatar || "/default-avatar.png"} className="h-full w-full rounded-full object-cover" />
-                    </div>
-                    <span className="ml-1 font-semibold text-foreground transition-all duration-200 hover:text-blue-500" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>{post?.author?.name}</span>
-                    <span className="surface-text-muted text-[0.9rem] transition-all duration-200 hover:text-foreground" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
-                        @{post?.author?.username}
-                    </span>
+                        <div className="h-8 md:h-12 w-8 md:w-12 rounded-full transition-all duration-200" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
+                            <img alt={post.author?.name || "Post author"} src={post?.author?.avatar || "/default-avatar.png"} className="h-full w-full rounded-full object-cover" />
+                        </div>
+                        <span className="ml-1 font-semibold text-foreground transition-all duration-200 hover:text-blue-500" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>{post?.author?.name}</span>
+                        <span className="surface-text-muted text-[0.9rem] transition-all duration-200 hover:text-foreground" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
+                            @{post?.author?.username}
+                        </span>
                     </div>
                     <div className="w-full sm:w-auto">
-                    <p className="text-[0.9rem] font-semibold text-blue-500 flex items-center gap-1.5 truncate">
-                        Intent:
-                        {(() => {
-                            const Icon = post.intent ? intentIconMap[post.intent] : null;
-                            return Icon ? <Icon size={16} className="text-blue-500 mt-0.5" /> : null;
-                        })()}
-                        <span className="capitalize">{post.intent}</span>
-                    </p>
+                        <p className="text-[0.9rem] font-semibold text-blue-500 flex items-center gap-1.5 truncate">
+                            Intent:
+                            {(() => {
+                                const Icon = post.intent ? intentIconMap[post.intent] : null;
+                                return Icon ? <Icon size={16} className="text-blue-500 mt-0.5" /> : null;
+                            })()}
+                            <span className="capitalize">{post.intent}</span>
+                        </p>
                     </div>
                 </div>
 
@@ -259,7 +261,21 @@ export default function PostCard({ post, setPost }: PostCardProps) {
 
             {post.image && (
                 <div className="w-full mb-4 rounded-xl overflow-hidden border border-white/10 max-h-125">
-                    <img src={post.image} alt="Post attachment" className="w-full h-full object-cover" />
+                    {!imageLoaded && (
+                        <SkeletonLoader
+                            count={1}
+                            height="h-[500px]"
+                            className="w-full"
+                        />
+                    )}
+
+                    <img
+                        src={post.image}
+                        alt="Post attachment"
+                        onLoad={() => setImageLoaded(true)}
+                        className={`w-full h-full object-cover ${imageLoaded ? "block" : "hidden"
+                            }`}           
+                    />
                 </div>
             )}
             <div className="flex w-full gap-x-2 border-t border-border/80 pt-3 text-foreground sm:justify-between">
