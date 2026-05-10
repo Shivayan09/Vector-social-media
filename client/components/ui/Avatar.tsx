@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface AvatarProps {
@@ -12,7 +12,8 @@ interface AvatarProps {
 
 /**
  * A reusable Avatar component that handles broken image URLs by falling back
- * to a default image.
+ * to a default image. Using the 'key' prop on the img tag ensures the state 
+ * resets when the src changes.
  */
 export default function Avatar({ 
   src, 
@@ -22,13 +23,9 @@ export default function Avatar({
 }: AvatarProps) {
   const [hasError, setHasError] = useState(false);
 
-  // Reset error state if the src prop changes
-  useEffect(() => {
-    setHasError(false);
-  }, [src]);
-
   return (
     <img
+      key={src}
       src={hasError || !src ? fallback : src}
       alt={alt}
       className={cn("rounded-full object-cover", className)}
