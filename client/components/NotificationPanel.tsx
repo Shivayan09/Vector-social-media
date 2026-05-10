@@ -8,7 +8,13 @@ import { toast } from "react-toastify";
 import { Trash2, MessageCircle, UserPlus, ArrowRight } from "lucide-react";
 import ConfirmModal from "./modals/DeleteWarning";
 import FollowRequestsModal from "./modals/FollowRequestsModal";
-import type { Notification } from "@/lib/types";
+import type { Notification, UserSummary } from "@/lib/types";
+
+function notificationWithSender(
+  n: Notification
+): n is Notification & { sender: UserSummary } {
+  return n.sender !== null;
+}
 
 type Props = {
   search?: string;
@@ -182,11 +188,13 @@ export default function NotificationPanel({ search = "" }: Props) {
       );
       toast.success("Follow request accepted");
       // Update local state to remove the request notification or change its type
-      setNotifications(prev => prev.map(n => 
-        (n.sender._id === senderId && n.type === "follow_request") 
-        ? { ...n, type: "follow" as const } 
-        : n
-      ));
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.sender?._id === senderId && n.type === "follow_request"
+            ? { ...n, type: "follow" as const }
+            : n
+        )
+      );
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         toast.error(err.response?.data?.message || "Action failed");
@@ -205,7 +213,11 @@ export default function NotificationPanel({ search = "" }: Props) {
         { withCredentials: true }
       );
       toast.success("Follow request rejected");
-      setNotifications(prev => prev.filter(n => !(n.sender._id === senderId && n.type === "follow_request")));
+      setNotifications((prev) =>
+        prev.filter(
+          (n) => !(n.sender?._id === senderId && n.type === "follow_request")
+        )
+      );
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         toast.error(err.response?.data?.message || "Action failed");
@@ -263,12 +275,14 @@ export default function NotificationPanel({ search = "" }: Props) {
   if (!userData) return null;
 
   const openNotification = (n: Notification) => {
+    const sender = n.sender;
+    if (!sender) return;
     if (n.post?._id) {
       router.push(`/main/post/${n.post._id}`);
     } else if (n.type === "message") {
-      void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
+      void handleReplyToMessage(n._id, sender._id, n.conversation?._id);
     } else {
-      router.push(`/main/user/${n.sender.username}`);
+      router.push(`/main/user/${sender.username}`);
     }
   };
 
@@ -281,12 +295,16 @@ export default function NotificationPanel({ search = "" }: Props) {
     follow_request_accepted: "accepted your follow request",
   };
 
-  const filteredNotifications = notifications.filter((n) => {
-    if (n.type === "follow_request") return false;
-    const query = search.toLowerCase();
-    const searchable = `${n.sender.name} ${n.sender.username} ${typeText[n.type]}`.toLowerCase();
-    return searchable.includes(query);
-  });
+  const filteredNotifications = notifications.filter(
+    (n): n is Notification & { sender: UserSummary } => {
+      if (n.type === "follow_request") return false;
+      if (!notificationWithSender(n)) return false;
+      const query = search.toLowerCase();
+      const searchable =
+        `${n.sender.name} ${n.sender.username ?? ""} ${typeText[n.type]}`.toLowerCase();
+      return searchable.includes(query);
+    }
+  );
 
   return (
     <div className="w-full mt-5">
