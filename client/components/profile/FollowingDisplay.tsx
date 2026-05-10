@@ -4,7 +4,10 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import UserRow from "./UserRow";
 import SkeletonLoader from "../loaders/SkeletonLoader";
+import FollowListModal from "../modals/FollowListModal";
 import type { UserSummary } from "@/lib/types";
+
+const DISPLAY_LIMIT = 5;
 
 type Props = {
     userId: string;
@@ -14,6 +17,7 @@ type Props = {
 export default function FollowingDisplay({ userId, emptyText }: Props) {
     const [users, setUsers] = useState<UserSummary[]>([]);
     const [loading, setLoading] = useState(true);
+    const [modalOpen, setModalOpen] = useState(false);
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
     useEffect(() => {
@@ -34,11 +38,32 @@ export default function FollowingDisplay({ userId, emptyText }: Props) {
         return <p className="text-center text-gray-500 mt-6">{emptyText}</p>;
     }
 
+    const visibleUsers = users.slice(0, DISPLAY_LIMIT);
+    const hasMore = users.length > DISPLAY_LIMIT;
+
     return (
-        <div className="flex flex-col gap-3">
-            {users.map(user => (
-                <UserRow key={user._id} user={user} />
-            ))}
-        </div>
+        <>
+            <div className="flex flex-col gap-3">
+                {visibleUsers.map(user => (
+                    <UserRow key={user._id} user={user} />
+                ))}
+            </div>
+
+            {hasMore && (
+                <button
+                    onClick={() => setModalOpen(true)}
+                    className="mt-4 w-full py-2 rounded-md text-sm font-semibold text-blue-500 hover:bg-blue-500/10 transition cursor-pointer"
+                >
+                    Load more ({users.length - DISPLAY_LIMIT} more)
+                </button>
+            )}
+
+            <FollowListModal
+                open={modalOpen}
+                onClose={() => setModalOpen(false)}
+                users={users}
+                title={`${users.length} Following`}
+            />
+        </>
     );
 }
