@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
@@ -26,6 +26,7 @@ export default function NotificationPanel({ search = "" }: Props) {
   const [selected, setSelected] = useState<string[]>([]);
   const [followLoading, setFollowLoading] = useState<Record<string, boolean>>({});
   const [messageLoading, setMessageLoading] = useState<Record<string, boolean>>({});
+  const [deleteLoading, setDeleteLoading] = useState<Record<string, boolean>>({});
   const [modalOpen, setModalOpen] = useState(false);
 
   const fetchNotifications = useCallback(async () => {
@@ -51,19 +52,20 @@ export default function NotificationPanel({ search = "" }: Props) {
   }, [BACKEND_URL]);
 
   const deleteSingle = async (id: string) => {
+    if (deleteLoading[id]) return;
+
+    setDeleteLoading((prev) => ({ ...prev, [id]: true }));
     try {
-      await axios.delete(
-        `${BACKEND_URL}/api/notifications/${id}`,
-        { withCredentials: true }
-      );
+      await axios.delete(`${BACKEND_URL}/api/notifications/${id}`, {
+        withCredentials: true,
+      });
+
       setNotifications((prev) => prev.filter((n) => n._id !== id));
       toast.success("Notification deleted");
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || "Delete failed");
-      } else {
-        toast.error("Delete failed");
-      }
+    } catch {
+      toast.error("Delete failed");
+    } finally {
+      setDeleteLoading((prev) => ({ ...prev, [id]: false }));
     }
   };
 
@@ -138,6 +140,9 @@ export default function NotificationPanel({ search = "" }: Props) {
       console.error(err);
     }
   }, [BACKEND_URL, notifications]);
+
+  const markAllAsReadRef = useRef(markAllAsRead);
+  markAllAsReadRef.current = markAllAsRead;
 
   const isFollowingUser = (userId: string) => {
     return userData?.following?.includes(userId) ?? false;
@@ -245,14 +250,27 @@ export default function NotificationPanel({ search = "" }: Props) {
   }, [fetchNotifications, userData]);
 
   useEffect(() => {
-    if (!notifications.some((n) => !n.isRead)) return;
-    const timeoutId = window.setTimeout(() => {
-      void markAllAsRead();
-    }, 0);
-    return () => window.clearTimeout(timeoutId);
-  }, [markAllAsRead, notifications]);
+    const hasUnread = notifications.some((n) => !n.isRead);
+    if (!hasUnread) return;
+
+    const timer = setTimeout(() => {
+      void markAllAsReadRef.current();
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [notifications]);
 
   if (!userData) return null;
+
+  const openNotification = (n: Notification) => {
+    if (n.post?._id) {
+      router.push(`/main/post/${n.post._id}`);
+    } else if (n.type === "message") {
+      void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
+    } else {
+      router.push(`/main/user/${n.sender.username}`);
+    }
+  };
 
   const typeText: Record<string, string> = {
     follow: "follow followed",
@@ -330,11 +348,16 @@ export default function NotificationPanel({ search = "" }: Props) {
       ) : (
         <div className="flex flex-col gap-2">
           {filteredNotifications.map((n) => (
-            <div key={n._id}
-              className={`notification-card ${!n.isRead ? "notification-card-unread" : ""
-                }`}>
+            <div
+              key={n._id}
+              className={`notification-card flex items-center gap-2 ${
+                !n.isRead ? "notification-card-unread" : ""
+              }`}
+            >
               {selectMode && (
-                <input type="checkbox" className="h-4 w-4 cursor-pointer"
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 shrink-0 cursor-pointer"
                   checked={selected.includes(n._id)}
                   onChange={() =>
                     setSelected((prev) =>
@@ -347,30 +370,34 @@ export default function NotificationPanel({ search = "" }: Props) {
               )}
 
               <div
+                role={selectMode ? undefined : "button"}
+                tabIndex={selectMode ? undefined : 0}
                 onClick={() => {
-                  if (!selectMode) {
-                    if (n.post?._id) {
-                      router.push(`/main/post/${n.post._id}`);
-                    } else if (n.type === "message") {
-                      void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
-                    } else {
-                      router.push(`/main/user/${n.sender.username}`);
-                    }
-                  }
+                  if (!selectMode) openNotification(n);
                 }}
-                className="flex gap-3 flex-1 cursor-pointer p-2 rounded-lg">
-                <img alt={n.sender.name || "Notification sender"} src={n.sender.avatar || "/default-avatar.png"} className="h-10 w-10 rounded-full object-cover" />
+                onKeyDown={(e) => {
+                  if (selectMode) return;
+                  if (e.key !== "Enter" && e.key !== " ") return;
+                  e.preventDefault();
+                  openNotification(n);
+                }}
+                className={`flex min-w-0 flex-1 gap-3 rounded-lg p-2 ${
+                  selectMode ? "" : "cursor-pointer"
+                }`}
+              >
+                <img
+                  alt={n.sender.name || "Notification sender"}
+                  src={n.sender.avatar || "/default-avatar.png"}
+                  className="h-10 w-10 shrink-0 rounded-full object-cover"
+                />
 
-                <div>
+                <div className="min-w-0">
                   <p className="text-foreground">
-                    <span className="font-semibold">
-                      {n.sender.name}
-                    </span>{" "}
+                    <span className="font-semibold">{n.sender.name}</span>{" "}
                     {n.type === "follow" && "followed you"}
                     {n.type === "follow_request" && "wants to follow you"}
                     {n.type === "like" && "liked your post"}
-                    {n.type === "comment" &&
-                      "commented on your post"}
+                    {n.type === "comment" && "commented on your post"}
                     {n.type === "message" && "messaged you"}
                   </p>
 
@@ -378,9 +405,10 @@ export default function NotificationPanel({ search = "" }: Props) {
                     {new Date(n.createdAt).toLocaleString()}
                   </p>
                 </div>
+              </div>
 
-                {!selectMode && (
-                  <div className="flex items-center gap-2 ml-auto">
+              {!selectMode && (
+                <div className="flex shrink-0 items-center gap-2 border-l border-border/50 pl-3">
                     {n.type === "message" && (
                       <button
                         onClick={(e) => {
@@ -442,17 +470,24 @@ export default function NotificationPanel({ search = "" }: Props) {
                       </button>
                     )}
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        deleteSingle(n._id);
+                        void deleteSingle(n._id);
                       }}
-                      className="p-1 text-foreground transition hover:text-red-400"
+                      disabled={deleteLoading[n._id]}
+                      aria-busy={deleteLoading[n._id]}
+                      aria-label="Delete notification"
+                      className={`p-1 transition ${
+                        deleteLoading[n._id]
+                          ? "opacity-50 cursor-not-allowed"
+                          : "hover:text-red-400"
+                      }`}
                     >
-                      <Trash2 className="h-5 cursor-pointer" />
+                      <Trash2 className="h-5" />
                     </button>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
