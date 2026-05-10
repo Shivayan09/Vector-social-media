@@ -14,6 +14,8 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
+import InlineLoader from "@/components/loaders/InlineLoader";
+import type { Intent } from "@/lib/types";
 
 type User = {
   _id: string;
@@ -22,7 +24,14 @@ type User = {
   avatar?: string;
 };
 
-type Intent = "ask" | "build" | "share" | "discuss" | "reflect";
+type SearchPost = {
+  _id: string;
+  content: string;
+  intent: Intent;
+  author?: {
+    username?: string;
+  };
+};
 
 type TopPost = {
   _id: string;
@@ -56,6 +65,7 @@ export default function Explore() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<User[]>([]);
+  const [postResults, setPostResults] = useState<SearchPost[]>([]);
   const [searching, setSearching] = useState(false);
   const [open, setOpen] = useState(false);
   const [highlightedTopic, setHighlightedTopic] = useState<Intent | null>(null);
@@ -103,16 +113,20 @@ export default function Explore() {
     const fetchTopPosts = async () => {
       try {
         const { data } = await axios.get(
-          `${BACKEND_URL}/api/posts/top-week`,
+          `${BACKEND_URL}/api/posts/top-month`,
           { withCredentials: true }
         );
 
         setTopPosts(data.posts || []);
-      } catch (error: any) {
-        toast.error(
-          error?.response?.data?.message ||
-            "Failed to load explore data"
-        );
+      } catch (error: unknown) {
+        if (axios.isAxiosError(error)) {
+          toast.error(
+            error.response?.data?.message ||
+              "Failed to load explore data"
+          );
+        } else {
+          toast.error("Failed to load explore data");
+        }
       } finally {
         setLoading(false);
       }
@@ -127,6 +141,7 @@ export default function Explore() {
     const delay = setTimeout(async () => {
       if (!query.trim()) {
         setResults([]);
+        setPostResults([]);
         setOpen(false);
         return;
       }
@@ -141,6 +156,7 @@ export default function Explore() {
         );
 
         setResults(res.data.users || []);
+        setPostResults(res.data.posts || []);
         setOpen(true);
       } catch (err) {
         console.error("Search failed:", err);
@@ -180,71 +196,119 @@ export default function Explore() {
 
   return (
     <div className="w-full py-5 px-7">
-        <p className="text-[1.6rem] font-semibold text-center md:text-left text-white">
+        <p className="page-title text-[1.6rem]">
           Explore
         </p>
 
-        <p className="text-gray-300 text-center md:text-left">
+        <p className="page-subtitle">
           Discover people, posts and ideas
         </p>
 
         {/* SEARCH */}
         <div className="relative mt-5" ref={wrapperRef}>
-          <div className="flex items-center px-2 gap-2 bg-white/30 dark:bg-black/30 rounded-full h-10">
+          <div className="search-pill">
             <Search className="h-5" />
             <input
               type="text"
-              placeholder="Search users"
+              placeholder="Search users and posts"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="outline-0 w-full h-full bg-transparent"
+              className="h-full w-full bg-transparent outline-0 placeholder:text-muted-foreground"
             />
           </div>
 
           {open && (
-            <div className="absolute w-full mt-2 bg-white border rounded-xl shadow-lg max-h-75 overflow-y-auto z-50">
+            <div className="absolute w-full mt-2 bg-card border-border rounded-xl shadow-lg max-h-75 overflow-y-auto z-50">
               {searching ? (
                 <p className="p-4 text-sm opacity-50">
                   Searching...
                 </p>
               ) : results.length === 0 ? (
-                <p className="p-4 text-sm opacity-50">
-                  No users found.
-                </p>
+                <div className="p-4 text-center">
+                  <p className="text-sm font-medium text-foreground">
+                    No users found for &quot;{query}&quot;
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1 mb-3">
+                    Try searching something else or explore by intent
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {(["ask", "build", "share", "discuss", "reflect"] as const).map((intent) => (
+                      <button
+                        key={intent}
+                        onClick={() => { setQuery(intent); }}
+                        className="px-3 py-1 text-xs rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-foreground/70 transition capitalize"
+                      >
+                        #{intent}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ) : (
-                results
-                  .filter((user) => user?._id)
-                  .map((user) => (
-                    <div
-                      key={user._id}
-                      className="flex items-center gap-3 p-3 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition"
-                      onClick={() => {
-                        if (!user?.username) return;
-                        router.push(`/main/user/${user.username}`);
-                      }}
-                    >
-                      <div className="h-10 w-10 rounded-full overflow-hidden bg-black/5 dark:bg-white/5">
-                        <img
-                          src={
-                            user.avatar ||
-                            "/default-avatar.png"
-                          }
-                          alt={user.name}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
+                <>
+                  {results
+                    .filter((user) => user?._id)
+                    .map((user) => (
+                      <div
+                        key={user._id}
+                        className="flex items-center gap-3 p-3 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition"
+                        onClick={() => {
+                          if (!user?.username) return;
+                          router.push(`/main/user/${user.username}`);
+                        }}
+                      >
+                        <div className="h-10 w-10 rounded-full overflow-hidden bg-black/5 dark:bg-white/5">
+                          <img
+                            src={
+                              user.avatar ||
+                              "/default-avatar.png"
+                            }
+                            alt={user.name}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
 
-                      <div>
-                        <p className="text-sm font-medium">
-                          {user.name}
-                        </p>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            {user.name}
+                          </p>
 
-                        <p className="text-xs opacity-50">
-                          @{user?.username || "unknown"}
-                        </p>
+                          <p className="text-xs text-muted-foreground">
+                            @{user?.username || "unknown"}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    ))}
+
+                  {postResults.length > 0 && (
+                    <>
+                      <p className="px-3 pt-2 text-xs font-semibold text-muted-foreground">
+                        Posts
+                      </p>
+
+                      {postResults.map((post) => (
+                        <div
+                          key={post._id}
+                          className="p-3 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition border-t border-border"
+                          onClick={() => {
+                            router.push(`/main/post/${post._id}`);
+                          }}
+                        >
+                          <p className="text-sm line-clamp-2">
+                            {post.content}
+                          </p>
+
+                          <p className="text-xs text-blue-500 mt-1">
+                            #{post.intent}
+                          </p>
+
+                          <p className="text-xs text-muted-foreground">
+                            @{post.author?.username || "unknown"}
+                          </p>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -252,14 +316,14 @@ export default function Explore() {
 
         {/* TRENDING DOMAINS */}
         <div className="mt-5">
-          <p className="font-semibold text-white">
+          <p className="font-semibold text-foreground">
             Trending domains
           </p>
 
           {loading ? (
-            <p className="text-gray-300 mt-3">Loading domains...</p>
+            <p className="surface-text-muted mt-3">Loading domains...</p>
           ) : topicCards.length === 0 ? (
-            <p className="text-gray-300 mt-3">No active domains yet</p>
+            <p className="surface-text-muted mt-3">No active domains yet</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 my-5">
               {topicCards.map((topic) => (
@@ -290,7 +354,7 @@ export default function Explore() {
         </div>
 
         {/* EXPLORE TOPICS */}
-        <div className="mt-5 p-4 rounded-xl border border-white/15 bg-black/15 backdrop-blur-xl text-white">
+        <div className="panel-card mt-5">
           <p className="flex items-center gap-2 font-semibold">
             <Compass className="h-5 text-blue-400" />
             Explore topics
@@ -302,7 +366,7 @@ export default function Explore() {
                 key={topic.intent}
                 type="button"
                 onClick={() => setHighlightedTopic(topic.intent)}
-                className="h-20 border border-white/15 rounded-md flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 transition"
+                className="glass-surface flex h-20 items-center justify-center gap-2 rounded-md transition hover:bg-accent/70"
               >
                 {topic.intent === "build" ? (
                   <Trophy className="h-4" />
@@ -316,7 +380,7 @@ export default function Explore() {
             <button
               type="button"
               onClick={handleRandomTopic}
-              className="col-span-2 md:col-span-1 h-20 border border-white/15 rounded-md flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 transition"
+              className="glass-surface col-span-2 flex h-20 items-center justify-center gap-2 rounded-md transition hover:bg-accent/70 md:col-span-1"
             >
               <Shuffle className="h-4 opacity-80" />
               <span className="text-sm">Random</span>
@@ -324,14 +388,14 @@ export default function Explore() {
           </div>
 
           {highlightedTopic && (
-            <p className="text-sm text-blue-200 mt-3">
+            <p className="mt-3 text-sm text-blue-500">
               Highlighted topic: {intentLabel[highlightedTopic]}
             </p>
           )}
         </div>
 
         {/* TRENDING TOPICS */}
-        <div className="mt-5 p-4 rounded-xl border border-white/15 bg-black/15 backdrop-blur-xl text-white">
+        <div className="panel-card mt-5">
           <p className="flex items-center gap-2 font-semibold">
             <TrendingUp className="h-5 text-blue-400" />
             Trending topics
@@ -339,9 +403,9 @@ export default function Explore() {
 
           <div className="mt-4 space-y-3">
             {loading ? (
-              <p className="text-gray-300">Loading trending topics...</p>
+              <p className="surface-text-muted">Loading trending topics...</p>
             ) : trendingTopics.length === 0 ? (
-              <p className="text-gray-300">No trending topics this week</p>
+              <p className="surface-text-muted">No trending topics this month</p>
             ) : (
               trendingTopics.map((topic) => (
                 <button
@@ -350,9 +414,9 @@ export default function Explore() {
                   onClick={() =>
                     router.push(`/main/post/${topic.id}`)
                   }
-                  className="w-full text-left flex items-start gap-3 rounded-md hover:bg-white/10 p-2 transition"
+                  className="flex w-full items-start gap-3 rounded-md p-2 text-left transition hover:bg-accent/70"
                 >
-                  <div className="h-11 w-11 rounded-md overflow-hidden bg-white/10 shrink-0">
+                  <div className="glass-surface h-11 w-11 shrink-0 overflow-hidden rounded-md">
                     <img
                       src={intentImage[topic.intent]}
                       alt={intentLabel[topic.intent]}
@@ -362,12 +426,12 @@ export default function Explore() {
 
                   <div className="flex-1 min-w-0">
                     <p className="text-sm line-clamp-2">{topic.title}</p>
-                    <p className="text-xs text-blue-200 mt-1">
+                    <p className="mt-1 text-xs text-blue-500">
                       #{intentLabel[topic.intent]}
                     </p>
                   </div>
 
-                  <p className="flex items-center gap-1 text-xs text-gray-200 pt-1">
+                  <p className="surface-text-muted flex items-center gap-1 pt-1 text-xs">
                     <Heart
                       className="text-blue-400 h-4"
                       fill="currentColor"
@@ -382,18 +446,16 @@ export default function Explore() {
 
         {/* TOP POSTS */}
         <div className="mt-5">
-          <p className="font-semibold text-white">
-            Top posts of the week
+          <p className="font-semibold text-foreground">
+            Top posts of the month
           </p>
 
-          <div className="flex flex-col gap-5 md:flex-row items-center mt-5">
+          <div className="flex flex-col gap-5 md:flex-row flex-wrap items-stretch mt-5">
             {loading ? (
-              <p className="text-gray-300">
-                Loading top posts...
-              </p>
+              <InlineLoader text="Loading top posts..." className="surface-text-muted" />
             ) : topPosts.length === 0 ? (
-              <p className="text-gray-300">
-                No trending posts this week
+              <p className="surface-text-muted">
+                No trending posts this month
               </p>
             ) : (
               topPosts
@@ -402,9 +464,9 @@ export default function Explore() {
                   <div
                     onClick={() => handleClick(post)}
                     key={post._id}
-                    className="box w-[90%] md:w-[32%] h-44 border rounded-md px-5 py-4 relative cursor-pointer backdrop-blur-3xl text-white hover:bg-black/2 flex flex-col justify-between"
+                    className="content-card glass-hover box relative flex h-44 w-full cursor-pointer flex-col justify-between rounded-md md:w-[calc(33.333%-1rem)]"
                   >
-                    <p className="text-blue-300">
+                    <p className="text-blue-500">
                       {post.likes?.length || 0} likes
                     </p>
 
@@ -431,7 +493,7 @@ export default function Explore() {
                         @{post?.author?.username || "unknown"}
                       </p>
 
-                      <p className="text-gray-300 text-[0.8rem]">
+                      <p className="surface-text-muted text-[0.8rem]">
                         {new Date(
                           post.createdAt
                         ).toLocaleDateString("en-GB")}

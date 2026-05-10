@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import PostCard from "../feed/Postcard";
+import SkeletonLoader from "../loaders/SkeletonLoader";
+import type { Post } from "@/lib/types";
 
 type PostsDisplayProps = {
     userId: string;
@@ -10,8 +12,9 @@ type PostsDisplayProps = {
 };
 
 export default function PostsDisplay({ userId, emptyText }: PostsDisplayProps) {
-    const [posts, setPosts] = useState<any[]>([]);
+    const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
+    const [visibleCount, setVisibleCount] = useState(5);
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
     useEffect(() => {
@@ -26,9 +29,13 @@ export default function PostsDisplay({ userId, emptyText }: PostsDisplayProps) {
             }
         };
         fetchPosts();
-    }, [userId]);
+    }, [BACKEND_URL, userId]);
     if (loading) {
-        return <p className="text-center text-blue-500/70">Loading posts...</p>;
+        return (
+            <div className="mt-4">
+                <SkeletonLoader count={3} height="h-40" />
+            </div>
+        );
     }
     if (posts.length === 0) {
         return (
@@ -38,11 +45,24 @@ export default function PostsDisplay({ userId, emptyText }: PostsDisplayProps) {
         );
     }
 
+    const handleLoadMore = () => {
+        setVisibleCount((prev) => prev + 5);
+    };
+
     return (
         <div className="flex flex-col gap-3">
-            {posts.map((post) => (
+            {posts.slice(0, visibleCount).map((post) => (
                 <PostCard key={post._id} post={post} />
             ))}
+            
+            {visibleCount < posts.length && (
+                <button 
+                    onClick={handleLoadMore} 
+                    className="mt-2 w-fit self-end px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition duration-200 font-medium cursor-pointer"
+                >
+                    Load More
+                </button>
+            )}
         </div>
     );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "../ui/button";
-import { Compass, Heart, Lightbulb, Shuffle, TrendingUp, Trophy, UserPlus, X } from "lucide-react";
+import { Compass, Heart, Lightbulb, TrendingUp, Trophy, UserPlus, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
@@ -28,7 +28,7 @@ export default function ExploreSidebar() {
         const fetchTrendingPosts = async () => {
             try {
                 const response = await axios.get(
-                    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/posts/top-week`
+                    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/posts/top-month`
                 );
                 setTrendingPosts(response.data.posts || []);
             } catch (error) {

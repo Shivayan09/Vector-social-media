@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, ReactNode } from "react";
+import { useState, useEffect, useCallback, ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Home, Search, Bell, User, Plus, Menu, X, Settings, LogOut, Send } from "lucide-react";
@@ -10,6 +10,7 @@ import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import LogoutWarning from "../modals/LogoutWarning";
 import Themetoggle from "@/app/theme-toggle";
+import type { Notification, Post } from "@/lib/types";
 
 interface SidebarItemProps {
   icon: ReactNode;
@@ -21,7 +22,7 @@ interface SidebarItemProps {
 }
 
 export default function Sidebar() {
-  const [open, setOpen] = useState<boolean>(false);
+  const [open, setOpen] = useState<boolean>(true);
   const [createOpen, setCreateOpen] = useState<boolean>(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const pathname = usePathname();
@@ -31,10 +32,6 @@ export default function Sidebar() {
 
   const { isLoggedIn, setIsLoggedIn, setUserData, userData, setPosts } = useAppContext();
   const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
 
   const handleLogout = async () => {
     try {
@@ -54,21 +51,31 @@ export default function Sidebar() {
     }
   };
 
-  const fetchUnreadCount = async () => {
+  const fetchUnreadCount = useCallback(async () => {
     try {
-      const { data } = await axios.get(`${BACKEND_URL}/api/notifications`, { withCredentials: true });
-      const unread = data.filter((n: any) => !n.isRead).length;
+      const { data } = await axios.get<Notification[]>(
+        `${BACKEND_URL}/api/notifications`,
+        { withCredentials: true }
+      );
+      const unread = data.filter((n) => !n.isRead).length;
       setUnreadCount(unread);
     } catch {
       console.error("Failed to fetch notifications");
     }
-  };
+  }, [BACKEND_URL]);
 
   useEffect(() => {
-    fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 10000);
-    return () => clearInterval(interval);
-  }, []);
+    const timeoutId = window.setTimeout(() => {
+      void fetchUnreadCount();
+    }, 0);
+    const interval = window.setInterval(() => {
+      void fetchUnreadCount();
+    }, 10000);
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.clearInterval(interval);
+    };
+  }, [fetchUnreadCount]);
 
   const isMain = pathname === "/main";
 
@@ -76,28 +83,32 @@ export default function Sidebar() {
     <>
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className={`fixed z-50 md:hidden p-2 rounded-lg ${isMain ? "top-7.5 left-6" : "top-4 left-3"
-          }`}
+        className={`fixed z-60 p-2 rounded-lg ${open? "top-4 left-45":isMain ? "top-7.5 left-6" : "top-4 left-3"
+          } text-slate-900 dark:text-white transition-all duration-300 ease-in-out`}
         aria-label="Toggle menu"
       >
-        {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6 text-white" />}
+        {open ? <X className="size-5 cursor-pointer" /> : <Menu className="size-7 cursor-pointer" />}
       </button>
 
       {open && (
         <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={() => setOpen(false)} />
       )}
 
-      <aside className={`fixed md:static top-0 left-0 z-50 h-screen overflow-y-auto hide-scrollbar text-white w-50 md:w-55 border-r border-black/5 shadow-lg flex flex-col gap-5 px-2 py-5 font-serif text-[1.1rem] backdrop-blur-3xl transform transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
+      <aside className={`fixed md:static top-0 left-0 z-50 h-screen overflow-y-auto hide-scrollbar text-slate-900 dark:text-white 
+  ${open ? "w-50 md:w-55" : "w-0 md:w-16"} 
+  border-r border-border shadow-lg flex flex-col gap-5 px-2 py-5 font-serif text-[1.1rem] backdrop-blur-3xl 
+  transform transition-all duration-300 ${open ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex w-full">
           <div className="flex justify-center ml-3">
             <img
+              alt={userData?.name || "User avatar"}
               src={userData?.avatar || "/default-avatar.png"}
               className="h-12 w-12 rounded-full object-cover border shrink-0"
             />
 
             <div className="flex flex-col ml-3">
               <p className="font-semibold text-[1.1rem]">Hello</p>
-              <p className="text-gray-300">{userData?.name}!</p>
+              <p className="text-slate-600 dark:text-gray-300">{userData?.name}!</p>
             </div>
           </div>
         </div>
@@ -156,7 +167,7 @@ export default function Sidebar() {
         />
 
         <p
-          className="flex mr-auto pl-2 md:pl-5 gap-2 mt-auto transition-all duration-300 hover:bg-black/10 w-full h-10 rounded-lg items-center cursor-pointer dark:hover:text-white/70"
+          className="flex mr-auto pl-2 md:pl-5 gap-2 mt-auto transition-all duration-300 hover:bg-black/10 w-full h-10 rounded-lg items-center cursor-pointer text-slate-700 hover:text-slate-900 dark:text-white dark:hover:text-white/70"
           onClick={() => setLogoutOpen(true)}
         >
           <LogOut className="opacity-60" />
@@ -174,12 +185,12 @@ export default function Sidebar() {
       {createOpen && (
         <CreateModal
           onClose={() => setCreateOpen(false)}
-          onPostCreated={(post) => {
+          onPostCreated={(post: Post) => {
             if (!post || !post._id) return;
             setPosts((prev) => [post, ...prev]);
           }}
         />
-      )}
+      )} 
     </>
   );
 }
@@ -187,8 +198,8 @@ export default function Sidebar() {
 function SidebarItem({ icon, label, href, active, onClick, unreadCount = 0 }: SidebarItemProps) {
   if (onClick) {
     return (
-      <button onClick={onClick} className="flex gap-2 cursor-pointer transition-all duration-200 p-2 rounded-lg w-full md:pl-5 hover:bg-black/10 dark:hover:bg-blue-400/20">
-        <span className="h-4 md:h-6 text-stone-300 dark:text-white/50">
+      <button onClick={onClick} className="flex gap-2 cursor-pointer transition-all duration-200 p-2 rounded-lg w-full md:pl-5 text-slate-700 hover:bg-black/10 hover:text-slate-900 dark:text-white dark:hover:bg-blue-400/20 dark:hover:text-white/70">
+        <span className="h-4 md:h-6 text-slate-500 dark:text-white/50">
           {icon}
         </span>
         {label}
@@ -201,9 +212,9 @@ function SidebarItem({ icon, label, href, active, onClick, unreadCount = 0 }: Si
       href={href!}
       className={`relative flex gap-2 cursor-pointer transition-all duration-200 p-2 rounded-lg w-full md:pl-5 ${active
         ? "bg-blue-500 text-white"
-        : "hover:bg-black/10 dark:hover:bg-blue-400/20 dark:hover:text-white/70"
+        : "text-slate-700 hover:bg-black/10 hover:text-slate-900 dark:text-white dark:hover:bg-blue-400/20 dark:hover:text-white/70"
         }`}>
-      <span className={`h-4 md:h-6 ${active ? "text-white" : "text-stone-300 dark:text-white/50"}`}>
+      <span className={`h-4 md:h-6 ${active ? "text-white" : "text-slate-500 dark:text-white/50"}`}>
         {icon}
       </span>
       {label}

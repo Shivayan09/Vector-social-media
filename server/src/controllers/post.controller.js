@@ -1,8 +1,24 @@
+import mongoose from "mongoose";
 import Post from "../models/post.model.js";
+import User from "../models/user.model.js";
 import Notification from "../models/notification.model.js";
 import cloudinary from "../config/cloudinary.js";
 
-export const createPost = async (req, res, next) => {
+export const removePostById = async (postId) => {
+    const post = await Post.findById(postId);
+    if (!post) {
+        return null;
+    }
+
+    if (post.imagePublicId) {
+        await cloudinary.uploader.destroy(post.imagePublicId);
+    }
+
+    await post.deleteOne();
+    return post;
+};
+
+export const createPost = async (req, res) => {
     try {
         const { content, intent } = req.body;
         if (!intent || (!content && !req.file)) {
@@ -48,7 +64,7 @@ export const getPosts = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
-        const posts = await Post.find().sort({ createdAt: -1 }).skip(skip).limit(limit).populate("author", "username name surname avatar");
+        const posts = await Post.find().sort({ createdAt: -1 }).skip(skip).limit(limit).populate("author", "username name surname avatar").populate("likes", "username name avatar _id");
         const total = await Post.countDocuments();
         res.status(200).json({
             posts,
@@ -82,12 +98,8 @@ export const deletePost = async (req, res) => {
                 message: "You are not allowed to delete this post",
             });
         }
-        
-        if (post.imagePublicId) {
-            await cloudinary.uploader.destroy(post.imagePublicId);
-        }
 
-        await post.deleteOne();
+        await removePostById(postId);
         res.status(200).json({
             success: true,
             message: "Post deleted successfully",
@@ -107,10 +119,9 @@ export const toggleLike = async (req, res) => {
     }
     const userId = req.user.id;
     const index = post.likes.indexOf(userId);
-    let liked = false;
+    const liked = index === -1;
     if (index === -1) {
         post.likes.push(userId);
-        liked = true;
         if (post.author.toString() !== userId) {
             await Notification.create({
                 recipient: post.author,
@@ -121,7 +132,6 @@ export const toggleLike = async (req, res) => {
         }
     } else {
         post.likes.splice(index, 1);
-        liked = false;
     }
     await post.save();
     res.json({
@@ -134,7 +144,36 @@ export const toggleLike = async (req, res) => {
 export const getPostsByUser = async (req, res) => {
     try {
         const { userId } = req.params;
-        const posts = await Post.find({ author: userId }).populate("author", "username name avatar").sort({ createdAt: -1 });
+        
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid user ID format",
+            });
+        }
+
+        // Fetch target user to check privacy status
+        const targetUser = await User.findById(userId);
+        if (!targetUser) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+
+        // Check if current user is allowed to see posts
+        const isSelf = req.user?.id === userId;
+        const isFollower = targetUser.followers.some(id => id.toString() === req.user?.id);
+
+        if (targetUser.isPrivate && !isSelf && !isFollower) {
+            return res.status(200).json({
+                success: true,
+                posts: [],
+                message: "This account is private. Follow to see posts."
+            });
+        }
+
+        const posts = await Post.find({ author: userId }).populate("author", "username name avatar").populate("likes", "username name avatar _id").sort({ createdAt: -1 });
         return res.status(200).json({
             success: true,
             posts,
@@ -142,20 +181,35 @@ export const getPostsByUser = async (req, res) => {
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: "Failed to fetch user posts",
+            message: "Failed to fetch user posts: " + error.message,
         });
     }
 };
 
 export const getSinglePost = async (req, res) => {
     try {
-        const post = await Post.findById(req.params.postId).populate("author", "username name avatar");
+        const { postId } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).json({ message: "Invalid post ID format" });
+        }
+
+        const post = await Post.findById(postId).populate("author", "username name avatar isPrivate followers").populate("likes", "username name avatar _id");
         if (!post) {
             return res.status(404).json({ message: "Post not found" });
         }
+
+        // Privacy check for single post
+        const author = post.author;
+        const isSelf = req.user?.id === author._id.toString();
+        const isFollower = author.followers?.some(id => id.toString() === req.user?.id);
+
+        if (author.isPrivate && !isSelf && !isFollower) {
+            return res.status(403).json({ message: "This post is from a private account. Follow them to see it." });
+        }
+
         res.json(post);
-    } catch (err) {
-        res.status(500).json({ message: "Server error" });
+    } catch (error) {
+        res.status(500).json({ message: "Server error: " + error.message });
     }
 };
 
@@ -163,7 +217,15 @@ export const getTopPostsOfWeek = async (req, res) => {
     try {
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-        const posts = await Post.find({ createdAt: { $gte: oneWeekAgo } }).populate("author", "username name surname avatar").sort({ likes: -1 }).limit(10);
+        const posts = await Post.aggregate([
+            { $match: { createdAt: { $gte: oneWeekAgo } } },
+            { $addFields: { likesCount: { $size: "$likes" } } },
+            { $sort: { likesCount: -1, createdAt: -1 } },
+            { $limit: 10 },
+            { $lookup: { from: "users", localField: "author", foreignField: "_id", as: "author" } },
+            { $unwind: "$author" },
+            { $project: { "author.password": 0, "author.email": 0 } }
+        ]);
         res.status(200).json({
             success: true,
             posts
@@ -173,5 +235,51 @@ export const getTopPostsOfWeek = async (req, res) => {
             success: false,
             message: error.message
         });
+    }
+};
+
+export const getTopPostsOfMonth = async (req, res) => {
+    try {
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
+        
+        const posts = await Post.aggregate([
+            { $match: { createdAt: { $gte: oneMonthAgo } } },
+            { $addFields: { likesCount: { $size: "$likes" } } },
+            { $sort: { likesCount: -1, createdAt: -1 } },
+            { $limit: 10 },
+            { $lookup: { from: "users", localField: "author", foreignField: "_id", as: "author" } },
+            { $unwind: "$author" },
+            { $project: { "author.password": 0, "author.email": 0 } }
+        ]);
+        
+        res.status(200).json({
+            success: true,
+            posts
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+export const incrementShare = async (req, res) => {
+    try {
+        const post = await Post.findByIdAndUpdate(
+            req.params.id,
+            { $inc: { sharesCount: 1 } },
+            { new: true }
+        );
+        if (!post) {
+            return res.status(404).json({ success: false, message: "Post not found" });
+        }
+        res.json({
+            success: true,
+            sharesCount: post.sharesCount,
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
     }
 };

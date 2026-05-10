@@ -6,10 +6,12 @@ import axios from "axios";
 import PostCard from "@/components/feed/Postcard";
 import CommentsSection from "@/components/feed/CommentsSection";
 import Navbar from "@/components/Navbar";
+import SkeletonLoader from "@/components/loaders/SkeletonLoader";
+import type { Post } from "@/lib/types";
 
 export default function PostPage() {
   const { postId } = useParams();
-  const [post, setPost] = useState<any>(null);
+  const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
@@ -30,20 +32,20 @@ export default function PostPage() {
     };
 
     if (postId) fetchPost();
-  }, [postId]);
+  }, [BACKEND_URL, postId]);
 
-  if (loading) return <p className="p-10">Loading...</p>;
-  if (!post) return <p className="p-10">Post not found</p>;
+  if (loading) return <div className="p-10"><SkeletonLoader count={1} height="h-64" /></div>;
+if (!post) return <p className="p-10">Post not found</p>;
 
-  return (
-    <div className="overflow-y-auto h-screen">
-      <Navbar />
-      <div className="px-5 md:px-10">
-        <PostCard post={post} setPost={setPost} />
-        <div className="mt-6">
-          <CommentsSection postId={post._id} />
-        </div>
+return (
+  <div className="overflow-y-auto h-screen">
+    <Navbar />
+    <div className="px-5 md:px-10">
+      <PostCard post={post} setPost={setPost} />
+      <div className="mt-6">
+        <CommentsSection postId={post._id} />
       </div>
     </div>
-  );
+  </div>
+);
 }

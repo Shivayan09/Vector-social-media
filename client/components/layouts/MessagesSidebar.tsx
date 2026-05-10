@@ -4,8 +4,8 @@ import { Search, Send, UserPlus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
-import FollowButton from "../ui/FollowButton";
 import { useRouter } from "next/navigation";
+import InlineLoader from "../loaders/InlineLoader";
 
 type SuggestedUser = {
     _id: string;
@@ -137,7 +137,7 @@ export default function MessagesSidebar() {
 
                 <div className="mt-5 flex flex-col gap-2 w-fit min-h-[75vh] max-h-[60vh] overflow-y-auto hide-scrollbar pr-1">
                     {loading ? (
-                        <p className="text-sm opacity-50">Loading users...</p>
+                        <InlineLoader text="Loading users..." />
                     ) : query.trim() ? (
                         searching ? (
                             <p className="text-sm opacity-50">Searching...</p>
@@ -145,7 +145,6 @@ export default function MessagesSidebar() {
                             <p className="text-sm opacity-50">No users found.</p>
                         ) : (
                             results.filter((user) => user._id !== userData?.id).map((user) => {
-                                const isFollowing = userData?.following?.includes(user._id.toString()) ?? false;
                                 return (
                                     <div key={user._id} className="flex items-center gap-2">
                                         <div className="h-12 w-12 rounded-full overflow-hidden">
@@ -165,7 +164,6 @@ export default function MessagesSidebar() {
                         <p className="text-sm opacity-50">No users found.</p>
                     ) : (
                         filteredUsers.map((suggestedUser) => {
-                            const isFollowing = userData?.following?.includes(suggestedUser._id.toString()) ?? false;
                             return (
                                 <div onClick={() => startChat(suggestedUser._id)} key={suggestedUser._id} className="flex items-center gap-2 hover:bg-black/10 cursor-pointer p-3 rounded-md">
                                     <div className="h-10 w-10 rounded-full overflow-hidden">

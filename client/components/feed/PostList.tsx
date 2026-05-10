@@ -1,7 +1,8 @@
 import PostCard from "./Postcard";
+import type { Post } from "@/lib/types";
 
 type PostListProps = {
-    posts: any[];
+    posts: Post[];
 };
 
 export default function PostList({ posts }: PostListProps) {

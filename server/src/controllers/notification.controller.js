@@ -6,6 +6,7 @@ export const getNotifications = async (req, res) => {
         sender: { $nin: req.user.blockedUsers || [] }
     };
     const notifications = await Notification.find(query).populate("sender", "name username avatar").populate("post").sort({ createdAt: -1 });
+    const notifications = await Notification.find({ recipient: req.user._id, }).populate("sender", "name username avatar").populate("post").populate("conversation").sort({ createdAt: -1 });
     return res.json(notifications);
 };
 
@@ -29,7 +30,7 @@ export const deleteNotification = async (req, res) => {
             });
         }
         return res.json({ success: true });
-    } catch (err) {
+    } catch {
         return res.status(500).json({
             success: false,
             message: "Server error"
@@ -50,7 +51,7 @@ export const deleteMultipleNotifications = async (req, res) => {
         return res.json({
             success: true
         });
-    } catch (err) {
+    } catch {
         return res.status(500).json({
             success: false,
             message: "Server error"

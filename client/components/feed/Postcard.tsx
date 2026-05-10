@@ -2,20 +2,23 @@
 
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
-import { Bookmark, Heart, MessageCircle, Repeat, HelpCircle, Hammer, Share2, MessagesSquare, MoreHorizontal, Trash2, Flag, Share, LucideShare2, Forward } from "lucide-react";
+import { Bookmark, Heart, MessageCircle, HelpCircle, Hammer, Share2, MessagesSquare, MoreHorizontal, Trash2, Flag, Forward } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import PostDelete from "../modals/DeleteWarning";
 import ReportPost from "../modals/ReportPost";
+import LikesModal from "../modals/LikesModal";
 import { useRouter } from "next/navigation";
-import CommentsSection from "./CommentsSection";
+import type { Post, ReportReason } from "@/lib/types";
+import { reportPost } from "@/lib/reportApi";
 
 type PostCardProps = {
-    post: any;
-    setPost?: React.Dispatch<React.SetStateAction<any>>;
+    post: Post;
+    setPost?: React.Dispatch<React.SetStateAction<Post | null>>;
 };
 
-const intentIconMap: Record<string, any> = {
+const intentIconMap: Record<string, LucideIcon> = {
     ask: HelpCircle,
     build: Hammer,
     share: Share2,
@@ -24,23 +27,21 @@ const intentIconMap: Record<string, any> = {
 };
 
 export default function PostCard({ post, setPost }: PostCardProps) {
-
-    // prevent crash if author missing
-    if (!post?.author) return null;
-
     const router = useRouter();
-    const { userData, posts, setPosts } = useAppContext();
+    const { userData, setPosts } = useAppContext();
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
+    const [showLikesModal, setShowLikesModal] = useState(false);
+    const getLikeUserId = (like: string | { _id?: string }) =>
+        typeof like === "string" ? like : like._id;
 
     const isOwner = userData?.id === post?.author?._id;
-    const isLiked = post.likes?.map(String).includes(String(userData?.id));
+    const isLiked = post.likes?.some((like) => getLikeUserId(like) === userData?.id);
 
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
     const [likeAnimating, setLikeAnimating] = useState(false);
-    const [showComments, setShowComments] = useState(false);
 
     function timeAgo(dateString: string) {
         const now = new Date().getTime();
@@ -67,22 +68,32 @@ export default function PostCard({ post, setPost }: PostCardProps) {
 
     const handleLike = async () => {
         try {
+            // 🚨 guard: don't proceed if user id missing
+            if (!userData?.id) {
+                toast.error("User not authenticated");
+                return;
+            }
+
             if (!isLiked) {
                 setLikeAnimating(true);
                 setTimeout(() => setLikeAnimating(false), 300);
             }
 
             const updatedLikes = isLiked
-                ? post.likes.filter((id: string) => String(id) !== String(userData?.id))
-                : [...post.likes, userData?.id];
+                ? post.likes.filter((like) => getLikeUserId(like) !== userData.id)
+                : [...post.likes, userData.id];
 
+            // ✅ update local state safely
             if (setPost) {
-                setPost((prev: any) => ({
-                    ...prev,
-                    likes: updatedLikes,
-                }));
-            }
-            else {
+                setPost(prev =>
+                    prev
+                        ? {
+                            ...prev,
+                            likes: updatedLikes,
+                        }
+                        : prev
+                );
+            } else {
                 setPosts(prev =>
                     prev.map(p =>
                         p._id === post._id
@@ -92,8 +103,12 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                 );
             }
 
-            await axios.put(`${BACKEND_URL}/api/posts/${post._id}/like`, {}, { withCredentials: true });
-
+            // ✅ API call
+            await axios.put(
+                `${BACKEND_URL}/api/posts/${post._id}/like`,
+                {},
+                { withCredentials: true }
+            );
         } catch {
             toast.error("Failed to like post");
         }
@@ -110,7 +125,9 @@ export default function PostCard({ post, setPost }: PostCardProps) {
         }
     };
 
-    const handleReport = async () => { }
+    const handleReport = async (reason: ReportReason, details?: string) => {
+        await reportPost(post._id, reason, details);
+    };
 
     useEffect(() => {
         if (!menuOpen) return;
@@ -128,6 +145,9 @@ export default function PostCard({ post, setPost }: PostCardProps) {
         };
     }, [menuOpen]);
 
+    // prevent crash if author missing
+    if (!post?.author) return null;
+
     const handleShare = async (e: React.MouseEvent) => {
         e.stopPropagation();
         const postUrl = `${window.location.origin}/main/post/${post._id}`;
@@ -142,37 +162,61 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                 await navigator.clipboard.writeText(postUrl);
                 toast.success("Post link copied to clipboard");
             }
+
+            // Increment share count in DB
+            await axios.put(`${BACKEND_URL}/api/posts/${post._id}/share`, {}, { withCredentials: true });
+
+            // Update local state
+            if (setPost) {
+                setPost((prev) => prev ? ({
+                    ...prev,
+                    sharesCount: (prev.sharesCount || 0) + 1,
+                }) : prev);
+            } else {
+                setPosts(prev =>
+                    prev.map(p =>
+                        p._id === post._id
+                            ? { ...p, sharesCount: (p.sharesCount || 0) + 1 }
+                            : p
+                    )
+                );
+            }
+
         } catch {
-            toast.error("Failed to share post");
+            // share dismissed or failed
         }
         setMenuOpen(false);
     };
 
     return (
-        <div className="border overflow-clip relative border-black/10 bg-black/10 backdrop-blur-3xl cursor-pointer hover:shadow-lg px-5 py-3 rounded-2xl transition"
+        <div className="content-card glass-hover relative overflow-clip cursor-pointer"
             onClick={openPost}>
             <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center flex-wrap sm:justify-between w-[90%]">
+                    <div className="flex items-center gap-2">
                     <div className="h-8 md:h-12 w-8 md:w-12 rounded-full transition-all duration-200" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
-                        <img src={post?.author?.avatar || "/default-avatar.png"} className="h-full w-full rounded-full object-cover" />
+                        <img alt={post.author?.name || "Post author"} src={post?.author?.avatar || "/default-avatar.png"} className="h-full w-full rounded-full object-cover" />
                     </div>
-                    <span className="font-semibold ml-1 transition-all duration-200 text-white hover:text-blue-500" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>{post?.author?.name}</span>
-                    <span className="text-[0.9rem] text-white/60 transition-all duration-200 hover:text-white/80" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
+                    <span className="ml-1 font-semibold text-foreground transition-all duration-200 hover:text-blue-500" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>{post?.author?.name}</span>
+                    <span className="surface-text-muted text-[0.9rem] transition-all duration-200 hover:text-foreground" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
                         @{post?.author?.username}
                     </span>
-                    <p className="absolute left-195 text-[0.9rem] font-semibold text-blue-500 flex items-center gap-1.5">
+                    </div>
+                    <div className="w-full sm:w-auto">
+                    <p className="text-[0.9rem] font-semibold text-blue-500 flex items-center gap-1.5 truncate">
                         Intent:
                         {(() => {
-                            const Icon = intentIconMap[post.intent];
+                            const Icon = post.intent ? intentIconMap[post.intent] : null;
                             return Icon ? <Icon size={16} className="text-blue-500 mt-0.5" /> : null;
                         })()}
                         <span className="capitalize">{post.intent}</span>
                     </p>
+                    </div>
                 </div>
 
                 <div ref={menuRef} className="relative">
-                    <button onClick={(e) => { e.stopPropagation(); setMenuOpen(prev => !prev); }} className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10">
-                        <MoreHorizontal size={20} className="text-white cursor-pointer mt-0.5" />
+                    <button onClick={(e) => { e.stopPropagation(); setMenuOpen(prev => !prev); }} className="rounded-full p-1 transition-colors hover:bg-accent/70">
+                        <MoreHorizontal size={20} className="mt-0.5 cursor-pointer text-foreground" />
                     </button>
 
                     {menuOpen && (
@@ -193,53 +237,54 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                                     Delete post
                                 </button>
                             )}
-                            {!isOwner && (
-                                <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-black/3 dark:hover:bg-white/5"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setMenuOpen(false);
-                                        setShowReportModal(true);
-                                    }}>
-                                    <Flag size={14} />
-                                    Report post
-                                </button>
-                            )}
+                            <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-black/3 dark:hover:bg-white/5"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setMenuOpen(false);
+                                    setShowReportModal(true);
+                                }}>
+                                <Flag size={14} />
+                                Report post
+                            </button>
                         </div>
                     )}
                 </div>
             </div>
 
             {post.content && (
-                <p className="mt-2 mb-3 p-1 text-[0.9rem] md:text-[1.1rem] text-gray-100">
+                <p className="mt-2 mb-3 p-1 text-[0.9rem] text-foreground md:text-[1.1rem]">
                     {post.content}
                 </p>
             )}
 
             {post.image && (
-                <div className="w-full mb-4 rounded-xl overflow-hidden border border-white/10 max-h-[500px]">
+                <div className="w-full mb-4 rounded-xl overflow-hidden border border-white/10 max-h-125">
                     <img src={post.image} alt="Post attachment" className="w-full h-full object-cover" />
                 </div>
             )}
-
-            <div className="flex justify-between text-white border-t border-white/20 dark:border-white/10 pt-3">
-                <div className="flex items-center justify-between w-2/3 text-gray-200 dark:text-gray-300 text-sm">
-                    <p className="flex gap-1 items-center cursor-pointer hover:text-blue-500 md:w-[20%] justify-center">
+            <div className="flex w-full gap-x-2 border-t border-border/80 pt-3 text-foreground sm:justify-between">
+                <div className="surface-text-muted flex w-full items-center gap-4 text-sm sm:w-2/3 sm:justify-between">
+                    <p className="flex flex-col text-center gap-2 sm:flex-row items-center cursor-pointer hover:text-blue-500 md:w-[20%] justify-center">
                         <MessageCircle className="h-4.5 md:h-5 hover:text-blue-500" />
-                        {post.commentsCount || 0} {post.commentsCount===1 ? 'Comment' : 'Comments'}
+                        {post.commentsCount || 0} {post.commentsCount === 1 ? 'Comment' : 'Comments'}
                     </p>
 
-                    <p onClick={handleShare} className="flex gap-1 items-center cursor-pointer md:w-[20%] justify-center hover:text-blue-500">
-                        <Forward className="h-4.5 md:h-5" />0 Shares
+                    <p onClick={handleShare} className="flex flex-col text-center sm:flex-row gap-1 items-center cursor-pointer hover:text-blue-500 md:w-[20%] justify-center">
+                        <Forward className="h-4.5 md:h-5" />{post.sharesCount || 0} {post.sharesCount === 1 ? 'Share' : 'Shares'}
                     </p>
 
-                    <p onClick={(e) => { e.stopPropagation(); handleLike() }} className="flex gap-1 items-center md:w-[20%] justify-center cursor-pointer hover:text-blue-500">
-                        <Heart className={`h-4.5 md:h-5 cursor-pointer transition-transform duration-300 hover:text-blue-500 ${isLiked ? "text-blue-500" : ""} ${likeAnimating ? "scale-135" : "scale-100"}`} fill={isLiked ? "currentColor" : "none"} />
-                        {post.likes.length} {post.likes.length===1 ? 'Like' : 'Likes'}
-                    </p>
+                    <div className="flex flex-col text-center sm:flex-row gap-1 items-center md:w-[20%] justify-center">
+                        <button onClick={(e) => { e.stopPropagation(); handleLike() }} className="p-0 hover:text-blue-500">
+                            <Heart className={`h-4.5 md:h-5 cursor-pointer transition-transform duration-300 hover:text-blue-500 ${isLiked ? "text-blue-500" : ""} ${likeAnimating ? "scale-135" : "scale-100"}`} fill={isLiked ? "currentColor" : "none"} />
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); setShowLikesModal(true) }} className="cursor-pointer text-sm hover:text-blue-500">
+                            {post.likes.length} {post.likes.length === 1 ? 'Like' : 'Likes'}
+                        </button>
+                    </div>
                 </div>
 
                 <div>
-                    <p className="text-[0.85rem]">{timeAgo(post.createdAt)}</p>
+                    <p className="text-sm sm:text-md">{timeAgo(post.createdAt)}</p>
                 </div>
             </div>
 
@@ -258,9 +303,11 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                 onSubmit={handleReport}
             />
 
-            {showComments && (
-                <CommentsSection postId={post._id} />
-            )}
+            <LikesModal
+                open={showLikesModal}
+                onClose={() => setShowLikesModal(false)}
+                likers={post.likes}
+            />
         </div>
     );
 }

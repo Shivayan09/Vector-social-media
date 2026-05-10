@@ -7,6 +7,7 @@ import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import { Trash2, ArrowLeft } from "lucide-react";
 import ConfirmModal from "@/components/modals/DeleteWarning";
+import type { Conversation, Message, UserSummary } from "@/lib/types";
 
 type Params = {
   conversationId: string;
@@ -19,14 +20,14 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
 
   const { userData } = useAppContext();
 
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
   const [receiverId, setReceiverId] = useState<string | null>(null);
-  const [otherUser, setOtherUser] = useState<any>(null);
+  const [otherUser, setOtherUser] = useState<UserSummary | null>(null);
   const [isSending, setIsSending] = useState(false);
 
   const [warningOpen, setWarningOpen] = useState(false);
-  const [selectedMessage, setSelectedMessage] = useState<any>(null);
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -73,7 +74,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
 
     socket.emit("register", userData.id);
 
-    const handleReceiveMessage = (message: any) => {
+    const handleReceiveMessage = (message: Message) => {
       setMessages((prev) => {
         if (prev.some((m) => m._id === message._id)) return prev;
         if (message.conversation !== conversationId) return prev;
@@ -81,7 +82,13 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
       });
     };
 
-    const handleDelete = ({ messageId, conversationId: convo }: any) => {
+    const handleDelete = ({
+      messageId,
+      conversationId: convo,
+    }: {
+      messageId: string;
+      conversationId: string;
+    }) => {
       if (convo === conversationId) {
         setMessages((prev) =>
           prev.filter((m) => m._id !== messageId)
@@ -104,7 +111,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
 
     const fetchChat = async () => {
 
-      const convoRes = await axios.get(
+      const convoRes = await axios.get<Conversation>(
         `${BACKEND_URL}/api/conversation/${conversationId}`,
         { withCredentials: true }
       );
@@ -112,7 +119,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
       const participants = convoRes.data.participants;
 
       const other = participants.find(
-        (p: any) => p._id !== userData?.id
+        (p: UserSummary) => p._id !== userData?.id
       );
 
       if (other) {
@@ -120,7 +127,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
         setOtherUser(other);
       }
 
-      const msgRes = await axios.get(
+      const msgRes = await axios.get<Message[]>(
         `${BACKEND_URL}/api/messages/${conversationId}`,
         { withCredentials: true }
       );
@@ -134,7 +141,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
           {},
           { withCredentials: true }
         );
-      } catch (error) {
+      } catch {
         // Silently handle error to not interrupt chat load
       }
     };
@@ -143,7 +150,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
       fetchChat();
     }
 
-  }, [conversationId, userData]);
+  }, [BACKEND_URL, conversationId, userData]);
 
   // AUTO SCROLL
   useEffect(() => {
@@ -204,22 +211,22 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
   return (
     <div className="flex flex-col h-screen">
 
-      <div className="bg-white/15 px-14 md:px-5 py-2 flex items-center">
+      <div className="chat-header px-14 md:px-5">
         <button
           onClick={() => router.push("/main/chat")}
-          className="hover:bg-white/20 p-2 rounded-full transition-colors"
+          className="rounded-full p-2 transition-colors hover:bg-accent/70"
           title="Back to chat list"
         >
-          <ArrowLeft size={24} className="text-white" />
+          <ArrowLeft size={24} className="text-foreground" />
         </button>
 
-        <img src={otherUser?.avatar || "/default-avatar.png"} className="h-12 w-12 rounded-full object-cover border ml-3"/>
+        <img alt={otherUser?.name || "User avatar"} src={otherUser?.avatar || "/default-avatar.png"} className="h-12 w-12 rounded-full object-cover border ml-3"/>
 
         <p
           onClick={() =>
             router.push(`/main/user/${otherUser?.username}`)
           }
-          className="ml-3 cursor-pointer font-semibold text-white text-[1.1rem]">
+          className="ml-3 cursor-pointer text-[1.1rem] font-semibold text-foreground">
           {otherUser?.name || "User"}
         </p>
       </div>
@@ -227,7 +234,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
       <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
 
         {messages.length === 0 ? (
-  <p className="text-center text-gray-600 dark:text-gray-400 mt-4">
+  <p className="surface-text-muted mt-4 text-center">
     No messages
   </p>
 ) : (
@@ -242,7 +249,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
             <div key={m._id}>
               {showDateSeparator && (
                 <div className="flex justify-center my-3">
-                  <span className="text-xs text-gray-400 bg-gray-800/50 px-3 py-1 rounded-full">
+                  <span className="chat-date-pill">
                     {getDateString(m.createdAt)}
                   </span>
                 </div>
@@ -254,10 +261,10 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
                 }`} >
 
                 <div
-                  className={`max-w-[70%] px-4 py-2 rounded-md relative ${
+                  className={`${
                     isMe
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-200 text-black"
+                      ? "chat-bubble-self"
+                      : "chat-bubble-other"
                   }`}
                 >
 
@@ -290,7 +297,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
         <div ref={bottomRef} />
       </div>
 
-      <div className="border-t px-7 pb-6 pt-4 flex gap-2 backdrop-blur-3xl">
+      <div className="chat-composer">
 
         <input
           value={text}
@@ -302,7 +309,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
             }
           }}
           disabled={isSending}
-          className="flex-1 border px-3 py-2 rounded-md text-white bg-black/10 disabled:opacity-50"
+          className="chat-composer-input"
           placeholder="Type a message..."
         />
 

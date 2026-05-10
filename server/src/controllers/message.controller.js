@@ -67,6 +67,7 @@ export const sendMessage = async (req, res) => {
         recipient: receiverId,
         sender: req.user._id,
         type: "message",
+        conversation: conversationId,
       });
 
       const io = getIO();

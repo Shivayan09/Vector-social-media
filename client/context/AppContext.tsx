@@ -6,13 +6,16 @@ import {
   useContext,
   useEffect,
   useState,
+  useCallback,
   ReactNode,
 } from "react";
+import type { Post } from "@/lib/types";
 
 axios.defaults.withCredentials = true;
 
 export type User = {
   id: string;
+  _id: string;
   name: string;
   surname: string;
   email: string;
@@ -25,9 +28,9 @@ export type User = {
   signupStep?: number;
   followers?: string[];
   following?: string[];
+  isPrivate?: boolean;
+  followRequests?: string[];
 };
-
-export type Post = any;
 
 type AppContextType = {
   isLoggedIn: boolean;
@@ -66,7 +69,7 @@ export function AppContextProvider({
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-  const refreshAuth = async () => {
+  const refreshAuth = useCallback(async () => {
     if (!BACKEND_URL) {
       setIsLoggedIn(false);
       setUserData(null);
@@ -89,11 +92,11 @@ export function AppContextProvider({
     } finally {
       setLoading(false); // ✅ loader stop
     }
-  };
+  }, [BACKEND_URL]);
 
   useEffect(() => {
     refreshAuth();
-  }, []);
+  }, [refreshAuth]);
 
   return (
     <AppContext.Provider

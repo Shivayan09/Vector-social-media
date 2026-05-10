@@ -7,67 +7,79 @@ import { useAppContext } from "@/context/AppContext";
 import { ArrowRight, Trash2 } from "lucide-react";
 import ConfirmModal from "@/components/modals/DeleteWarning";
 import { toast } from "react-toastify";
+import SkeletonLoader from "@/components/loaders/SkeletonLoader";
+import type { Conversation, UserSummary } from "@/lib/types";
 
 export default function ChatListPage() {
     const { userData } = useAppContext();
     const router = useRouter();
 
-    const [conversations, setConversations] = useState<any[]>([]);
-    const [filteredConversations, setFilteredConversations] = useState<any[]>([]);
+    const [conversations, setConversations] = useState<Conversation[]>([]);
+    const [filteredConversations, setFilteredConversations] = useState<Conversation[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
-    const [chatToDelete, setChatToDelete] = useState<any>(null);
+    const [chatToDelete, setChatToDelete] = useState<Conversation | null>(null);
     const [hasMessages, setHasMessages] = useState(false);
     const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+    const [loading, setLoading] = useState(true);
 
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
     useEffect(() => {
         const fetchConversations = async () => {
-            const { data: allConvos } = await axios.get(
-                `${BACKEND_URL}/api/conversation`,
-                { withCredentials: true }
-            );
+            try {
+                setLoading(true);
+                const { data: allConvos } = await axios.get(
+                    `${BACKEND_URL}/api/conversation`,
+                    { withCredentials: true }
+                );
 
-            const results = await Promise.all(
-                allConvos.map(async (convo: any) => {
-                    const { data: messages } = await axios.get(
-                        `${BACKEND_URL}/api/messages/${convo._id}`,
-                        { withCredentials: true }
-                    );
-                    return messages.length > 0 ? convo : null;
-                })
-            );
-
-            const validConvos = results.filter(Boolean);
-
-            setConversations(validConvos);
-
-            const unreadCountEntries = await Promise.all(
-                validConvos.map(async (convo: any) => {
-                    try {
-                        const { data } = await axios.get(
-                            `${BACKEND_URL}/api/messages/${convo._id}/unread-count`,
+                const results = await Promise.all(
+                    allConvos.map(async (convo: Conversation) => {
+                        const { data: messages } = await axios.get(
+                            `${BACKEND_URL}/api/messages/${convo._id}`,
                             { withCredentials: true }
                         );
-                        return [convo._id, data.unreadCount] as const;
-                    } catch {
-                        return [convo._id, 0] as const;
-                    }
-                })
-            );
+                        return messages.length > 0 ? convo : null;
+                    })
+                );
 
-            const counts = Object.fromEntries(unreadCountEntries) as Record<string, number>;
-            setUnreadCounts(counts);
-            setFilteredConversations(validConvos);
+                const validConvos = results.filter(Boolean);
+
+                setConversations(validConvos);
+
+                const unreadCountEntries = await Promise.all(
+                    validConvos.map(async (convo: Conversation) => {
+                        try {
+                            const { data } = await axios.get(
+                                `${BACKEND_URL}/api/messages/${convo._id}/unread-count`,
+                                { withCredentials: true }
+                            );
+                            return [convo._id, data.unreadCount] as const;
+                        } catch {
+                            return [convo._id, 0] as const;
+                        }
+                    })
+                );
+
+                const counts = Object.fromEntries(unreadCountEntries) as Record<string, number>;
+                setUnreadCounts(counts);
+                setFilteredConversations(validConvos);
+            } catch {
+                setConversations([]);
+                setFilteredConversations([]);
+                setUnreadCounts({});
+            } finally {
+                setLoading(false);
+            }
         };
 
-        if (userData?.id) fetchConversations();
-    }, [userData]);
+        if (userData?.id) void fetchConversations();
+    }, [BACKEND_URL, userData]);
 
     useEffect(() => {
         const filtered = conversations.filter((convo) => {
             const otherUser = convo.participants.find(
-                (p: any) => p._id !== userData?.id
+                (p: UserSummary) => p._id !== userData?.id
             );
 
             return (
@@ -83,7 +95,10 @@ export default function ChatListPage() {
         setFilteredConversations(filtered);
     }, [searchTerm, conversations, userData]);
 
-    const handleDeleteClick = async (e: React.MouseEvent, convo: any) => {
+    const handleDeleteClick = async (
+        e: React.MouseEvent,
+        convo: Conversation
+    ) => {
         e.stopPropagation();
 
         try {
@@ -128,71 +143,77 @@ export default function ChatListPage() {
         <div className="flex w-full h-screen">
             <div className="flex-1 h-screen overflow-y-auto hide-scrollbar">
 
-                <div className="p-4 sticky top-0 z-10 bg-white/15 dark:bg-black/25 backdrop-blur-md">
+
+                <h1 className="px-5 pt-3 text-xl font-bold text-foreground">
+                    Your chats
+                </h1>
+                <div className="p-5 pb-0">
                     <input
                         type="text"
                         placeholder="Search chats..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full p-2 rounded-lg outline-none bg-black/20 text-white"
+                        className="chat-search-input"
                     />
                 </div>
-
-                <h1 className="text-xl font-bold px-5 pt-3 text-white">
-                    Your chats
-                </h1>
-
                 <div className="flex flex-col p-5 gap-2">
-                    {filteredConversations.map((convo) => {
-                        const otherUser = convo.participants.find(
-                            (p: any) => p._id !== userData?.id
-                        );
+                    {loading ? (
+                        <SkeletonLoader count={5} height="h-16" />
+                    ) : filteredConversations.length > 0 ? (
+                        filteredConversations.map((convo) => {
+                            const otherUser = convo.participants.find(
+                                (p: UserSummary) => p._id !== userData?.id
+                            );
 
-                        return (
-                            <div
-                                key={convo._id}
-                                onClick={() =>
-                                    router.push(`/main/chat/${convo._id}`)
-                                }
-                                className="flex items-center gap-3 p-4 rounded-lg cursor-pointer bg-black/10 hover:bg-black/15 hover:shadow-lg text-white transition-all duration-200"
-                            >
-                                <img
-                                    src={
-                                        otherUser?.avatar ||
-                                        "/default-avatar.png"
+                            return (
+                                <div
+                                    key={convo._id}
+                                    onClick={() =>
+                                        router.push(`/main/chat/${convo._id}`)
                                     }
-                                    className="h-12 w-12 rounded-full object-cover"
-                                />
+                                    className="flex items-center gap-3 p-4 rounded-lg cursor-pointer bg-black/10 dark:bg-white/5 hover:bg-black/15 hover:shadow-lg text-white transition-all duration-200"
+                                >
+                                    <img
+                                        alt={otherUser?.name || "Chat user"}
+                                        src={
+                                            otherUser?.avatar ||
+                                            "/default-avatar.png"
+                                        }
+                                        className="h-12 w-12 rounded-full object-cover"
+                                    />
 
-                                <div>
-                                    <p className="font-semibold">
-                                        {otherUser?.name}
-                                    </p>
-                                    <p className="text-sm text-gray-400">
-                                        @{otherUser?.username}
-                                    </p>
-                                </div>
-
-                                <div className="w-full">
-                                    {unreadCounts[convo._id] > 0 && (
-                                    <div className="ml-auto w-6 mr-2 bg-red-500 text-white rounded-full h-6 flex items-center justify-center text-xs font-bold">
-                                        {unreadCounts[convo._id]}
+                                    <div>
+                                        <p className="font-semibold text-gray-600 dark:text-white">
+                                            {otherUser?.name}
+                                        </p>
+                                        <p className="text-sm text-black/30 dark:text-white/40">
+                                            @{otherUser?.username}
+                                        </p>
                                     </div>
-                                )}
+
+                                    <div className="w-full">
+                                        {unreadCounts[convo._id] > 0 && (
+                                            <div className="ml-auto w-6 mr-2 bg-red-500 text-white rounded-full h-6 flex items-center justify-center text-xs font-bold">
+                                                {unreadCounts[convo._id]}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <Trash2
+                                        onClick={(e) =>
+                                            handleDeleteClick(e, convo)
+                                        }
+                                        className="ml-2 text-red-500 opacity-70 hover:opacity-100 hover:scale-110 transition-transform"
+                                        size={20}
+                                    />
+
+                                    <ArrowRight className="ml-3 opacity-70 text-foreground" />
                                 </div>
-
-                                <ArrowRight className="ml-auto opacity-70" />
-
-                                <Trash2
-                                    onClick={(e) =>
-                                        handleDeleteClick(e, convo)
-                                    }
-                                    className="ml-2 text-red-500 opacity-70 hover:opacity-100 hover:scale-110 transition-transform"
-                                    size={20}
-                                />
-                            </div>
-                        );
-                    })}
+                            );
+                        })
+                    ) : (
+                        <p className="text-gray-500 px-5">No conversations found.</p>
+                    )}
                 </div>
             </div>
 

@@ -1,15 +1,11 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useMounted } from "@/lib/useMounted";
 
 export default function ThemeToggle() {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useMounted();
 
   if (!mounted) return null;
 
@@ -18,22 +14,20 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="flex items-center gap-3 cursor-pointer"
+      className="flex cursor-pointer items-center gap-3 text-foreground"
     >
-      
-
       <div
-        className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ${
-          isDark ? "bg-blue-500" : "bg-transparent border"
+        className={`flex h-6 w-12 border-2 items-center rounded-full p-1 transition-colors duration-300 ${
+          isDark ? "bg-primary" : "glass-surface"
         }`}
       >
         <div
-          className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${
+          className={`h-4 w-4 rounded-full bg-black/30 dark:bg-white shadow-md transform transition-transform duration-300 ${
             isDark ? "translate-x-6" : "translate-x-0"
           }`}
         />
       </div>
-      <span className="font-medium">
+      <span className="font-medium surface-text-muted">
         {isDark ? "Dark" : "Light"}
       </span>
     </button>
