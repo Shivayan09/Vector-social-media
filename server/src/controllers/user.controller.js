@@ -2,6 +2,7 @@ import cloudinary from "../config/cloudinary.js";
 import User from "../models/user.model.js";
 import Notification from "../models/notification.model.js";
 import Post from "../models/post.model.js";
+import { getIO, onlineUsers } from "../socket/socket.js";
 
 export const uploadAvatar = async (req, res) => {
     try {
@@ -147,11 +148,18 @@ export const toggleFollowUser = async (req, res) => {
                 } else {
                     // Create follow request
                     await User.findByIdAndUpdate(targetUserId, { $addToSet: { followRequests: currentUserId } });
-                    await Notification.create({
+                    const notification = await Notification.create({
                         recipient: targetUser._id,
                         sender: req.user._id,
                         type: "follow_request",
                     });
+                    const recipientSocket = onlineUsers.get(targetUser._id.toString());
+                    if (recipientSocket) {
+                        getIO().to(recipientSocket).emit("notification:new", {
+                            notificationId: notification._id,
+                            type: notification.type,
+                        });
+                    }
                     return res.json({
                         requested: true,
                         message: "Follow request sent"
@@ -161,11 +169,18 @@ export const toggleFollowUser = async (req, res) => {
                 // Public account follow (immediate)
                 await User.findByIdAndUpdate(currentUserId, { $addToSet: { following: targetUserId }, $inc: { followingCount: 1 } });
                 await User.findByIdAndUpdate(targetUserId, { $addToSet: { followers: currentUserId }, $inc: { followersCount: 1 }, });
-                await Notification.create({
+                const notification = await Notification.create({
                     recipient: targetUser._id,
                     sender: req.user._id,
                     type: "follow",
                 });
+                const recipientSocket = onlineUsers.get(targetUser._id.toString());
+                if (recipientSocket) {
+                    getIO().to(recipientSocket).emit("notification:new", {
+                        notificationId: notification._id,
+                        type: notification.type,
+                    });
+                }
                 return res.json({
                     followed: true
                 });
@@ -210,11 +225,18 @@ export const acceptFollowRequest = async (req, res) => {
             $addToSet: { following: currentUserId },
             $inc: { followingCount: 1 }
         });
-        await Notification.create({
+        const notification = await Notification.create({
             recipient: requesterId,
             sender: currentUserId,
             type: "follow_request_accepted",
         });
+        const recipientSocket = onlineUsers.get(requesterId.toString());
+        if (recipientSocket) {
+            getIO().to(recipientSocket).emit("notification:new", {
+                notificationId: notification._id,
+                type: notification.type,
+            });
+        }
 
         res.json({ success: true, message: "Follow request accepted" });
     } catch (err) {

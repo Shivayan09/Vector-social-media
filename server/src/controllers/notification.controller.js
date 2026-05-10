@@ -5,6 +5,12 @@ export const getNotifications = async (req, res) => {
         recipient: req.user._id,
         sender: { $nin: req.user.blockedUsers || [] }
     }).populate("sender", "name username avatar").populate("post").populate("conversation").sort({ createdAt: -1 });
+    const currentUserId = req.user?._id || req.user?.id;
+    const notifications = await Notification.find({ recipient: currentUserId })
+        .populate("sender", "name username avatar _id")
+        .populate("post")
+        .populate("conversation")
+        .sort({ createdAt: -1 });
     return res.json(notifications);
 };
 
@@ -17,9 +23,10 @@ export const markAsRead = async (req, res) => {
 
 export const deleteNotification = async (req, res) => {
     try {
+        const currentUserId = req.user?._id || req.user?.id;
         const notification = await Notification.findOneAndDelete({
             _id: req.params.id,
-            recipient: req.user._id,
+            recipient: currentUserId,
         });
         if (!notification) {
             return res.status(404).json({
@@ -39,13 +46,14 @@ export const deleteNotification = async (req, res) => {
 export const deleteMultipleNotifications = async (req, res) => {
     try {
         const { ids } = req.body;
+        const currentUserId = req.user?._id || req.user?.id;
         if (!ids || !Array.isArray(ids)) {
             return res.status(400).json({
                 success: false,
                 message: "Invalid request"
             });
         }
-        await Notification.deleteMany({ _id: { $in: ids }, recipient: req.user._id});
+        await Notification.deleteMany({ _id: { $in: ids }, recipient: currentUserId });
         return res.json({
             success: true
         });
@@ -59,7 +67,8 @@ export const deleteMultipleNotifications = async (req, res) => {
 
 export const deleteAllNotifications = async (req, res) => {
     try {
-        await Notification.deleteMany({ recipient: req.user._id });
+        const currentUserId = req.user?._id || req.user?.id;
+        await Notification.deleteMany({ recipient: currentUserId });
         return res.json({
             success: true,
             message: "Notifications deleted"

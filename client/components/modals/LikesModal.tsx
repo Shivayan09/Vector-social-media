@@ -17,9 +17,13 @@ export default function LikesModal({ open, onClose, likers }: LikesModalProps) {
 
   // Backend always populates likes with full user objects (username, name, avatar, _id)
   // Filter ensures we only render valid user objects, ignoring any legacy string IDs
-  const userLikers = likers.filter(
-    (liker) => typeof liker === "object"
-  ) as UserSummary[];
+  const userLikers = Array.from(
+    new Map(
+      likers
+        .filter((liker) => typeof liker === "object")
+        .map((liker) => [(liker as UserSummary)._id, liker as UserSummary])
+    ).values()
+  );
 
   if (!mounted) return null;
 

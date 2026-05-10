@@ -33,11 +33,22 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
     const [showLikesModal, setShowLikesModal] = useState(false);
-    const getLikeUserId = (like: string | { _id?: string }) =>
+    type PostLike = Post["likes"][number];
+    const getLikeUserId = (like: PostLike) =>
         typeof like === "string" ? like : like._id;
+    const getUniqueLikes = (likes: Post["likes"]): Post["likes"] =>
+        Array.from(
+            new Map<string, PostLike>(
+                likes
+                    .map((like) => [getLikeUserId(like), like] as const)
+                    .filter((entry): entry is [string, PostLike] => Boolean(entry[0]))
+            ).values()
+        );
+    const uniqueLikes = getUniqueLikes(post.likes);
+    const likeCount = uniqueLikes.length;
 
     const isOwner = userData?.id === post?.author?._id;
-    const isLiked = post.likes?.some((like) => getLikeUserId(like) === userData?.id);
+    const isLiked = uniqueLikes.some((like) => getLikeUserId(like) === userData?.id);
 
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
@@ -80,8 +91,8 @@ export default function PostCard({ post, setPost }: PostCardProps) {
             }
 
             const updatedLikes = isLiked
-                ? post.likes.filter((like) => getLikeUserId(like) !== userData.id)
-                : [...post.likes, userData.id];
+                ? uniqueLikes.filter((like) => getLikeUserId(like) !== userData.id)
+                : getUniqueLikes([...uniqueLikes, userData.id]);
 
             // ✅ update local state safely
             if (setPost) {
@@ -278,7 +289,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                             <Heart className={`h-4.5 md:h-5 cursor-pointer transition-transform duration-300 hover:text-blue-500 ${isLiked ? "text-blue-500" : ""} ${likeAnimating ? "scale-135" : "scale-100"}`} fill={isLiked ? "currentColor" : "none"} />
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); setShowLikesModal(true) }} className="cursor-pointer text-sm hover:text-blue-500">
-                            {post.likes.length} {post.likes.length === 1 ? 'Like' : 'Likes'}
+                            {likeCount} {likeCount === 1 ? 'Like' : 'Likes'}
                         </button>
                     </div>
                 </div>
@@ -306,7 +317,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
             <LikesModal
                 open={showLikesModal}
                 onClose={() => setShowLikesModal(false)}
-                likers={post.likes}
+                likers={uniqueLikes}
             />
         </div>
     );
