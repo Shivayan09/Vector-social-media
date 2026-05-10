@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
@@ -9,7 +9,6 @@ import { Trash2, MessageCircle, UserPlus, ArrowRight } from "lucide-react";
 import ConfirmModal from "./modals/DeleteWarning";
 import FollowRequestsModal from "./modals/FollowRequestsModal";
 import type { Notification } from "@/lib/types";
-import { socket } from "@/socket/socket";
 
 type Props = {
   search?: string;
@@ -29,12 +28,6 @@ export default function NotificationPanel({ search = "" }: Props) {
   const [messageLoading, setMessageLoading] = useState<Record<string, boolean>>({});
   const [deleteLoading, setDeleteLoading] = useState<Record<string, boolean>>({});
   const [modalOpen, setModalOpen] = useState(false);
-  const getSenderName = (notification: Notification) =>
-    notification.sender?.name || notification.sender?.username || "Someone";
-  const getSenderUsername = (notification: Notification) =>
-    notification.sender?.username || "unknown";
-  const getSenderAvatar = (notification: Notification) =>
-    notification.sender?.avatar || "/default-avatar.png";
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -148,6 +141,9 @@ export default function NotificationPanel({ search = "" }: Props) {
     }
   }, [BACKEND_URL, notifications]);
 
+  const markAllAsReadRef = useRef(markAllAsRead);
+  markAllAsReadRef.current = markAllAsRead;
+
   const isFollowingUser = (userId: string) => {
     return userData?.following?.includes(userId) ?? false;
   };
@@ -187,7 +183,7 @@ export default function NotificationPanel({ search = "" }: Props) {
       toast.success("Follow request accepted");
       // Update local state to remove the request notification or change its type
       setNotifications(prev => prev.map(n => 
-        (n.sender?._id === senderId && n.type === "follow_request") 
+        (n.sender._id === senderId && n.type === "follow_request") 
         ? { ...n, type: "follow" as const } 
         : n
       ));
@@ -209,7 +205,7 @@ export default function NotificationPanel({ search = "" }: Props) {
         { withCredentials: true }
       );
       toast.success("Follow request rejected");
-      setNotifications(prev => prev.filter(n => !(n.sender?._id === senderId && n.type === "follow_request")));
+      setNotifications(prev => prev.filter(n => !(n.sender._id === senderId && n.type === "follow_request")));
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         toast.error(err.response?.data?.message || "Action failed");
@@ -250,30 +246,19 @@ export default function NotificationPanel({ search = "" }: Props) {
     const timeoutId = window.setTimeout(() => {
       void fetchNotifications();
     }, 0);
-    const interval = window.setInterval(() => {
-      void fetchNotifications();
-    }, 10000);
     return () => window.clearTimeout(timeoutId);
   }, [fetchNotifications, userData]);
 
   useEffect(() => {
-    if (!userData) return;
-    const handleNotification = () => {
-      void fetchNotifications();
-    };
-    socket.on("notification:new", handleNotification);
-    return () => {
-      socket.off("notification:new", handleNotification);
-    };
-  }, [fetchNotifications, userData]);
+    const hasUnread = notifications.some((n) => !n.isRead);
+    if (!hasUnread) return;
 
-  useEffect(() => {
-    if (!notifications.some((n) => !n.isRead)) return;
-    const timeoutId = window.setTimeout(() => {
-      void markAllAsRead();
-    }, 0);
-    return () => window.clearTimeout(timeoutId);
-  }, [markAllAsRead, notifications]);
+    const timer = setTimeout(() => {
+      void markAllAsReadRef.current();
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [notifications]);
 
   if (!userData) return null;
 
@@ -281,10 +266,8 @@ export default function NotificationPanel({ search = "" }: Props) {
     if (n.post?._id) {
       router.push(`/main/post/${n.post._id}`);
     } else if (n.type === "message") {
-      if (n.sender?._id) {
-        void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
-      }
-    } else if (n.sender?.username) {
+      void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
+    } else {
       router.push(`/main/user/${n.sender.username}`);
     }
   };
@@ -301,7 +284,7 @@ export default function NotificationPanel({ search = "" }: Props) {
   const filteredNotifications = notifications.filter((n) => {
     if (n.type === "follow_request") return false;
     const query = search.toLowerCase();
-    const searchable = `${getSenderName(n)} ${getSenderUsername(n)} ${typeText[n.type]}`.toLowerCase();
+    const searchable = `${n.sender.name} ${n.sender.username} ${typeText[n.type]}`.toLowerCase();
     return searchable.includes(query);
   });
 
@@ -403,16 +386,14 @@ export default function NotificationPanel({ search = "" }: Props) {
                 }`}
               >
                 <img
-                  alt={getSenderName(n)}
-                  src={getSenderAvatar(n)}
+                  alt={n.sender.name || "Notification sender"}
+                  src={n.sender.avatar || "/default-avatar.png"}
                   className="h-10 w-10 shrink-0 rounded-full object-cover"
                 />
 
                 <div className="min-w-0">
                   <p className="text-foreground">
-                    <span className="font-semibold">
-                      {getSenderName(n)}
-                    </span>{" "}
+                    <span className="font-semibold">{n.sender.name}</span>{" "}
                     {n.type === "follow" && "followed you"}
                     {n.type === "follow_request" && "wants to follow you"}
                     {n.type === "like" && "liked your post"}
@@ -432,11 +413,9 @@ export default function NotificationPanel({ search = "" }: Props) {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (n.sender?._id) {
-                            void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
-                          }
+                          void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
                         }}
-                        disabled={messageLoading[n._id] || !n.sender?._id}
+                        disabled={messageLoading[n._id]}
                         className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:opacity-70 text-white rounded-md transition"
                       >
                         <MessageCircle className="h-4 w-4" />
@@ -448,26 +427,22 @@ export default function NotificationPanel({ search = "" }: Props) {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (n.sender?._id) {
-                              handleAcceptRequest(n.sender._id);
-                            }
+                            handleAcceptRequest(n.sender._id);
                           }}
-                          disabled={!n.sender?._id || followLoading[n.sender?._id || ""]}
+                          disabled={followLoading[n.sender._id]}
                           className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
                         >
-                          {followLoading[n.sender?._id || ""] ? "..." : "Accept"}
+                          {followLoading[n.sender._id] ? "..." : "Accept"}
                         </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (n.sender?._id) {
-                              handleRejectRequest(n.sender._id);
-                            }
+                            handleRejectRequest(n.sender._id);
                           }}
-                          disabled={!n.sender?._id || followLoading[n.sender?._id || ""]}
+                          disabled={followLoading[n.sender._id]}
                           className="px-3 py-1.5 text-sm bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-foreground rounded-md transition"
                         >
-                          {followLoading[n.sender?._id || ""] ? "..." : "Reject"}
+                          {followLoading[n.sender._id] ? "..." : "Reject"}
                         </button>
                       </div>
                     )}
@@ -475,21 +450,21 @@ export default function NotificationPanel({ search = "" }: Props) {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (n.sender?._id && !isFollowingUser(n.sender._id)) {
+                          if (!isFollowingUser(n.sender._id)) {
                             handleFollowBack(n.sender._id);
                           }
                         }}
-                        disabled={!n.sender?._id || followLoading[n.sender?._id || ""] || isFollowingUser(n.sender?._id || "")}
+                        disabled={followLoading[n.sender._id] || isFollowingUser(n.sender._id)}
                         className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-md transition ${
-                          isFollowingUser(n.sender?._id || "")
+                          isFollowingUser(n.sender._id)
                             ? "bg-gray-600 text-gray-300 cursor-default"
                             : "bg-blue-600 hover:bg-blue-700 text-white"
                         }`}
                       >
                         <UserPlus className="h-4 w-4" />
-                        {followLoading[n.sender?._id || ""]
+                        {followLoading[n.sender._id]
                           ? "Loading..."
-                          : isFollowingUser(n.sender?._id || "")
+                          : isFollowingUser(n.sender._id)
                           ? "Following"
                           : "Follow back"}
                       </button>
@@ -498,6 +473,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (deleteLoading[n._id]) return;
                         void deleteSingle(n._id);
                       }}
                       disabled={deleteLoading[n._id]}
