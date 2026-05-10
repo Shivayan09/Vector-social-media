@@ -13,7 +13,7 @@ const optionalAuthMiddleware = async (req, res, next) => {
             req.user = user;
         }
         next();
-    } catch (error) {
+    } catch (_error) {
         // If token is invalid, just proceed as guest
         next();
     }
