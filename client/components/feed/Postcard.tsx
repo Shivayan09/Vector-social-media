@@ -33,14 +33,15 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
     const [showLikesModal, setShowLikesModal] = useState(false);
-    const getLikeUserId = (like: string | { _id?: string }) =>
+    type PostLike = Post["likes"][number];
+    const getLikeUserId = (like: PostLike) =>
         typeof like === "string" ? like : like._id;
-    const getUniqueLikes = (likes: (string | { _id?: string })[]) =>
+    const getUniqueLikes = (likes: Post["likes"]): Post["likes"] =>
         Array.from(
-            new Map(
+            new Map<string, PostLike>(
                 likes
                     .map((like) => [getLikeUserId(like), like] as const)
-                    .filter(([id]) => Boolean(id))
+                    .filter((entry): entry is [string, PostLike] => Boolean(entry[0]))
             ).values()
         );
     const uniqueLikes = getUniqueLikes(post.likes);
