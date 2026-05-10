@@ -12,6 +12,8 @@ import LikesModal from "../modals/LikesModal";
 import { useRouter } from "next/navigation";
 import type { Post, ReportReason } from "@/lib/types";
 import { reportPost } from "@/lib/reportApi";
+import Linkify from "../ui/Linkify";
+
 
 type PostCardProps = {
     post: Post;
@@ -263,7 +265,7 @@ Report post </button>
 
             {post.content && (
                 <p className="mt-2 mb-3 p-1 text-[0.9rem] text-foreground md:text-[1.1rem]">
-                    {post.content}
+                    <Linkify text={post.content} />
                 </p>
             )}
 

@@ -12,6 +12,8 @@ import type { Comment } from "@/lib/types";
 import ReportPost from "../modals/ReportPost";
 import type { ReportReason } from "@/lib/types";
 import { reportComment } from "@/lib/reportApi";
+import Linkify from "../ui/Linkify";
+
 
 export default function CommentsSection({ postId }: { postId: string }) {
     const { userData } = useAppContext();
@@ -193,7 +195,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
                                 </div>
 
                                 <p className="surface-text-muted text-[0.9rem] wrap-break-word">
-                                    {c?.content}
+                                    <Linkify text={c?.content || ""} />
                                 </p>
 
                                 <p className="text-[0.75rem] text-gray-500 mt-1">

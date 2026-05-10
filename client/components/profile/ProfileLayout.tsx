@@ -1,6 +1,6 @@
 "use client";
 
-import { Edit, Lock } from "lucide-react";
+import { Edit, Link, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import PostsDisplay from "./PostsDisplay";
@@ -9,6 +9,7 @@ import FollowersDisplay from "./FollowersDisplay";
 import FollowingDisplay from "./FollowingDisplay";
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
+import { toast } from "react-toastify";
 import type { UserSummary } from "@/lib/types";
 
 type ProfileLayoutProps = {
@@ -42,6 +43,12 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
     }
   };
 
+  const copyProfileLink = () => {
+    const url = `${window.location.origin}/main/user/${user.username}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Profile link copied!");
+  };
+
   const canSeeContent = isSelfProfile || !user.isPrivate || following;
 
   return (
@@ -63,11 +70,18 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
               </div>
 
               {isSelfProfile ? (
-                <button onClick={() => router.push("/main/settings")}
-                  className="w-32 text-sm md:text-[1rem] py-1.5 rounded-md cursor-pointer bg-blue-500 text-white hover:bg-blue-600 transition flex items-center justify-center gap-1">
-                  <Edit className="h-4" />
-                  Edit profile
-                </button>
+                <div className="flex gap-2">
+                  <button onClick={() => router.push("/main/settings")}
+                    className="w-32 text-sm md:text-[1rem] py-1.5 rounded-md cursor-pointer bg-blue-500 text-white hover:bg-blue-600 transition flex items-center justify-center gap-1">
+                    <Edit className="h-4" />
+                    Edit profile
+                  </button>
+                  <button onClick={copyProfileLink}
+                    className="w-32 text-sm md:text-[1rem] py-1.5 rounded-md cursor-pointer bg-blue-500 text-white hover:bg-blue-600 transition flex items-center justify-center gap-1">
+                    <Link className="h-4" />
+                    Copy link
+                  </button>
+                </div>
               ) : (
                 <div className="flex gap-2 w-full sm:w-fit">
 
@@ -80,6 +94,12 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
 
                   <button onClick={startChat} className="bg-blue-500 h-9 w-1/2 sm:w-30 text-white rounded-md cursor-pointer">
                     Chat
+                  </button>
+
+                  <button onClick={copyProfileLink}
+                    className="h-9 w-1/2 sm:w-30 text-sm rounded-md cursor-pointer bg-blue-500 text-white hover:bg-blue-600 transition flex items-center justify-center gap-1">
+                    <Link className="h-4" />
+                    Copy link
                   </button>
                 </div>
               )}
