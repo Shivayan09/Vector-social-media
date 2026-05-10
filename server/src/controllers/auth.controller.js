@@ -1,7 +1,7 @@
 import User from "../models/user.model.js"
+import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "../validators/user.validator.js";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import validator from 'validator';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 
@@ -28,6 +28,15 @@ const sendResetEmail = async (email, token) => {
 
 export const register = async (req, res) => {
     try {
+        const validation = registerSchema.safeParse(req.body);
+
+        if (!validation.success) {
+            return res.json({
+                success: false,
+                message: validation.error.errors[0].message,
+            });
+        }
+
         const {
             name,
             surname,
@@ -38,62 +47,8 @@ export const register = async (req, res) => {
             bio,
             description,
             isPrivate,
-        } = req.body;
-        
-        // basic validations
-        if (!name) {
-            return res.json({ success: false, message: "Please enter your name!" });
-        }
+        } = validation.data;
 
-        if (!email) {
-            return res.json({ success: false, message: "Please enter your email!" });
-        }
-
-        if (!validator.isEmail(email)) {
-            return res.json({ success: false, message: "Please enter a valid email!" });
-        }
-
-        if (!phoneNumber) {
-            return res.json({
-                success: false,
-                message: "Please enter your phone number!",
-            });
-        }
-
-        if (!validator.isMobilePhone(phoneNumber, "any")) {
-            return res.json({
-                success: false,
-                message: "Please enter a valid phone number!",
-            });
-        }
-
-        if (!password) {
-            return res.json({
-                success: false,
-                message: "Please enter a password!",
-            });
-        }
-
-        if (!username) {
-            return res.json({
-                success: false,
-                message: "Please enter a username!",
-            });
-        }
-
-        if (!bio) {
-            return res.json({
-                success: false,
-                message: "Please enter a bio!",
-            });
-        }
-
-        if (!description) {
-            return res.json({
-                success: false,
-                message: "Please enter a description!",
-            });
-        }
 
         // check existing email
         const existingUser = await User.findOne({ email });
@@ -179,19 +134,17 @@ export const getMe = (req, res) => {
 };
 
 export const login = async (req, res) => {
-    const { username, password } = req.body;
-    if (!username) {
+    const validation = loginSchema.safeParse(req.body);
+
+    if (!validation.success) {
         return res.json({
             success: false,
-            message: "Enter your username!"
-        })
+            message: validation.error.errors[0].message,
+        });
     }
-    if (!password) {
-        return res.json({
-            success: false,
-            message: "Enter your password!"
-        })
-    }
+
+    const { username, password } = validation.data;
+
     try {
         const user = await User.findOne({ username }).select("+password");
         if (!user) {
@@ -249,10 +202,16 @@ export const logout = async (req, res) => {
 
 export const forgotPassword = async (req, res) => {
     try {
-        const { email } = req.body;
-        if (!email) {
-            return res.json({ success: false, message: "Please enter your email!" });
+        const validation = forgotPasswordSchema.safeParse(req.body);
+
+        if (!validation.success) {
+            return res.json({
+                success: false,
+                message: validation.error.errors[0].message,
+            });
         }
+
+        const { email } = validation.data;
         
         const user = await User.findOne({ email });
         if (!user) {
@@ -279,10 +238,16 @@ export const forgotPassword = async (req, res) => {
 
 export const resetPassword = async (req, res) => {
     try {
-        const { resetToken, newPassword } = req.body;
-        if (!resetToken || !newPassword) {
-            return res.json({ success: false, message: "Please provide token and new password!" });
+        const validation = resetPasswordSchema.safeParse(req.body);
+
+        if (!validation.success) {
+            return res.json({
+                success: false,
+                message: validation.error.errors[0].message,
+            });
         }
+
+        const { resetToken, newPassword } = validation.data;
 
         const user = await User.findOne({
             resetToken,
