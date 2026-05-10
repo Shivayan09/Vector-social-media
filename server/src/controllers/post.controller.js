@@ -28,6 +28,14 @@ export const createPost = async (req, res) => {
                 message: "Intent and either content or image are required"
             });
         }
+
+        const validIntents = ["ask", "build", "share", "discuss", "reflect"];
+        if (!validIntents.includes(intent)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid intent. Must be one of: ask, build, share, discuss, reflect"
+            });
+        }
         
         let image = null;
         let imagePublicId = null;
