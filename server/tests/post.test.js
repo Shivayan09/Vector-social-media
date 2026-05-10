@@ -2,7 +2,6 @@ import request from 'supertest';
 import app from '../src/app.js';
 import User from '../src/models/user.model.js';
 import Post from '../src/models/post.model.js';
-import { jest } from '@jest/globals';
 
 describe('Post and Comment Flows', () => {
   let cookie;

@@ -1,7 +1,6 @@
 import request from 'supertest';
 import app from '../src/app.js';
 import User from '../src/models/user.model.js';
-import { jest } from '@jest/globals';
 
 describe('Auth Endpoints', () => {
   const validUser = {
@@ -17,7 +16,8 @@ describe('Auth Endpoints', () => {
 
   describe('POST /api/auth/register', () => {
     it('should fail registration if name is missing', async () => {
-      const { name, ...userWithoutName } = validUser;
+      const userWithoutName = { ...validUser };
+      delete userWithoutName.name;
       const response = await request(app)
         .post('/api/auth/register')
         .send(userWithoutName);
