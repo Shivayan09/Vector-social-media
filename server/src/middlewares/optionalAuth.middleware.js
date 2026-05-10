@@ -14,7 +14,8 @@ const optionalAuthMiddleware = async (req, res, next) => {
         }
         next();
     } catch (error) {
-        // If token is invalid, just proceed as guest
+       /home/runner/work/Vector-social-media/Vector-social-media/server/src/middlewares/optionalAuth.middleware.js
+16:14  error  'error' is defined but never used  @typescript-eslint/no-unused-vars
         next();
     }
 };
