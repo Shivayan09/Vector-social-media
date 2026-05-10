@@ -77,7 +77,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
                     Edit profile
                   </button>
                   <button onClick={copyProfileLink}
-                    className="w-32 text-sm md:text-[1rem] py-1.5 rounded-md cursor-pointer border border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white transition flex items-center justify-center gap-1">
+                    className="w-32 text-sm md:text-[1rem] py-1.5 rounded-md cursor-pointer bg-blue-500 text-white hover:bg-blue-600 transition flex items-center justify-center gap-1">
                     <Link className="h-4" />
                     Copy link
                   </button>
@@ -97,7 +97,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
                   </button>
 
                   <button onClick={copyProfileLink}
-                    className="h-9 w-1/2 sm:w-30 text-sm rounded-md cursor-pointer border border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white transition flex items-center justify-center gap-1">
+                    className="h-9 w-1/2 sm:w-30 text-sm rounded-md cursor-pointer bg-blue-500 text-white hover:bg-blue-600 transition flex items-center justify-center gap-1">
                     <Link className="h-4" />
                     Copy link
                   </button>
