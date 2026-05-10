@@ -13,6 +13,9 @@ import { useRouter } from "next/navigation";
 import type { Post, ReportReason } from "@/lib/types";
 import { reportPost } from "@/lib/reportApi";
 import SkeletonLoader from "@/components/loaders/SkeletonLoader";
+import Linkify from "../ui/Linkify";
+import Avatar from "../ui/Avatar";
+
 
 type PostCardProps = {
     post: Post;
@@ -34,11 +37,22 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
     const [showLikesModal, setShowLikesModal] = useState(false);
-    const getLikeUserId = (like: string | { _id?: string }) =>
+    type PostLike = Post["likes"][number];
+    const getLikeUserId = (like: PostLike) =>
         typeof like === "string" ? like : like._id;
+    const getUniqueLikes = (likes: Post["likes"]): Post["likes"] =>
+        Array.from(
+            new Map<string, PostLike>(
+                likes
+                    .map((like) => [getLikeUserId(like), like] as const)
+                    .filter((entry): entry is [string, PostLike] => Boolean(entry[0]))
+            ).values()
+        );
+    const uniqueLikes = getUniqueLikes(post.likes);
+    const likeCount = uniqueLikes.length;
 
     const isOwner = userData?.id === post?.author?._id;
-    const isLiked = post.likes?.some((like) => getLikeUserId(like) === userData?.id);
+    const isLiked = uniqueLikes.some((like) => getLikeUserId(like) === userData?.id);
 
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
@@ -82,8 +96,8 @@ export default function PostCard({ post, setPost }: PostCardProps) {
             }
 
             const updatedLikes = isLiked
-                ? post.likes.filter((like) => getLikeUserId(like) !== userData.id)
-                : [...post.likes, userData.id];
+                ? uniqueLikes.filter((like) => getLikeUserId(like) !== userData.id)
+                : getUniqueLikes([...uniqueLikes, userData.id]);
 
             // ✅ update local state safely
             if (setPost) {
@@ -196,13 +210,17 @@ export default function PostCard({ post, setPost }: PostCardProps) {
             <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center flex-wrap sm:justify-between w-[90%]">
                     <div className="flex items-center gap-2">
-                        <div className="h-8 md:h-12 w-8 md:w-12 rounded-full transition-all duration-200" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
-                            <img alt={post.author?.name || "Post author"} src={post?.author?.avatar || "/default-avatar.png"} className="h-full w-full rounded-full object-cover" />
-                        </div>
-                        <span className="ml-1 font-semibold text-foreground transition-all duration-200 hover:text-blue-500" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>{post?.author?.name}</span>
-                        <span className="surface-text-muted text-[0.9rem] transition-all duration-200 hover:text-foreground" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
-                            @{post?.author?.username}
-                        </span>
+                    <div className="h-8 md:h-12 w-8 md:w-12 rounded-full transition-all duration-200" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
+                        <Avatar 
+                            src={post.author?.avatar} 
+                            alt={post.author?.name || "Post author"} 
+                            className="h-full w-full" 
+                        />
+                    </div>
+                    <span className="ml-1 font-semibold text-foreground transition-all duration-200 hover:text-blue-500" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>{post?.author?.name}</span>
+                    <span className="surface-text-muted text-[0.9rem] transition-all duration-200 hover:text-foreground" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
+                        @{post?.author?.username}
+                    </span>
                     </div>
                     <div className="w-full sm:w-auto">
                         <p className="text-[0.9rem] font-semibold text-blue-500 flex items-center gap-1.5 truncate">
@@ -222,12 +240,26 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                     </button>
 
                     {menuOpen && (
-                        <div className="absolute overflow-clip top-0 right-0 w-30 bg-white border border-black/10 rounded-md shadow-lg z-50">
-                            <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-blue-500 transition-all duration-300 hover:bg-black/3 dark:hover:bg-white/5"
-                                onClick={handleShare}>
-                                <Share2 size={14} />
-                                Share post
-                            </button>
+                        <div className="absolute overflow-clip top-0 right-0 w-30 bg-background border border-border rounded-md shadow-lg z-50">
+                            <button
+    className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-black/3 dark:hover:bg-white/5"
+    onClick={handleShare}
+>
+    <Forward size={14} />
+    Share post
+</button>
+                            {!isOwner && (
+<button
+className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-black/3 dark:hover:bg-white/5"
+onClick={(e) => {
+e.stopPropagation();
+setMenuOpen(false);
+setShowReportModal(true);
+}}
+> <Flag size={14} />
+Report post </button>
+)}
+
                             {isOwner && (
                                 <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-black/3 dark:hover:bg-white/5"
                                     onClick={(e) => {
@@ -239,15 +271,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                                     Delete post
                                 </button>
                             )}
-                            <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-black/3 dark:hover:bg-white/5"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setMenuOpen(false);
-                                    setShowReportModal(true);
-                                }}>
-                                <Flag size={14} />
-                                Report post
-                            </button>
+                           
                         </div>
                     )}
                 </div>
@@ -255,7 +279,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
 
             {post.content && (
                 <p className="mt-2 mb-3 p-1 text-[0.9rem] text-foreground md:text-[1.1rem]">
-                    {post.content}
+                    <Linkify text={post.content} />
                 </p>
             )}
 
@@ -294,7 +318,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                             <Heart className={`h-4.5 md:h-5 cursor-pointer transition-transform duration-300 hover:text-blue-500 ${isLiked ? "text-blue-500" : ""} ${likeAnimating ? "scale-135" : "scale-100"}`} fill={isLiked ? "currentColor" : "none"} />
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); setShowLikesModal(true) }} className="cursor-pointer text-sm hover:text-blue-500">
-                            {post.likes.length} {post.likes.length === 1 ? 'Like' : 'Likes'}
+                            {likeCount} {likeCount === 1 ? 'Like' : 'Likes'}
                         </button>
                     </div>
                 </div>
@@ -322,7 +346,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
             <LikesModal
                 open={showLikesModal}
                 onClose={() => setShowLikesModal(false)}
-                likers={post.likes}
+                likers={uniqueLikes}
             />
         </div>
     );

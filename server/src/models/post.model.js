@@ -41,10 +41,6 @@ const postSchema = new mongoose.Schema({
     default: 0,
   },
 
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
-});
+}, { timestamps: true });
 
 export default mongoose.model("Post", postSchema);
