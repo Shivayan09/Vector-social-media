@@ -234,6 +234,13 @@ export default function PostCard({ post, setPost }: PostCardProps) {
 
                     {menuOpen && (
                         <div className="absolute overflow-clip top-0 right-0 w-30 bg-white border border-black/10 rounded-md shadow-lg z-50">
+                            <button
+    className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm hover:bg-black/3 dark:hover:bg-white/5"
+    onClick={handleShare}
+>
+    <Forward size={14} />
+    Share post
+</button>
                             {!isOwner && (
 <button
 className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-black/3 dark:hover:bg-white/5"
