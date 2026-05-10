@@ -1,6 +1,7 @@
 import Comment from "../models/comment.model.js";
 import Post from "../models/post.model.js";
 import Notification from '../models/notification.model.js'
+import { getIO, onlineUsers } from "../socket/socket.js";
 
 export const addComment = async (req, res) => {
     const { postId } = req.params;
@@ -24,12 +25,20 @@ export const addComment = async (req, res) => {
     });
     const populated = await comment.populate("author", "username name avatar");
     if (post.author.toString() !== req.user.id) {
-        await Notification.create({
+        const notification = await Notification.create({
             recipient: post.author,
             sender: req.user.id,
             type: "comment",
             post: post._id,
         });
+
+        const recipientSocket = onlineUsers.get(post.author.toString());
+        if (recipientSocket) {
+            getIO().to(recipientSocket).emit("notification:new", {
+                notificationId: notification._id,
+                type: notification.type,
+            });
+        }
     }
     return res.status(201).json(populated);
 };

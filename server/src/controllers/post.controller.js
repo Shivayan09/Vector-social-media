@@ -3,6 +3,7 @@ import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
 import Notification from "../models/notification.model.js";
 import cloudinary from "../config/cloudinary.js";
+import { getIO, onlineUsers } from "../socket/socket.js";
 
 export const removePostById = async (postId) => {
     const post = await Post.findById(postId);
@@ -118,20 +119,36 @@ export const toggleLike = async (req, res) => {
         return res.status(404).json({ success: false });
     }
     const userId = req.user.id;
-    const index = post.likes.indexOf(userId);
-    const liked = index === -1;
-    if (index === -1) {
+    const likesWithoutDuplicates = Array.from(
+        new Map(post.likes.map((likeId) => [likeId.toString(), likeId])).values()
+    );
+    const existingIndex = likesWithoutDuplicates.findIndex(
+        (likeId) => likeId.toString() === userId
+    );
+    const liked = existingIndex === -1;
+
+    post.likes = likesWithoutDuplicates;
+
+    if (liked) {
         post.likes.push(userId);
         if (post.author.toString() !== userId) {
-            await Notification.create({
+            const notification = await Notification.create({
                 recipient: post.author,
                 sender: userId,
                 type: "like",
                 post: post._id,
             });
+
+            const recipientSocket = onlineUsers.get(post.author.toString());
+            if (recipientSocket) {
+                getIO().to(recipientSocket).emit("notification:new", {
+                    notificationId: notification._id,
+                    type: notification.type,
+                });
+            }
         }
     } else {
-        post.likes.splice(index, 1);
+        post.likes = post.likes.filter((likeId) => likeId.toString() !== userId);
     }
     await post.save();
     res.json({

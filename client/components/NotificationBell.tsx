@@ -6,6 +6,7 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useAppContext } from "@/context/AppContext";
 import type { Notification } from "@/lib/types";
+import { socket } from "@/socket/socket";
 
 export default function NotificationBell() {
   const { userData } = useAppContext();
@@ -32,7 +33,14 @@ export default function NotificationBell() {
     const timeoutId = window.setTimeout(() => {
       void fetchUnreadCount();
     }, 0);
-    return () => window.clearTimeout(timeoutId);
+    const handleNotification = () => {
+      void fetchUnreadCount();
+    };
+    socket.on("notification:new", handleNotification);
+    return () => {
+      window.clearTimeout(timeoutId);
+      socket.off("notification:new", handleNotification);
+    };
   }, [fetchUnreadCount, userData]);
 
   if (!userData) return null;

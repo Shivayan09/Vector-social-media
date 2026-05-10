@@ -52,14 +52,20 @@ export const sendMessage = async (req, res) => {
 
     if (receiverId) {
 
-      await Notification.create({
+      const notification = await Notification.create({
         recipient: receiverId,
         sender: req.user._id,
         type: "message",
         conversation: conversationId,
       });
-
       const io = getIO();
+      const notificationSocket = onlineUsers.get(receiverId.toString());
+      if (notificationSocket) {
+        io.to(notificationSocket).emit("notification:new", {
+          notificationId: notification._id,
+          type: notification.type,
+        });
+      }
       const receiverSocket = onlineUsers.get(receiverId.toString());
 
       if (receiverSocket) {
