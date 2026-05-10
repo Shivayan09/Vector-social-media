@@ -27,6 +27,7 @@ export default function NotificationPanel({ search = "" }: Props) {
   const [selected, setSelected] = useState<string[]>([]);
   const [followLoading, setFollowLoading] = useState<Record<string, boolean>>({});
   const [messageLoading, setMessageLoading] = useState<Record<string, boolean>>({});
+  const [deleteLoading, setDeleteLoading] = useState<Record<string, boolean>>({});
   const [modalOpen, setModalOpen] = useState(false);
   const getSenderName = (notification: Notification) =>
     notification.sender?.name || notification.sender?.username || "Someone";
@@ -58,6 +59,9 @@ export default function NotificationPanel({ search = "" }: Props) {
   }, [BACKEND_URL]);
 
   const deleteSingle = async (id: string) => {
+    if (deleteLoading[id]) return;
+
+    setDeleteLoading((prev) => ({ ...prev, [id]: true }));
     try {
       await axios.delete(
         `${BACKEND_URL}/api/notifications/${id}`,
@@ -71,6 +75,8 @@ export default function NotificationPanel({ search = "" }: Props) {
       } else {
         toast.error("Delete failed");
       }
+    } finally {
+      setDeleteLoading((prev) => ({ ...prev, [id]: false }));
     }
   };
 
@@ -251,7 +257,10 @@ export default function NotificationPanel({ search = "" }: Props) {
     const interval = window.setInterval(() => {
       void fetchNotifications();
     }, 10000);
-    return () => window.clearTimeout(timeoutId);
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.clearInterval(interval);
+    };
   }, [fetchNotifications, userData]);
 
   useEffect(() => {
@@ -473,11 +482,14 @@ export default function NotificationPanel({ search = "" }: Props) {
                       </button>
                     )}
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        deleteSingle(n._id);
+                        if (deleteLoading[n._id]) return;
+                        void deleteSingle(n._id);
                       }}
-                      className="p-1 text-foreground transition hover:text-red-400"
+                      disabled={deleteLoading[n._id]}
+                      className="p-1 text-foreground transition hover:text-red-400 disabled:pointer-events-none disabled:opacity-50"
                     >
                       <Trash2 className="h-5 cursor-pointer" />
                     </button>
