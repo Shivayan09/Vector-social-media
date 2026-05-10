@@ -45,8 +45,8 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
   const getDateString = (date: string) => {
     const messageDate = new Date(date);
     const today = new Date();
-    
-    const isToday = 
+
+    const isToday =
       messageDate.getDate() === today.getDate() &&
       messageDate.getMonth() === today.getMonth() &&
       messageDate.getFullYear() === today.getFullYear();
@@ -60,7 +60,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
 
     if (isToday) return "Today";
     if (isYesterday) return "Yesterday";
-    
+
     return messageDate.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
@@ -220,7 +220,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
           <ArrowLeft size={24} className="text-foreground" />
         </button>
 
-        <img alt={otherUser?.name || "User avatar"} src={otherUser?.avatar || "/default-avatar.png"} className="h-12 w-12 rounded-full object-cover border ml-3"/>
+        <img alt={otherUser?.name || "User avatar"} src={otherUser?.avatar || "/default-avatar.png"} className="h-12 w-12 rounded-full object-cover border ml-3" />
 
         <p
           onClick={() =>
@@ -234,65 +234,63 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
       <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
 
         {messages.length === 0 ? (
-  <p className="surface-text-muted mt-4 text-center">
-    No messages
-  </p>
-) : (
-  messages.map((m, index) => {
+          <p className="surface-text-muted mt-4 text-center">
+            No messages
+          </p>
+        ) : (
+          messages.map((m, index) => {
 
-          const isMe = m.sender._id === userData?.id;
-          const showDateSeparator = 
-            index === 0 || 
-            getDateString(m.createdAt) !== getDateString(messages[index - 1].createdAt);
+            const isMe = m.sender._id === userData?.id;
+            const showDateSeparator =
+              index === 0 ||
+              getDateString(m.createdAt) !== getDateString(messages[index - 1].createdAt);
 
-          return (
-            <div key={m._id}>
-              {showDateSeparator && (
-                <div className="flex justify-center my-3">
-                  <span className="chat-date-pill">
-                    {getDateString(m.createdAt)}
-                  </span>
-                </div>
-              )}
-              
-              <div
-                className={`flex ${
-                  isMe ? "justify-end" : "justify-start"
-                }`} >
+            return (
+              <div key={m._id}>
+                {showDateSeparator && (
+                  <div className="flex justify-center my-3">
+                    <span className="chat-date-pill">
+                      {getDateString(m.createdAt)}
+                    </span>
+                  </div>
+                )}
 
                 <div
-                  className={`${
-                    isMe
-                      ? "chat-bubble-self"
-                      : "chat-bubble-other"
-                  }`}
-                >
+                  className={`flex ${isMe ? "justify-end" : "justify-start"
+                    }`} >
 
-                  {isMe && (
-                    <Trash2
-                      size={14}
-                      className="absolute -top-2 -right-2 cursor-pointer opacity-70 hover:opacity-100"
-                      onClick={() => {
-                        setSelectedMessage(m);
-                        setWarningOpen(true);
-                      }}
-                    />
-                  )}
+                  <div
+                    className={`${isMe
+                        ? "chat-bubble-self"
+                        : "chat-bubble-other"
+                      }`}
+                  >
 
-                  <p className="whitespace-pre-wrap wrap-break-word">
-                    {m.content}
-                    <span className="ml-2 text-[10px] opacity-70 relative top-0.5">
-                      {formatTime(m.createdAt)}
-                    </span>
-                  </p>
+                    {isMe && (
+                      <Trash2
+                        size={14}
+                        className="absolute -top-2 -right-2 cursor-pointer opacity-70 hover:opacity-100 text-gray-700 dark:text-gray-200"
+                        onClick={() => {
+                          setSelectedMessage(m);
+                          setWarningOpen(true);
+                        }}
+                      />
+                    )}
+
+                    <p className="whitespace-pre-wrap wrap-break-word">
+                      {m.content}
+                      <span className="ml-2 text-[10px] opacity-70 relative top-0.5">
+                        {formatTime(m.createdAt)}
+                      </span>
+                    </p>
+
+                  </div>
 
                 </div>
-
               </div>
-            </div>
-          );
-       }))
-}
+            );
+          }))
+        }
 
         <div ref={bottomRef} />
       </div>
@@ -313,14 +311,13 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
           placeholder="Type a message..."
         />
 
-        <button 
-          onClick={sendMessage} 
+        <button
+          onClick={sendMessage}
           disabled={isSending}
-          className={`text-white px-5 rounded-md transition-all ${
-            isSending 
-              ? "bg-blue-400 cursor-not-allowed opacity-60" 
+          className={`text-white px-5 rounded-md transition-all ${isSending
+              ? "bg-blue-400 cursor-not-allowed opacity-60"
               : "bg-blue-500 cursor-pointer hover:bg-blue-600"
-          }`}
+            }`}
         >
           {isSending ? "Sending..." : "Send"}
         </button>
