@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
@@ -8,14 +8,7 @@ import { toast } from "react-toastify";
 import { Trash2, MessageCircle, UserPlus, ArrowRight } from "lucide-react";
 import ConfirmModal from "./modals/DeleteWarning";
 import FollowRequestsModal from "./modals/FollowRequestsModal";
-import type { Notification, UserSummary } from "@/lib/types";
-import { socket } from "@/socket/socket";
-
-function notificationWithSender(
-  n: Notification
-): n is Notification & { sender: UserSummary } {
-  return n.sender !== null;
-}
+import type { Notification } from "@/lib/types";
 
 type Props = {
   search?: string;
@@ -36,45 +29,45 @@ export default function NotificationPanel({ search = "" }: Props) {
   const [deleteLoading, setDeleteLoading] = useState<Record<string, boolean>>({});
   const [modalOpen, setModalOpen] = useState(false);
 
-  const fetchNotifications = useCallback(
-    async (opts?: { silent?: boolean }) => {
-      const silent = opts?.silent === true;
-      try {
-        if (!silent) setLoading(true);
-        const { data } = await axios.get<Notification[]>(
-          `${BACKEND_URL}/api/notifications`,
-          { withCredentials: true }
+  const fetchNotifications = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data } = await axios.get<Notification[]>(
+        `${BACKEND_URL}/api/notifications`,
+        { withCredentials: true }
+      );
+      setNotifications(data);
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        toast.error(
+          err.response?.data?.message ||
+            "Failed to fetch notifications"
         );
-        setNotifications(data);
-      } catch (err: unknown) {
-        if (axios.isAxiosError(err)) {
-          toast.error(
-            err.response?.data?.message ||
-              "Failed to fetch notifications"
-          );
-        } else {
-          toast.error("Failed to fetch notifications");
-        }
-      } finally {
-        if (!silent) setLoading(false);
+      } else {
+        toast.error("Failed to fetch notifications");
       }
-    },
-    [BACKEND_URL]
-  );
+    } finally {
+      setLoading(false);
+    }
+  }, [BACKEND_URL]);
 
   const deleteSingle = async (id: string) => {
     if (deleteLoading[id]) return;
 
     setDeleteLoading((prev) => ({ ...prev, [id]: true }));
     try {
-      await axios.delete(`${BACKEND_URL}/api/notifications/${id}`, {
-        withCredentials: true,
-      });
-
+      await axios.delete(
+        `${BACKEND_URL}/api/notifications/${id}`,
+        { withCredentials: true }
+      );
       setNotifications((prev) => prev.filter((n) => n._id !== id));
       toast.success("Notification deleted");
-    } catch {
-      toast.error("Delete failed");
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        toast.error(err.response?.data?.message || "Delete failed");
+      } else {
+        toast.error("Delete failed");
+      }
     } finally {
       setDeleteLoading((prev) => ({ ...prev, [id]: false }));
     }
@@ -152,9 +145,6 @@ export default function NotificationPanel({ search = "" }: Props) {
     }
   }, [BACKEND_URL, notifications]);
 
-  const markAllAsReadRef = useRef(markAllAsRead);
-  markAllAsReadRef.current = markAllAsRead;
-
   const isFollowingUser = (userId: string) => {
     return userData?.following?.includes(userId) ?? false;
   };
@@ -193,13 +183,11 @@ export default function NotificationPanel({ search = "" }: Props) {
       );
       toast.success("Follow request accepted");
       // Update local state to remove the request notification or change its type
-      setNotifications((prev) =>
-        prev.map((n) =>
-          n.sender?._id === senderId && n.type === "follow_request"
-            ? { ...n, type: "follow" as const }
-            : n
-        )
-      );
+      setNotifications(prev => prev.map(n => 
+        (n.sender?._id === senderId && n.type === "follow_request") 
+        ? { ...n, type: "follow" as const } 
+        : n
+      ));
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         toast.error(err.response?.data?.message || "Action failed");
@@ -218,11 +206,7 @@ export default function NotificationPanel({ search = "" }: Props) {
         { withCredentials: true }
       );
       toast.success("Follow request rejected");
-      setNotifications((prev) =>
-        prev.filter(
-          (n) => !(n.sender?._id === senderId && n.type === "follow_request")
-        )
-      );
+      setNotifications(prev => prev.filter(n => !(n.sender?._id === senderId && n.type === "follow_request")));
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         toast.error(err.response?.data?.message || "Action failed");
@@ -267,40 +251,14 @@ export default function NotificationPanel({ search = "" }: Props) {
   }, [fetchNotifications, userData]);
 
   useEffect(() => {
-    if (!userData) return;
-    const handleNotification = () => {
-      void fetchNotifications({ silent: true });
-    };
-    socket.on("notification:new", handleNotification);
-    return () => {
-      socket.off("notification:new", handleNotification);
-    };
-  }, [fetchNotifications, userData]);
-
-  useEffect(() => {
-    const hasUnread = notifications.some((n) => !n.isRead);
-    if (!hasUnread) return;
-
-    const timer = setTimeout(() => {
-      void markAllAsReadRef.current();
-    }, 1200);
-
-    return () => clearTimeout(timer);
-  }, [notifications]);
+    if (!notifications.some((n) => !n.isRead)) return;
+    const timeoutId = window.setTimeout(() => {
+      void markAllAsRead();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [markAllAsRead, notifications]);
 
   if (!userData) return null;
-
-  const openNotification = (n: Notification) => {
-    const sender = n.sender;
-    if (!sender) return;
-    if (n.post?._id) {
-      router.push(`/main/post/${n.post._id}`);
-    } else if (n.type === "message") {
-      void handleReplyToMessage(n._id, sender._id, n.conversation?._id);
-    } else {
-      router.push(`/main/user/${sender.username}`);
-    }
-  };
 
   const typeText: Record<string, string> = {
     follow: "follow followed",
@@ -312,12 +270,11 @@ export default function NotificationPanel({ search = "" }: Props) {
   };
 
   const filteredNotifications = notifications.filter(
-    (n): n is Notification & { sender: UserSummary } => {
+    (n): n is Notification & { sender: Exclude<Notification["sender"], null> } => {
       if (n.type === "follow_request") return false;
-      if (!notificationWithSender(n)) return false;
+      if (n.sender == null) return false;
       const query = search.toLowerCase();
-      const searchable =
-        `${n.sender.name} ${n.sender.username ?? ""} ${typeText[n.type]}`.toLowerCase();
+      const searchable = `${n.sender.name} ${n.sender.username} ${typeText[n.type]}`.toLowerCase();
       return searchable.includes(query);
     }
   );
@@ -382,16 +339,11 @@ export default function NotificationPanel({ search = "" }: Props) {
       ) : (
         <div className="flex flex-col gap-2">
           {filteredNotifications.map((n) => (
-            <div
-              key={n._id}
-              className={`notification-card flex items-center gap-2 ${
-                !n.isRead ? "notification-card-unread" : ""
-              }`}
-            >
+            <div key={n._id}
+              className={`notification-card ${!n.isRead ? "notification-card-unread" : ""
+                }`}>
               {selectMode && (
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 shrink-0 cursor-pointer"
+                <input type="checkbox" className="h-4 w-4 cursor-pointer"
                   checked={selected.includes(n._id)}
                   onChange={() =>
                     setSelected((prev) =>
@@ -404,34 +356,30 @@ export default function NotificationPanel({ search = "" }: Props) {
               )}
 
               <div
-                role={selectMode ? undefined : "button"}
-                tabIndex={selectMode ? undefined : 0}
                 onClick={() => {
-                  if (!selectMode) openNotification(n);
+                  if (!selectMode) {
+                    if (n.post?._id) {
+                      router.push(`/main/post/${n.post._id}`);
+                    } else if (n.type === "message") {
+                      void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
+                    } else {
+                      router.push(`/main/user/${n.sender.username}`);
+                    }
+                  }
                 }}
-                onKeyDown={(e) => {
-                  if (selectMode) return;
-                  if (e.key !== "Enter" && e.key !== " ") return;
-                  e.preventDefault();
-                  openNotification(n);
-                }}
-                className={`flex min-w-0 flex-1 gap-3 rounded-lg p-2 ${
-                  selectMode ? "" : "cursor-pointer"
-                }`}
-              >
-                <img
-                  alt={n.sender.name || "Notification sender"}
-                  src={n.sender.avatar || "/default-avatar.png"}
-                  className="h-10 w-10 shrink-0 rounded-full object-cover"
-                />
+                className="flex gap-3 flex-1 cursor-pointer p-2 rounded-lg">
+                <img alt={n.sender.name || "Notification sender"} src={n.sender.avatar || "/default-avatar.png"} className="h-10 w-10 rounded-full object-cover" />
 
-                <div className="min-w-0">
+                <div>
                   <p className="text-foreground">
-                    <span className="font-semibold">{n.sender.name}</span>{" "}
+                    <span className="font-semibold">
+                      {n.sender.name}
+                    </span>{" "}
                     {n.type === "follow" && "followed you"}
                     {n.type === "follow_request" && "wants to follow you"}
                     {n.type === "like" && "liked your post"}
-                    {n.type === "comment" && "commented on your post"}
+                    {n.type === "comment" &&
+                      "commented on your post"}
                     {n.type === "message" && "messaged you"}
                   </p>
 
@@ -439,10 +387,9 @@ export default function NotificationPanel({ search = "" }: Props) {
                     {new Date(n.createdAt).toLocaleString()}
                   </p>
                 </div>
-              </div>
 
-              {!selectMode && (
-                <div className="flex shrink-0 items-center gap-2 border-l border-border/50 pl-3">
+                {!selectMode && (
+                  <div className="flex items-center gap-2 ml-auto">
                     {n.type === "message" && (
                       <button
                         onClick={(e) => {
@@ -511,18 +458,13 @@ export default function NotificationPanel({ search = "" }: Props) {
                         void deleteSingle(n._id);
                       }}
                       disabled={deleteLoading[n._id]}
-                      aria-busy={deleteLoading[n._id]}
-                      aria-label="Delete notification"
-                      className={`p-1 transition ${
-                        deleteLoading[n._id]
-                          ? "opacity-50 cursor-not-allowed"
-                          : "hover:text-red-400"
-                      }`}
+                      className="p-1 text-foreground transition hover:text-red-400 disabled:pointer-events-none disabled:opacity-50"
                     >
-                      <Trash2 className="h-5" />
+                      <Trash2 className="h-5 cursor-pointer" />
                     </button>
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
