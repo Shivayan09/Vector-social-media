@@ -123,12 +123,6 @@ export const toggleFollowUser = async (req, res) => {
                 message: "User not found"
             });
         }
-        
-        if (currentUser.blockedUsers?.some(id => id.toString() === targetUserId) || targetUser.blockedUsers?.some(id => id.toString() === currentUserId)) {
-            return res.status(403).json({
-                message: "Action not allowed due to blocking"
-            });
-        }
         const isFollowing = currentUser.following.includes(targetUserId);
         if (isFollowing) {
             // Unfollow logic (same as before)
@@ -251,7 +245,6 @@ export const rejectFollowRequest = async (req, res) => {
 export const getUserProfile = async (req, res) => {
     try {
         const { username } = req.params;
-        const user = await User.findOne({ username }).select("name surname username avatar bio description followersCount followingCount blockedUsers").lean();
         const user = await User.findOne({ username }).select("_id name surname username avatar bio description followersCount followingCount followers isPrivate").lean();
         if (!user) {
             return res.status(404).json({
@@ -259,19 +252,6 @@ export const getUserProfile = async (req, res) => {
             });
         }
         
-        if (req.user) {
-            const isBlockedByTarget = user.blockedUsers?.some(id => id.toString() === req.user._id.toString());
-            const hasBlockedTarget = req.user.blockedUsers?.some(id => id.toString() === user._id.toString());
-            
-            if (isBlockedByTarget || hasBlockedTarget) {
-                return res.status(404).json({
-                    message: "User not found"
-                });
-            }
-        }
-        delete user.blockedUsers; // Don't expose this field
-
-        res.json(user);
         const response = { ...user };
         
         // Check if current user is following or has requested to follow this profile
@@ -345,13 +325,7 @@ export const getAllUsers = async (req, res) => {
         const page = Number(req.query.page) || 1;
         const limit = 10;
         const skip = (page - 1) * limit;
-        
-        const query = {};
-        if (req.user) {
-            query._id = { $nin: [...(req.user.blockedUsers || []), ...(req.user.blockedBy || [])] };
-        }
-        
-        const users = await User.find(query).select("-password").limit(limit).skip(skip);
+        const users = await User.find().select("-password").limit(limit).skip(skip);
         res.status(200).json({
             success: true,
             users
@@ -367,19 +341,6 @@ export const getAllUsers = async (req, res) => {
 
 export const getSuggestedUsers = async (req, res) => {
     try {
-        const { query } = req.query;
-        if (!query) {
-            return res.json({ users: [] });
-        }
-        const queryObj = { 
-            $or: [{ name: { $regex: query, $options: "i" } }, { username: { $regex: query, $options: "i" } }] 
-        };
-        if (req.user) {
-            queryObj._id = { $nin: [...(req.user.blockedUsers || []), ...(req.user.blockedBy || [])] };
-        }
-        const users = await User.find(queryObj).select("-password").limit(10);
-        res.json({ users });
-    } catch {
         const currentUserId = req.user._id || req.user.id;
         const following = req.user.following || [];
 
@@ -404,46 +365,45 @@ export const getSuggestedUsers = async (req, res) => {
 };
 
 export const searchUsers = async (req, res) => {
-try {
-const { query } = req.query;
+    try {
+        const { query } = req.query;
 
+        if (!query) {
+            return res.json({
+                users: [],
+                posts: []
+            });
+        }
 
-    if (!query) {
-        return res.json({
-            users: [],
-            posts: []
+        const users = await User.find({
+            $or: [
+                { name: { $regex: query, $options: "i" } },
+                { username: { $regex: query, $options: "i" } }
+            ]
+        })
+        .select("-password")
+        .limit(10);
+
+        const posts = await Post.find({
+            $or: [
+                { content: { $regex: query, $options: "i" } },
+                { intent: { $regex: query, $options: "i" } }
+            ]
+        })
+        .populate("author", "username")
+        .limit(10);
+
+        res.json({
+            users,
+            posts
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Search failed",
+            error: error.message
         });
     }
-
-    const users = await User.find({
-        $or: [
-            { name: { $regex: query, $options: "i" } },
-            { username: { $regex: query, $options: "i" } }
-        ]
-    })
-    .select("-password")
-    .limit(10);
-
-    const posts = await Post.find({
-        $or: [
-            { content: { $regex: query, $options: "i" } },
-            { intent: { $regex: query, $options: "i" } }
-        ]
-    })
-    .populate("author", "username")
-    .limit(10);
-
-    res.json({
-        users,
-        posts
-    });
-
-} catch {
-    res.status(500).json({
-        message: "Search failed"
-    });
-}
-
 };
 
 export const blockUser = async (req, res) => {
