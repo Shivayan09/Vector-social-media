@@ -160,6 +160,7 @@ export const getMe = (req, res) => {
         success: true,
         user: {
             id: user._id,
+            _id: user._id,
             name: user.name,
             surname: user.surname,
             email: user.email,
@@ -167,6 +168,8 @@ export const getMe = (req, res) => {
             bio: user.bio,
             description: user.description,
             avatar: user.avatar,
+            isProfileComplete: user.isProfileComplete,
+            signupStep: user.signupStep,
             followers: user.followers.map(id => id.toString()),
             following: user.following.map(id => id.toString()),
             isPrivate: user.isPrivate,

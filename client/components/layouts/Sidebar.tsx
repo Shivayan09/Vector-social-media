@@ -11,6 +11,7 @@ import { useAppContext } from "@/context/AppContext";
 import LogoutWarning from "../modals/LogoutWarning";
 import Themetoggle from "@/app/theme-toggle";
 import type { Notification, Post } from "@/lib/types";
+import { socket } from "@/socket/socket";
 
 interface SidebarItemProps {
   icon: ReactNode;
@@ -71,9 +72,14 @@ export default function Sidebar() {
     const interval = window.setInterval(() => {
       void fetchUnreadCount();
     }, 10000);
+    const handleNotification = () => {
+      void fetchUnreadCount();
+    };
+    socket.on("notification:new", handleNotification);
     return () => {
       window.clearTimeout(timeoutId);
       window.clearInterval(interval);
+      socket.off("notification:new", handleNotification);
     };
   }, [fetchUnreadCount]);
 

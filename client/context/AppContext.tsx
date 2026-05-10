@@ -10,6 +10,7 @@ import {
   ReactNode,
 } from "react";
 import type { Post } from "@/lib/types";
+import { socket } from "@/socket/socket";
 
 axios.defaults.withCredentials = true;
 
@@ -97,6 +98,11 @@ export function AppContextProvider({
   useEffect(() => {
     refreshAuth();
   }, [refreshAuth]);
+
+  useEffect(() => {
+    if (!userData?.id) return;
+    socket.emit("register", userData.id);
+  }, [userData?.id]);
 
   return (
     <AppContext.Provider
