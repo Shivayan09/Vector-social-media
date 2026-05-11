@@ -1,7 +1,7 @@
 "use client";
 
 import { Search, UserPlus, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import FollowButton from "../ui/FollowButton";
@@ -33,6 +33,20 @@ type UserSummaryWithFollowState = UserSummary & {
   isRequestedByCurrentUser?: boolean;
 };
 
+type SidebarUser = {
+  username?: string;
+  isFollowedByCurrentUser?: boolean;
+  isRequestedByCurrentUser?: boolean;
+};
+
+type SuggestionsResponse = {
+  users?: SuggestedUser[];
+};
+
+type SearchResponse = {
+  users?: User[];
+};
+
 export default function ActivitySidebar() {
   const [open, setOpen] = useState(false);
   const [users, setUsers] = useState<SuggestedUser[]>([]);
@@ -46,43 +60,46 @@ export default function ActivitySidebar() {
 
   const router = useRouter();
 
-  const hydrateUsersWithFollowState = async <T extends { username?: string }>(
-    usersToHydrate: T[]
-  ): Promise<(T & UserSummaryWithFollowState)[]> => {
-    const hydratedUsers = await Promise.all(
-      usersToHydrate.map(async (user) => {
-        if (!user.username) {
-          return {
-            ...user,
-            isFollowedByCurrentUser: false,
-            isRequestedByCurrentUser: false,
-          };
-        }
+  const hydrateUsersWithFollowState = useCallback(
+    async <T extends SidebarUser>(
+      usersToHydrate: T[]
+    ): Promise<T[]> => {
+      const hydratedUsers = await Promise.all(
+        usersToHydrate.map(async (user) => {
+          if (!user.username) {
+            return {
+              ...user,
+              isFollowedByCurrentUser: false,
+              isRequestedByCurrentUser: false,
+            };
+          }
 
-        try {
-          const { data } = await axios.get<UserSummaryWithFollowState>(
-            `${BACKEND_URL}/api/users/${user.username}`,
-            { withCredentials: true }
-          );
+          try {
+            const { data } = await axios.get<UserSummaryWithFollowState>(
+              `${BACKEND_URL}/api/users/${user.username}`,
+              { withCredentials: true }
+            );
 
-          return {
-            ...user,
-            isFollowedByCurrentUser: data.isFollowedByCurrentUser ?? false,
-            isRequestedByCurrentUser: data.isRequestedByCurrentUser ?? false,
-          };
-        } catch (error) {
-          console.error("Failed to hydrate sidebar follow state", error);
-          return {
-            ...user,
-            isFollowedByCurrentUser: false,
-            isRequestedByCurrentUser: false,
-          };
-        }
-      })
-    );
+            return {
+              ...user,
+              isFollowedByCurrentUser: data.isFollowedByCurrentUser ?? false,
+              isRequestedByCurrentUser: data.isRequestedByCurrentUser ?? false,
+            };
+          } catch (error) {
+            console.error("Failed to hydrate sidebar follow state", error);
+            return {
+              ...user,
+              isFollowedByCurrentUser: false,
+              isRequestedByCurrentUser: false,
+            };
+          }
+        })
+      );
 
-    return hydratedUsers;
-  };
+      return hydratedUsers as T[];
+    },
+    [BACKEND_URL]
+  );
 
   useEffect(() => {
     if (!userData?.id) {
@@ -94,8 +111,13 @@ export default function ActivitySidebar() {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`${BACKEND_URL}/api/users/suggestions`, { withCredentials: true });
-        const hydratedUsers = await hydrateUsersWithFollowState(res.data.users || []);
+        const res = await axios.get<SuggestionsResponse>(
+          `${BACKEND_URL}/api/users/suggestions`,
+          { withCredentials: true }
+        );
+        const hydratedUsers = await hydrateUsersWithFollowState<SuggestedUser>(
+          res.data.users || []
+        );
         setUsers(hydratedUsers);
       } catch (err) {
         console.error("Failed to fetch users:", err);
@@ -104,7 +126,7 @@ export default function ActivitySidebar() {
       }
     };
     fetchUsers();
-  }, [BACKEND_URL, userData?.id]);
+  }, [BACKEND_URL, hydrateUsersWithFollowState, userData?.id]);
 
   useEffect(() => {
     if (!userData?.id) {
@@ -120,8 +142,13 @@ export default function ActivitySidebar() {
       }
       try {
         setSearching(true);
-        const res = await axios.get(`${BACKEND_URL}/api/users/search?query=${query}`, { withCredentials: true });
-        const hydratedUsers = await hydrateUsersWithFollowState(res.data.users || []);
+        const res = await axios.get<SearchResponse>(
+          `${BACKEND_URL}/api/users/search?query=${query}`,
+          { withCredentials: true }
+        );
+        const hydratedUsers = await hydrateUsersWithFollowState<User>(
+          res.data.users || []
+        );
         setResults(hydratedUsers);
       } catch (err) {
         console.error("Search failed:", err);
@@ -130,7 +157,7 @@ export default function ActivitySidebar() {
       }
     }, 400);
     return () => clearTimeout(delay);
-  }, [query, BACKEND_URL, userData?.id]);
+  }, [BACKEND_URL, query, hydrateUsersWithFollowState, userData?.id]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
