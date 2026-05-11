@@ -1,16 +1,17 @@
 import Notification from "../models/notification.model.js";
 
 export const getNotifications = async (req, res) => {
-    const notifications = await Notification.find({ 
-        recipient: req.user._id,
-        sender: { $nin: req.user.blockedUsers || [] }
-    }).populate("sender", "name username avatar").populate("post").populate("conversation").sort({ createdAt: -1 });
     const currentUserId = req.user?._id || req.user?.id;
-    const notifications = await Notification.find({ recipient: currentUserId })
+
+    const notifications = await Notification.find({
+        recipient: currentUserId,
+        sender: { $nin: req.user.blockedUsers || [] }
+    })
         .populate("sender", "name username avatar _id")
         .populate("post")
         .populate("conversation")
         .sort({ createdAt: -1 });
+
     return res.json(notifications);
 };
 
