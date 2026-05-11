@@ -61,7 +61,6 @@ const intentImage: Record<Intent, string> = {
 };
 
 export default function Explore() {
-  // --- EXISTING STATES ---
   const [topPosts, setTopPosts] = useState<TopPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -71,7 +70,6 @@ export default function Explore() {
   const [open, setOpen] = useState(false);
   const [highlightedTopic, setHighlightedTopic] = useState<Intent | null>(null);
 
-  // --- NEW STATES FOR ISSUE #90 ---
   const [suggestedUsers, setSuggestedUsers] = useState<User[]>([]);
   const [suggestedLoading, setSuggestedLoading] = useState(true);
 
@@ -79,7 +77,6 @@ export default function Explore() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-  // --- EXISTING MEMOS ---
   const topicCards = useMemo(() => {
     const counts: Record<Intent, number> = {
       ask: 0,
@@ -88,9 +85,13 @@ export default function Explore() {
       discuss: 0,
       reflect: 0,
     };
+
     topPosts.forEach((post) => {
-      if (post.intent in counts) counts[post.intent] += 1;
+      if (post.intent in counts) {
+        counts[post.intent] += 1;
+      }
     });
+
     return Object.entries(counts)
       .map(([intent, count]) => ({
         intent: intent as Intent,
@@ -111,18 +112,20 @@ export default function Explore() {
     }));
   }, [topPosts]);
 
-  // --- EXISTING EFFECTS ---
   useEffect(() => {
     const fetchTopPosts = async () => {
       try {
-        const { data } = await axios.get(`${BACKEND_URL}/api/posts/top-month`, {
-          withCredentials: true,
-        });
+        const { data } = await axios.get(
+          `${BACKEND_URL}/api/posts/top-month`,
+          { withCredentials: true }
+        );
+
         setTopPosts(data.posts || []);
       } catch (error: unknown) {
         if (axios.isAxiosError(error)) {
           toast.error(
-            error.response?.data?.message || "Failed to load explore data",
+            error.response?.data?.message ||
+              "Failed to load explore data"
           );
         } else {
           toast.error("Failed to load explore data");
@@ -131,7 +134,10 @@ export default function Explore() {
         setLoading(false);
       }
     };
-    if (BACKEND_URL) fetchTopPosts();
+
+    if (BACKEND_URL) {
+      fetchTopPosts();
+    }
   }, [BACKEND_URL]);
 
   useEffect(() => {
@@ -142,12 +148,16 @@ export default function Explore() {
         setOpen(false);
         return;
       }
+
       try {
         setSearching(true);
         const res = await axios.get(
-          `${BACKEND_URL}/api/users/search?query=${encodeURIComponent(query)}`,
-          { withCredentials: true },
+          `${BACKEND_URL}/api/users/search?query=${encodeURIComponent(
+            query
+          )}`,
+          { withCredentials: true }
         );
+
         setResults(res.data.users || []);
         setPostResults(res.data.posts || []);
         setOpen(true);
@@ -157,6 +167,7 @@ export default function Explore() {
         setSearching(false);
       }
     }, 400);
+
     return () => clearTimeout(delay);
   }, [query, BACKEND_URL]);
 
@@ -169,11 +180,12 @@ export default function Explore() {
         setOpen(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // --- NEW EFFECT FOR ISSUE #90 (FETCH UNFOLLOWED USERS) ---
   useEffect(() => {
     const fetchSuggestedUsers = async () => {
       if (!BACKEND_URL) return;
@@ -196,353 +208,387 @@ export default function Explore() {
     fetchSuggestedUsers();
   }, [BACKEND_URL]);
 
-  // --- HANDLERS ---
   const handleClick = (post: TopPost) => {
     router.push(`/main/post/${post._id}`);
   };
 
   const handleRandomTopic = () => {
     if (topicCards.length === 0) return;
-    const random = topicCards[Math.floor(Math.random() * topicCards.length)];
+    const random =
+      topicCards[Math.floor(Math.random() * topicCards.length)];
     setHighlightedTopic(random.intent);
   };
 
-  // --- NEW HANDLER FOR ISSUE #90 ---
   const handleFollow = async (targetUserId: string) => {
     try {
-      // Call the existing backend PUT route
       await axios.put(
         `${BACKEND_URL}/api/users/${targetUserId}/follow`,
-        {}, // PUT requests usually need a body, even an empty one
-        { withCredentials: true }, // Send the auth cookie!
+        {},
+        { withCredentials: true }
       );
 
       toast.success("Successfully followed user!");
 
-      // Instantly remove the user from the suggested list on the screen
       setSuggestedUsers((prevUsers) =>
-        prevUsers.filter((user) => user._id !== targetUserId),
+        prevUsers.filter((user) => user._id !== targetUserId)
       );
     } catch (error) {
       console.error("Failed to follow:", error);
       toast.error("Could not follow user. Please try again.");
     }
   };
+
   return (
     <div className="w-full py-5 px-7">
-      <p className="page-title text-[1.6rem]">Explore</p>
-      <p className="page-subtitle">Discover people, posts and ideas</p>
+        <p className="page-title text-[1.6rem]">
+          Explore
+        </p>
 
-      {/* SEARCH BLOCK */}
-      <div className="relative mt-5" ref={wrapperRef}>
-        <div className="search-pill">
-          <Search className="h-5" />
-          <input
-            type="text"
-            placeholder="Search users and posts"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="h-full w-full bg-transparent outline-0 placeholder:text-muted-foreground"
-          />
-        </div>
+        <p className="page-subtitle">
+          Discover people, posts and ideas
+        </p>
 
-        {open && (
-          <div className="absolute w-full mt-2 bg-card border-border rounded-xl shadow-lg max-h-75 overflow-y-auto z-50">
-            {searching ? (
-              <p className="p-4 text-sm opacity-50">Searching...</p>
-            ) : results.length === 0 ? (
-              <div className="p-4 text-center">
-                <p className="text-sm font-medium text-foreground">
-                  No users found for &quot;{query}&quot;
-                </p>
-                <p className="text-xs text-muted-foreground mt-1 mb-3">
-                  Try searching something else or explore by intent
-                </p>
-                <div className="flex flex-wrap justify-center gap-2">
-                  {(
-                    ["ask", "build", "share", "discuss", "reflect"] as const
-                  ).map((intent) => (
-                    <button
-                      key={intent}
-                      onClick={() => {
-                        setQuery(intent);
-                      }}
-                      className="px-3 py-1 text-xs rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-foreground/70 transition capitalize"
-                    >
-                      #{intent}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <>
-                {results
-                  .filter((user) => user?._id)
-                  .map((user) => (
-                    <div
-                      key={user._id}
-                      className="flex items-center gap-3 p-3 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition"
-                      onClick={() => {
-                        if (!user?.username) return;
-                        router.push(`/main/user/${user.username}`);
-                      }}
-                    >
-                      <div className="h-10 w-10 rounded-full overflow-hidden bg-black/5 dark:bg-white/5">
-                        <img
-                          src={user.avatar || "/default-avatar.png"}
-                          alt={user.name}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">
-                          {user.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          @{user?.username || "unknown"}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-
-                {postResults.length > 0 && (
-                  <>
-                    <p className="px-3 pt-2 text-xs font-semibold text-muted-foreground">
-                      Posts
-                    </p>
-                    {postResults.map((post) => (
-                      <div
-                        key={post._id}
-                        className="p-3 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition border-t border-border"
-                        onClick={() => router.push(`/main/post/${post._id}`)}
-                      >
-                        <p className="text-sm line-clamp-2">{post.content}</p>
-                        <p className="text-xs text-blue-500 mt-1">
-                          #{post.intent}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          @{post.author?.username || "unknown"}
-                        </p>
-                      </div>
-                    ))}
-                  </>
-                )}
-              </>
-            )}
+        {/* SEARCH */}
+        <div className="relative mt-5" ref={wrapperRef}>
+          <div className="search-pill">
+            <Search className="h-5" />
+            <input
+              type="text"
+              placeholder="Search users and posts"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="h-full w-full bg-transparent outline-0 placeholder:text-muted-foreground"
+            />
           </div>
-        )}
-      </div>
 
-      {/* --- NEW SUGGESTED USERS SECTION (ISSUE #90) --- */}
-      <div className="mt-8">
-        <p className="font-semibold text-foreground mb-4">Suggested For You</p>
-
-        {suggestedLoading ? (
-          <InlineLoader
-            text="Loading suggestions..."
-            className="surface-text-muted"
-          />
-        ) : suggestedUsers?.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {suggestedUsers.map((user) => (
-              <div
-                key={user._id}
-                className="panel-card flex items-center justify-between shadow-sm"
-              >
-                <div
-                  className="flex items-center gap-3 cursor-pointer"
-                  onClick={() => router.push(`/main/user/${user.username}`)}
-                >
-                  <img
-                    src={user.avatar || "/default-avatar.png"}
-                    alt={user.username || "User"}
-                    className="w-10 h-10 rounded-full object-cover border border-border"
-                  />
-                  <div className="flex flex-col">
-                    <span className="font-medium text-sm text-foreground">
-                      {user.name}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      @{user.username || "unknown"}
-                    </span>
+          {open && (
+            <div className="absolute w-full mt-2 bg-card border-border rounded-xl shadow-lg max-h-75 overflow-y-auto z-50">
+              {searching ? (
+                <p className="p-4 text-sm opacity-50">
+                  Searching...
+                </p>
+              ) : results.length === 0 ? (
+                <div className="p-4 text-center">
+                  <p className="text-sm font-medium text-foreground">
+                    No users found for &quot;{query}&quot;
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1 mb-3">
+                    Try searching something else or explore by intent
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {(["ask", "build", "share", "discuss", "reflect"] as const).map((intent) => (
+                      <button
+                        key={intent}
+                        onClick={() => { setQuery(intent); }}
+                        className="px-3 py-1 text-xs rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-foreground/70 transition capitalize"
+                      >
+                        #{intent}
+                      </button>
+                    ))}
                   </div>
                 </div>
-                <button onClick={() => handleFollow(user._id)} className="px-4 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition active:scale-95"> Follow</button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="surface-text-muted">
-            You are following everyone right now!
-          </p>
-        )}
-      </div>
-
-      {/* TRENDING DOMAINS */}
-      <div className="mt-8">
-        <p className="font-semibold text-foreground">Trending domains</p>
-        {loading ? (
-          <p className="surface-text-muted mt-3">Loading domains...</p>
-        ) : topicCards.length === 0 ? (
-          <p className="surface-text-muted mt-3">No active domains yet</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 my-5">
-            {topicCards.map((topic) => (
-              <div
-                key={topic.intent}
-                className={`box h-35 rounded-md overflow-hidden relative border cursor-pointer transition ${
-                  highlightedTopic === topic.intent
-                    ? "border-blue-400 shadow-lg"
-                    : "border-white/20 hover:shadow-md"
-                }`}
-              >
-                <p className="absolute z-20 bottom-0 left-0 p-2 w-full flex items-center justify-between bg-black/40 text-white text-sm">
-                  <span className="flex items-center gap-2">
-                    <ExternalLink className="text-blue-400 h-4" />
-                    {topic.label}
-                  </span>
-                  <span>{topic.count} posts</span>
-                </p>
-                <img
-                  src={intentImage[topic.intent]}
-                  alt={topic.label}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* EXPLORE TOPICS */}
-      <div className="panel-card mt-5">
-        <p className="flex items-center gap-2 font-semibold">
-          <Compass className="h-5 text-blue-400" />
-          Explore topics
-        </p>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
-          {topicCards.slice(0, 2).map((topic) => (
-            <button
-              key={topic.intent}
-              type="button"
-              onClick={() => setHighlightedTopic(topic.intent)}
-              className="glass-surface flex h-20 items-center justify-center gap-2 rounded-md transition hover:bg-accent/70"
-            >
-              {topic.intent === "build" ? (
-                <Trophy className="h-4" />
               ) : (
-                <Lightbulb className="h-4" />
-              )}
-              <span className="text-sm">{topic.label}</span>
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={handleRandomTopic}
-            className="glass-surface col-span-2 flex h-20 items-center justify-center gap-2 rounded-md transition hover:bg-accent/70 md:col-span-1"
-          >
-            <Shuffle className="h-4 opacity-80" />
-            <span className="text-sm">Random</span>
-          </button>
-        </div>
-        {highlightedTopic && (
-          <p className="mt-3 text-sm text-blue-500">
-            Highlighted topic: {intentLabel[highlightedTopic]}
-          </p>
-        )}
-      </div>
+                <>
+                  {results
+                    .filter((user) => user?._id)
+                    .map((user) => (
+                      <div
+                        key={user._id}
+                        className="flex items-center gap-3 p-3 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition"
+                        onClick={() => {
+                          if (!user?.username) return;
+                          router.push(`/main/user/${user.username}`);
+                        }}
+                      >
+                        <div className="h-10 w-10 rounded-full overflow-hidden bg-black/5 dark:bg-white/5">
+                          <img
+                            src={
+                              user.avatar ||
+                              "/default-avatar.png"
+                            }
+                            alt={user.name}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
 
-      {/* TRENDING TOPICS */}
-      <div className="panel-card mt-5">
-        <p className="flex items-center gap-2 font-semibold">
-          <TrendingUp className="h-5 text-blue-400" />
-          Trending topics
-        </p>
-        <div className="mt-4 space-y-3">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            {user.name}
+                          </p>
+
+                          <p className="text-xs text-muted-foreground">
+                            @{user?.username || "unknown"}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+
+                  {postResults.length > 0 && (
+                    <>
+                      <p className="px-3 pt-2 text-xs font-semibold text-muted-foreground">
+                        Posts
+                      </p>
+
+                      {postResults.map((post) => (
+                        <div
+                          key={post._id}
+                          className="p-3 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition border-t border-border"
+                          onClick={() => {
+                            router.push(`/main/post/${post._id}`);
+                          }}
+                        >
+                          <p className="text-sm line-clamp-2">
+                            {post.content}
+                          </p>
+
+                          <p className="text-xs text-blue-500 mt-1">
+                            #{post.intent}
+                          </p>
+
+                          <p className="text-xs text-muted-foreground">
+                            @{post.author?.username || "unknown"}
+                          </p>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-5">
+          <p className="font-semibold text-foreground">
+            Suggested For You
+          </p>
+
+          <div className="mt-3">
+            {suggestedLoading ? (
+              <InlineLoader text="Loading suggestions..." className="surface-text-muted" />
+            ) : suggestedUsers?.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 my-5">
+                {suggestedUsers.map((user) => (
+                  <div key={user._id} className="panel-card flex items-center justify-between shadow-sm">
+                    <div
+                      className="flex items-center gap-3 cursor-pointer"
+                      onClick={() => router.push(`/main/user/${user.username}`)}
+                    >
+                      <img
+                        src={user.avatar || "/default-avatar.png"}
+                        alt={user.username || "User"}
+                        className="w-10 h-10 rounded-full object-cover border border-border"
+                      />
+                      <div className="flex flex-col">
+                        <span className="font-medium text-sm text-foreground">{user.name}</span>
+                        <span className="text-xs text-muted-foreground">@{user.username || "unknown"}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleFollow(user._id)}
+                      className="px-4 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition active:scale-95"
+                    >
+                      Follow
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="surface-text-muted mt-3">You are following everyone right now!</p>
+            )}
+          </div>
+        </div>
+
+        {/* TRENDING DOMAINS */}
+        <div className="mt-5">
+          <p className="font-semibold text-foreground">
+            Trending domains
+          </p>
+
           {loading ? (
-            <p className="surface-text-muted">Loading trending topics...</p>
-          ) : trendingTopics.length === 0 ? (
-            <p className="surface-text-muted">No trending topics this month</p>
+            <p className="surface-text-muted mt-3">Loading domains...</p>
+          ) : topicCards.length === 0 ? (
+            <p className="surface-text-muted mt-3">No active domains yet</p>
           ) : (
-            trendingTopics.map((topic) => (
-              <button
-                type="button"
-                key={topic.id}
-                onClick={() => router.push(`/main/post/${topic.id}`)}
-                className="flex w-full items-start gap-3 rounded-md p-2 text-left transition hover:bg-accent/70"
-              >
-                <div className="glass-surface h-11 w-11 shrink-0 overflow-hidden rounded-md">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 my-5">
+              {topicCards.map((topic) => (
+                <div
+                  key={topic.intent}
+                  className={`box h-35 rounded-md overflow-hidden relative border cursor-pointer transition ${
+                    highlightedTopic === topic.intent
+                      ? "border-blue-400 shadow-lg"
+                      : "border-white/20 hover:shadow-md"
+                  }`}
+                >
+                  <p className="absolute z-20 bottom-0 left-0 p-2 w-full flex items-center justify-between bg-black/40 text-white text-sm">
+                    <span className="flex items-center gap-2">
+                      <ExternalLink className="text-blue-400 h-4" />
+                      {topic.label}
+                    </span>
+                    <span>{topic.count} posts</span>
+                  </p>
                   <img
                     src={intentImage[topic.intent]}
-                    alt={intentLabel[topic.intent]}
+                    alt={topic.label}
                     className="h-full w-full object-cover"
                   />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm line-clamp-2">{topic.title}</p>
-                  <p className="mt-1 text-xs text-blue-500">
-                    #{intentLabel[topic.intent]}
-                  </p>
-                </div>
-                <p className="surface-text-muted flex items-center gap-1 pt-1 text-xs">
-                  <Heart className="text-blue-400 h-4" fill="currentColor" />
-                  {topic.likes}
-                </p>
-              </button>
-            ))
+              ))}
+            </div>
           )}
         </div>
-      </div>
 
-      {/* TOP POSTS */}
-      <div className="mt-5">
-        <p className="font-semibold text-foreground">Top posts of the month</p>
-        <div className="flex flex-col gap-5 md:flex-row flex-wrap items-stretch mt-5">
-          {loading ? (
-            <InlineLoader
-              text="Loading top posts..."
-              className="surface-text-muted"
-            />
-          ) : topPosts.length === 0 ? (
-            <p className="surface-text-muted">No trending posts this month</p>
-          ) : (
-            topPosts
-              .filter((post) => post?._id)
-              .map((post) => (
-                <div
-                  onClick={() => handleClick(post)}
-                  key={post._id}
-                  className="content-card glass-hover box relative flex h-44 w-full cursor-pointer flex-col justify-between rounded-md md:w-[calc(33.333%-1rem)]"
+        {/* EXPLORE TOPICS */}
+        <div className="panel-card mt-5">
+          <p className="flex items-center gap-2 font-semibold">
+            <Compass className="h-5 text-blue-400" />
+            Explore topics
+          </p>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
+            {topicCards.slice(0, 2).map((topic) => (
+              <button
+                key={topic.intent}
+                type="button"
+                onClick={() => setHighlightedTopic(topic.intent)}
+                className="glass-surface flex h-20 items-center justify-center gap-2 rounded-md transition hover:bg-accent/70"
+              >
+                {topic.intent === "build" ? (
+                  <Trophy className="h-4" />
+                ) : (
+                  <Lightbulb className="h-4" />
+                )}
+                <span className="text-sm">{topic.label}</span>
+              </button>
+            ))}
+
+            <button
+              type="button"
+              onClick={handleRandomTopic}
+              className="glass-surface col-span-2 flex h-20 items-center justify-center gap-2 rounded-md transition hover:bg-accent/70 md:col-span-1"
+            >
+              <Shuffle className="h-4 opacity-80" />
+              <span className="text-sm">Random</span>
+            </button>
+          </div>
+
+          {highlightedTopic && (
+            <p className="mt-3 text-sm text-blue-500">
+              Highlighted topic: {intentLabel[highlightedTopic]}
+            </p>
+          )}
+        </div>
+
+        {/* TRENDING TOPICS */}
+        <div className="panel-card mt-5">
+          <p className="flex items-center gap-2 font-semibold">
+            <TrendingUp className="h-5 text-blue-400" />
+            Trending topics
+          </p>
+
+          <div className="mt-4 space-y-3">
+            {loading ? (
+              <p className="surface-text-muted">Loading trending topics...</p>
+            ) : trendingTopics.length === 0 ? (
+              <p className="surface-text-muted">No trending topics this month</p>
+            ) : (
+              trendingTopics.map((topic) => (
+                <button
+                  type="button"
+                  key={topic.id}
+                  onClick={() =>
+                    router.push(`/main/post/${topic.id}`)
+                  }
+                  className="flex w-full items-start gap-3 rounded-md p-2 text-left transition hover:bg-accent/70"
                 >
-                  <p className="text-blue-500">
-                    {post.likes?.length || 0} likes
-                  </p>
-                  <p className="absolute top-4 right-4 text-[0.9rem] text-blue-600">
-                    #{post.intent}
-                  </p>
-                  <p className="my-3 text-sm line-clamp-3 overflow-hidden">
-                    {post.content}
-                  </p>
-                  <div>
-                    <p
-                      className="text-[0.9rem] w-fit hover:text-blue-500"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (!post?.author?.username) return;
-                        router.push(`/main/user/${post.author.username}`);
-                      }}
-                    >
-                      @{post?.author?.username || "unknown"}
-                    </p>
-                    <p className="surface-text-muted text-[0.8rem]">
-                      {new Date(post.createdAt).toLocaleDateString("en-GB")}
+                  <div className="glass-surface h-11 w-11 shrink-0 overflow-hidden rounded-md">
+                    <img
+                      src={intentImage[topic.intent]}
+                      alt={intentLabel[topic.intent]}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm line-clamp-2">{topic.title}</p>
+                    <p className="mt-1 text-xs text-blue-500">
+                      #{intentLabel[topic.intent]}
                     </p>
                   </div>
-                </div>
+
+                  <p className="surface-text-muted flex items-center gap-1 pt-1 text-xs">
+                    <Heart
+                      className="text-blue-400 h-4"
+                      fill="currentColor"
+                    />
+                    {topic.likes}
+                  </p>
+                </button>
               ))
-          )}
+            )}
+          </div>
         </div>
-      </div>
+
+        {/* TOP POSTS */}
+        <div className="mt-5">
+          <p className="font-semibold text-foreground">
+            Top posts of the month
+          </p>
+
+          <div className="flex flex-col gap-5 md:flex-row flex-wrap items-stretch mt-5">
+            {loading ? (
+              <InlineLoader text="Loading top posts..." className="surface-text-muted" />
+            ) : topPosts.length === 0 ? (
+              <p className="surface-text-muted">
+                No trending posts this month
+              </p>
+            ) : (
+              topPosts
+                .filter((post) => post?._id)
+                .map((post) => (
+                  <div
+                    onClick={() => handleClick(post)}
+                    key={post._id}
+                    className="content-card glass-hover box relative flex h-44 w-full cursor-pointer flex-col justify-between rounded-md md:w-[calc(33.333%-1rem)]"
+                  >
+                    <p className="text-blue-500">
+                      {post.likes?.length || 0} likes
+                    </p>
+
+                    <p className="absolute top-4 right-4 text-[0.9rem] text-blue-600">
+                      #{post.intent}
+                    </p>
+
+                    <p className="my-3 text-sm line-clamp-3 overflow-hidden">
+                      {post.content}
+                    </p>
+
+                    <div>
+                      <p
+                        className="text-[0.9rem] w-fit hover:text-blue-500"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!post?.author?.username)
+                            return;
+                          router.push(
+                            `/main/user/${post.author.username}`
+                          );
+                        }}
+                      >
+                        @{post?.author?.username || "unknown"}
+                      </p>
+
+                      <p className="surface-text-muted text-[0.8rem]">
+                        {new Date(
+                          post.createdAt
+                        ).toLocaleDateString("en-GB")}
+                      </p>
+                    </div>
+                  </div>
+                ))
+            )}
+          </div>
+        </div>
     </div>
   );
 }

@@ -483,32 +483,23 @@ const { query } = req.query;
 
 };
 
-
 export const getUnfollowedUsers = async (req, res) => {
   try {
-    // 1. Ensure the user exists from the auth middleware
     if (!req.user || !req.user._id) {
       return res.status(401).json({ error: "Unauthorized" });
     }
-
     const currentUser = req.user;
-
-    // 2. Query MongoDB safely
     const suggestedUsers = await User.find({
       _id: { 
-        $ne: currentUser._id, // Exclude current user
-        $nin: currentUser.following || [] // Exclude followed users safely
+        $ne: currentUser._id, 
+        $nin: currentUser.following || [] 
       }
     })
-    .select('-password') // Never send passwords
+    .select('-password') 
     .limit(5);
-
-    // 3. Always return an array, even if it's empty
     return res.status(200).json(suggestedUsers || []);
-
   } catch (error) {
     console.error("Error in getUnfollowedUsers: ", error.message);
-    // Return empty array on error so frontend doesn't crash
     return res.status(500).json([]); 
   }
 };

@@ -3,21 +3,7 @@ import jwt from "jsonwebtoken";
 import authMiddleware from "../middlewares/auth.middleware.js";
 import upload from "../middlewares/upload.middleware.js";
 import User from "../models/user.model.js";
-import { 
-  getAllUsers, 
-  getFollowers, 
-  getFollowing, 
-  getUserProfile, 
-  searchUsers, 
-  toggleFollowUser, 
-  updateProfile, 
-  uploadAvatar, 
-  getSuggestedUsers, 
-  getFollowRequests, 
-  acceptFollowRequest, 
-  rejectFollowRequest,
-  getUnfollowedUsers // Added new controller function here
-} from "../controllers/user.controller.js";
+import { getAllUsers, getFollowers, getFollowing, getUserProfile, searchUsers, toggleFollowUser, updateProfile, uploadAvatar, getSuggestedUsers, getFollowRequests, acceptFollowRequest, rejectFollowRequest, getUnfollowedUsers } from "../controllers/user.controller.js";
 
 const userRouter = express.Router();
 
@@ -45,8 +31,6 @@ userRouter.put("/:id/accept-request", authMiddleware, acceptFollowRequest);
 userRouter.put("/:id/reject-request", authMiddleware, rejectFollowRequest);
 userRouter.get("/all", getAllUsers);
 userRouter.get("/search", searchUsers);
-
-// FIX #90: Fetch unfollowed users. 
 userRouter.get("/unfollowed", authMiddleware, getUnfollowedUsers);
 userRouter.get("/:username", optionalAuth, getUserProfile);
 userRouter.put("/:requestId/accept", authMiddleware, acceptFollowRequest);
