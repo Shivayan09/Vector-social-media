@@ -1,7 +1,7 @@
 "use client";
 
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
@@ -20,6 +20,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
     const [comments, setComments] = useState<Comment[]>([]);
     const [text, setText] = useState("");
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const router = useRouter();
     const [buttonLoading, setButtonLoading] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -45,14 +46,22 @@ export default function CommentsSection({ postId }: { postId: string }) {
 
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
-    useEffect(() => {
-        const fetchComments = async () => {
+    const fetchComments = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
             const { data } = await axios.get(`${BACKEND_URL}/api/comments/${postId}`, { withCredentials: true });
             setComments(data);
+        } catch {
+            setError("Failed to load comments.");
+        } finally {
             setLoading(false);
-        };
-        fetchComments();
+        }
     }, [BACKEND_URL, postId]);
+
+    useEffect(() => {
+        fetchComments();
+    }, [fetchComments]);
 
     const handlePost = async () => {
         try {
@@ -106,6 +115,17 @@ export default function CommentsSection({ postId }: { postId: string }) {
 
     if (loading) {
         return <div className="py-2"><InlineLoader text="Loading comments..." /></div>;
+    }
+
+    if (error) {
+        return (
+            <div className="py-4 text-center">
+                <p className="text-sm text-red-500 mb-2">{error}</p>
+                <button onClick={fetchComments} className="text-sm text-blue-500 hover:underline cursor-pointer">
+                    Retry
+                </button>
+            </div>
+        );
     }
 
     return (
