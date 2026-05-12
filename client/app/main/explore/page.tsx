@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import InlineLoader from "@/components/loaders/InlineLoader";
+import FollowButton from "@/components/ui/FollowButton";
 import type { Intent } from "@/lib/types";
 
 type User = {
@@ -219,25 +220,6 @@ export default function Explore() {
     setHighlightedTopic(random.intent);
   };
 
-  const handleFollow = async (targetUserId: string) => {
-    try {
-      await axios.put(
-        `${BACKEND_URL}/api/users/${targetUserId}/follow`,
-        {},
-        { withCredentials: true }
-      );
-
-      toast.success("Successfully followed user!");
-
-      setSuggestedUsers((prevUsers) =>
-        prevUsers.filter((user) => user._id !== targetUserId)
-      );
-    } catch (error) {
-      console.error("Failed to follow:", error);
-      toast.error("Could not follow user. Please try again.");
-    }
-  };
-
   return (
     <div className="w-full py-5 px-7">
         <p className="page-title text-[1.6rem]">
@@ -384,12 +366,17 @@ export default function Explore() {
                         <span className="text-xs text-muted-foreground">@{user.username || "unknown"}</span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleFollow(user._id)}
-                      className="px-4 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition active:scale-95"
-                    >
-                      Follow
-                    </button>
+                    
+                    <FollowButton
+                      userId={user._id}
+                      isFollowing={false}
+                      onFollowChange={(isFollowing) => {
+                        // Once they click follow, remove this user from the UI list
+                        if (isFollowing) {
+                          setSuggestedUsers((prev) => prev.filter((u) => u._id !== user._id));
+                        }
+                      }}
+                    />
                   </div>
                 ))}
               </div>
