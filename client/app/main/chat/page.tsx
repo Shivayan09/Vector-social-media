@@ -166,7 +166,7 @@ export default function ChatListPage() {
         <div className="flex w-full h-screen">
             <div className="flex-1 h-screen overflow-y-auto hide-scrollbar">
 
-                <h1 className="px-5 pt-3 text-xl font-bold text-foreground">
+                <h1 className="px-5 pt-3 text-xl text-center md:text-left font-bold text-foreground">
                     Your chats
                 </h1>
                 <div className="p-5 pb-0">
@@ -220,7 +220,7 @@ export default function ChatListPage() {
                                                 {convo.lastMessage?.content || `@${otherUser?.username}`}
                                             </p>
                                             {unreadCounts[convo._id] > 0 && (
-                                                <div className="min-w-[1.25rem] px-1 bg-red-500 text-white rounded-full h-5 flex items-center justify-center text-[10px] font-bold">
+                                                <div className="min-w-5 px-1 bg-red-500 text-white rounded-full h-5 flex items-center justify-center text-[10px] font-bold">
                                                     {unreadCounts[convo._id]}
                                                 </div>
                                             )}

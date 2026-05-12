@@ -89,7 +89,7 @@ export default function Sidebar() {
     <>
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className={`fixed z-60 p-2 rounded-lg ${open? "top-4 left-45":isMain ? "top-7.5 left-6" : "top-4 left-3"
+        className={`fixed z-60 p-2 rounded-lg ${open? "top-4 left-40 md:left-45":isMain ? "top-7.5 left-6" : "top-4 left-3"
           } text-slate-900 dark:text-white transition-all duration-300 ease-in-out`}
         aria-label="Toggle menu"
       >
@@ -102,7 +102,7 @@ export default function Sidebar() {
 
       <aside className={`fixed md:static top-0 left-0 z-50 h-screen overflow-y-auto hide-scrollbar text-slate-900 dark:text-white 
   ${open ? "w-50 md:w-55" : "w-0 md:w-16"} 
-  border-r border-border shadow-lg flex flex-col gap-5 px-2 py-5 font-serif text-[1.1rem] backdrop-blur-3xl 
+  border-r border-border shadow-lg flex flex-col gap-5 px-2 py-5 font-serif text-[1.1rem] bg-white
   transform transition-all duration-300 ${open ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex w-full">
           <div className="flex justify-center ml-3">
