@@ -5,14 +5,20 @@ import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import { Trash2, MessageCircle, UserPlus, ArrowRight } from "lucide-react";
+import { Trash2, MessageCircle, ArrowRight } from "lucide-react";
 import ConfirmModal from "./modals/DeleteWarning";
 import FollowRequestsModal from "./modals/FollowRequestsModal";
-import type { Notification } from "@/lib/types";
+import FollowButton from "./ui/FollowButton";
+import type { Notification, UserSummary } from "@/lib/types";
 import { socket } from "@/socket/socket";
 
 type Props = {
   search?: string;
+};
+
+type UserSummaryWithFollowState = UserSummary & {
+  isFollowedByCurrentUser?: boolean;
+  isRequestedByCurrentUser?: boolean;
 };
 
 export default function NotificationPanel({ search = "" }: Props) {
@@ -26,6 +32,9 @@ export default function NotificationPanel({ search = "" }: Props) {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [followLoading, setFollowLoading] = useState<Record<string, boolean>>({});
+  const [senderFollowState, setSenderFollowState] = useState<
+    Record<string, { isFollowing: boolean; isRequested: boolean }>
+  >({});
   const [messageLoading, setMessageLoading] = useState<Record<string, boolean>>({});
   const [deleteLoading, setDeleteLoading] = useState<Record<string, boolean>>({});
   const [modalOpen, setModalOpen] = useState(false);
@@ -36,6 +45,55 @@ export default function NotificationPanel({ search = "" }: Props) {
   const getSenderAvatar = (notification: Notification) =>
     notification.sender?.avatar || "/default-avatar.png";
 
+  const hydrateSenderFollowState = useCallback(
+    async (notificationsToHydrate: Notification[]) => {
+      const senders = notificationsToHydrate.filter(
+        (notification): notification is Notification & { sender: NonNullable<Notification["sender"]> } =>
+          !!notification.sender?._id && !!notification.sender?.username
+      );
+
+      const uniqueSenders = Array.from(
+        new Map(
+          senders.map((notification) => [
+            notification.sender._id,
+            notification.sender,
+          ])
+        ).values()
+      );
+
+      const states = await Promise.all(
+        uniqueSenders.map(async (sender) => {
+          try {
+            const { data } = await axios.get<UserSummaryWithFollowState>(
+              `${BACKEND_URL}/api/users/${sender.username}`,
+              { withCredentials: true }
+            );
+
+            return [
+              sender._id,
+              {
+                isFollowing: data.isFollowedByCurrentUser ?? false,
+                isRequested: data.isRequestedByCurrentUser ?? false,
+              },
+            ] as const;
+          } catch (error) {
+            console.error("Failed to hydrate notification follow state", error);
+            return [
+              sender._id,
+              {
+                isFollowing: false,
+                isRequested: false,
+              },
+            ] as const;
+          }
+        })
+      );
+
+      setSenderFollowState(Object.fromEntries(states));
+    },
+    [BACKEND_URL]
+  );
+
   const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
@@ -44,6 +102,7 @@ export default function NotificationPanel({ search = "" }: Props) {
         { withCredentials: true }
       );
       setNotifications(data);
+      await hydrateSenderFollowState(data);
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         toast.error(
@@ -56,7 +115,7 @@ export default function NotificationPanel({ search = "" }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [BACKEND_URL]);
+  }, [BACKEND_URL, hydrateSenderFollowState]);
 
   const deleteSingle = async (id: string) => {
     if (deleteLoading[id]) return;
@@ -152,34 +211,6 @@ export default function NotificationPanel({ search = "" }: Props) {
     }
   }, [BACKEND_URL, notifications]);
 
-  const isFollowingUser = (userId: string) => {
-    return userData?.following?.includes(userId) ?? false;
-  };
-
-  const handleFollowBack = async (senderId: string) => {
-    try {
-      setFollowLoading((prev) => ({ ...prev, [senderId]: true }));
-      const res = await axios.put(
-        `${BACKEND_URL}/api/users/${senderId}/follow`,
-        {},
-        { withCredentials: true }
-      );
-      if (res.data.followed) {
-        toast.success("Followed successfully");
-      } else {
-        toast.success("Unfollowed successfully");
-      }
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || "Follow action failed");
-      } else {
-        toast.error("Follow action failed");
-      }
-    } finally {
-      setFollowLoading((prev) => ({ ...prev, [senderId]: false }));
-    }
-  };
-
   const handleAcceptRequest = async (senderId: string) => {
     try {
       setFollowLoading((prev) => ({ ...prev, [senderId]: true }));
@@ -195,6 +226,13 @@ export default function NotificationPanel({ search = "" }: Props) {
         ? { ...n, type: "follow" as const } 
         : n
       ));
+      setSenderFollowState((prev) => ({
+        ...prev,
+        [senderId]: prev[senderId] || {
+          isFollowing: false,
+          isRequested: false,
+        },
+      }));
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         toast.error(err.response?.data?.message || "Action failed");
@@ -402,6 +440,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                     </span>{" "}
                     {n.type === "follow" && "followed you"}
                     {n.type === "follow_request" && "wants to follow you"}
+                    {n.type === "follow_request_accepted" && "accepted your follow request"}
                     {n.type === "like" && "liked your post"}
                     {n.type === "comment" &&
                       "commented on your post"}
@@ -458,28 +497,25 @@ export default function NotificationPanel({ search = "" }: Props) {
                         </button>
                       </div>
                     )}
-                    {n.type === "follow" && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (n.sender?._id && !isFollowingUser(n.sender._id)) {
-                            handleFollowBack(n.sender._id);
-                          }
-                        }}
-                        disabled={!n.sender?._id || followLoading[n.sender?._id || ""] || isFollowingUser(n.sender?._id || "")}
-                        className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-md transition ${
-                          isFollowingUser(n.sender?._id || "")
-                            ? "bg-gray-600 text-gray-300 cursor-default"
-                            : "bg-blue-600 hover:bg-blue-700 text-white"
-                        }`}
-                      >
-                        <UserPlus className="h-4 w-4" />
-                        {followLoading[n.sender?._id || ""]
-                          ? "Loading..."
-                          : isFollowingUser(n.sender?._id || "")
-                          ? "Following"
-                          : "Follow back"}
-                      </button>
+                    {(n.type === "follow" || n.type === "follow_request_accepted") && (
+                      n.sender?._id ? (
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <FollowButton
+                            userId={n.sender._id}
+                            isFollowing={senderFollowState[n.sender._id]?.isFollowing ?? false}
+                            isRequested={senderFollowState[n.sender._id]?.isRequested ?? false}
+                            onFollowChange={(next) =>
+                              setSenderFollowState((prev) => ({
+                                ...prev,
+                                [n.sender!._id]: {
+                                  isFollowing: next,
+                                  isRequested: false,
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                      ) : null
                     )}
                     <button
                       type="button"

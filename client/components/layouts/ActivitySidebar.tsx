@@ -1,12 +1,13 @@
 "use client";
 
 import { Search, UserPlus, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import FollowButton from "../ui/FollowButton";
 import { useRouter } from "next/navigation";
 import InlineLoader from "../loaders/InlineLoader";
+import type { UserSummary } from "@/lib/types";
 
 type SuggestedUser = {
   _id: string;
@@ -14,6 +15,8 @@ type SuggestedUser = {
   username: string;
   bio?: string;
   avatar?: string;
+  isFollowedByCurrentUser?: boolean;
+  isRequestedByCurrentUser?: boolean;
 };
 
 type User = {
@@ -21,29 +24,101 @@ type User = {
   name: string;
   username?: string;
   avatar?: string;
+  isFollowedByCurrentUser?: boolean;
+  isRequestedByCurrentUser?: boolean;
+};
+
+type UserSummaryWithFollowState = UserSummary & {
+  isFollowedByCurrentUser?: boolean;
+  isRequestedByCurrentUser?: boolean;
+};
+
+type SidebarUser = {
+  username?: string;
+  isFollowedByCurrentUser?: boolean;
+  isRequestedByCurrentUser?: boolean;
+};
+
+type SuggestionsResponse = {
+  users?: SuggestedUser[];
+};
+
+type SearchResponse = {
+  users?: User[];
 };
 
 export default function ActivitySidebar() {
   const [open, setOpen] = useState(false);
   const [users, setUsers] = useState<SuggestedUser[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<User[]>([]);
   const [searching, setSearching] = useState(false);
-
   const wrapperRef = useRef<HTMLDivElement>(null);
-
   const { userData } = useAppContext();
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
   const router = useRouter();
 
+  const hydrateUsersWithFollowState = useCallback(
+    async <T extends SidebarUser>(
+      usersToHydrate: T[]
+    ): Promise<T[]> => {
+      const hydratedUsers = await Promise.all(
+        usersToHydrate.map(async (user) => {
+          if (!user.username) {
+            return {
+              ...user,
+              isFollowedByCurrentUser: false,
+              isRequestedByCurrentUser: false,
+            };
+          }
+
+          try {
+            const { data } = await axios.get<UserSummaryWithFollowState>(
+              `${BACKEND_URL}/api/users/${user.username}`,
+              { withCredentials: true }
+            );
+
+            return {
+              ...user,
+              isFollowedByCurrentUser: data.isFollowedByCurrentUser ?? false,
+              isRequestedByCurrentUser: data.isRequestedByCurrentUser ?? false,
+            };
+          } catch (error) {
+            console.error("Failed to hydrate sidebar follow state", error);
+            return {
+              ...user,
+              isFollowedByCurrentUser: false,
+              isRequestedByCurrentUser: false,
+            };
+          }
+        })
+      );
+
+      return hydratedUsers as T[];
+    },
+    [BACKEND_URL]
+  );
+
   useEffect(() => {
+    if (!userData?.id) {
+      setUsers([]);
+      setLoading(false);
+      return;
+    }
+
     const fetchUsers = async () => {
       try {
-        const res = await axios.get(`${BACKEND_URL}/api/users/suggestions`, { withCredentials: true });
-        setUsers(res.data.users);
+        setLoading(true);
+        const res = await axios.get<SuggestionsResponse>(
+          `${BACKEND_URL}/api/users/suggestions`,
+          { withCredentials: true }
+        );
+        const hydratedUsers = await hydrateUsersWithFollowState<SuggestedUser>(
+          res.data.users || []
+        );
+        setUsers(hydratedUsers);
       } catch (err) {
         console.error("Failed to fetch users:", err);
       } finally {
@@ -51,9 +126,15 @@ export default function ActivitySidebar() {
       }
     };
     fetchUsers();
-  }, [BACKEND_URL]);
+  }, [BACKEND_URL, hydrateUsersWithFollowState, userData?.id]);
 
   useEffect(() => {
+    if (!userData?.id) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+
     const delay = setTimeout(async () => {
       if (!query.trim()) {
         setResults([]);
@@ -61,8 +142,14 @@ export default function ActivitySidebar() {
       }
       try {
         setSearching(true);
-        const res = await axios.get(`${BACKEND_URL}/api/users/search?query=${query}`, { withCredentials: true });
-        setResults(res.data.users);
+        const res = await axios.get<SearchResponse>(
+          `${BACKEND_URL}/api/users/search?query=${query}`,
+          { withCredentials: true }
+        );
+        const hydratedUsers = await hydrateUsersWithFollowState<User>(
+          res.data.users || []
+        );
+        setResults(hydratedUsers);
       } catch (err) {
         console.error("Search failed:", err);
       } finally {
@@ -70,7 +157,7 @@ export default function ActivitySidebar() {
       }
     }, 400);
     return () => clearTimeout(delay);
-  }, [query, BACKEND_URL]);
+  }, [BACKEND_URL, query, hydrateUsersWithFollowState, userData?.id]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -134,7 +221,6 @@ export default function ActivitySidebar() {
               <p className="surface-text-muted text-sm">No users found.</p>
             ) : (
               results.filter((user) => user._id !== userData?.id).map((user) => {
-                const isFollowing = userData?.following?.includes(user._id.toString()) ?? false;
                 return (
                   <div key={user._id} className="flex items-center gap-2">
                     <div className="h-12 w-12 rounded-full overflow-hidden">
@@ -148,7 +234,8 @@ export default function ActivitySidebar() {
                     </div>
                     <FollowButton
                       userId={user._id}
-                      isFollowing={isFollowing}
+                      isFollowing={user.isFollowedByCurrentUser ?? false}
+                      isRequested={user.isRequestedByCurrentUser ?? false}
                     />
                   </div>
                 );
@@ -158,7 +245,6 @@ export default function ActivitySidebar() {
             <p className="surface-text-muted text-sm">No users found.</p>
           ) : (
             filteredUsers.map((suggestedUser) => {
-              const isFollowing = userData?.following?.includes(suggestedUser._id.toString()) ?? false;
               return (
                 <div key={suggestedUser._id} className="flex items-center gap-2">
                   <div className="h-12 w-12 rounded-full overflow-hidden">
@@ -176,7 +262,8 @@ export default function ActivitySidebar() {
 
                   <FollowButton
                     userId={suggestedUser._id}
-                    isFollowing={isFollowing}
+                    isFollowing={suggestedUser.isFollowedByCurrentUser ?? false}
+                    isRequested={suggestedUser.isRequestedByCurrentUser ?? false}
                   />
                 </div>
               );

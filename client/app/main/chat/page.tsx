@@ -36,24 +36,16 @@ export default function ChatListPage() {
 
                 setConversations(validConvos);
 
-                const unreadCountEntries = await Promise.all(
-                    validConvos.map(async (convo: Conversation) => {
-                        try {
-                            const { data } = await axios.get(
-                                `${BACKEND_URL}/api/messages/${convo._id}/unread-count`,
-                                { withCredentials: true }
-                            );
-                            return [convo._id, data.unreadCount] as const;
-                        } catch {
-                            return [convo._id, 0] as const;
-                        }
-                    })
-                );
+                // Extract unread counts from response (already aggregated in backend)
+                const counts: Record<string, number> = {};
+                validConvos.forEach((convo: Conversation) => {
+                    counts[convo._id] = convo.unreadCount || 0;
+                });
 
-                const counts = Object.fromEntries(unreadCountEntries) as Record<string, number>;
                 setUnreadCounts(counts);
                 setFilteredConversations(validConvos);
-            } catch {
+            } catch (error) {
+                console.error("Failed to fetch conversations:", error);
                 setConversations([]);
                 setFilteredConversations([]);
                 setUnreadCounts({});
@@ -174,7 +166,7 @@ export default function ChatListPage() {
         <div className="flex w-full h-screen">
             <div className="flex-1 h-screen overflow-y-auto hide-scrollbar">
 
-                <h1 className="px-5 pt-3 text-xl font-bold text-foreground">
+                <h1 className="px-5 pt-3 text-xl text-center md:text-left font-bold text-foreground">
                     Your chats
                 </h1>
                 <div className="p-5 pb-0">
@@ -228,7 +220,7 @@ export default function ChatListPage() {
                                                 {convo.lastMessage?.content || `@${otherUser?.username}`}
                                             </p>
                                             {unreadCounts[convo._id] > 0 && (
-                                                <div className="min-w-[1.25rem] px-1 bg-red-500 text-white rounded-full h-5 flex items-center justify-center text-[10px] font-bold">
+                                                <div className="min-w-5 px-1 bg-red-500 text-white rounded-full h-5 flex items-center justify-center text-[10px] font-bold">
                                                     {unreadCounts[convo._id]}
                                                 </div>
                                             )}

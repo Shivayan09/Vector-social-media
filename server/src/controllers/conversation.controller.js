@@ -30,28 +30,100 @@ export const getConversation = async (req, res) => {
 
 export const getUserConversations = async (req, res) => {
   try {
+    const userId = req.user._id;
 
-    const conversations = await Conversation.find({
-      participants: req.user._id
-    })
-      .populate("participants", "username name avatar")
-      .sort({ updatedAt: -1 });
+    const conversations = await Conversation.aggregate([
+      // Match conversations for current user
+      { $match: { participants: userId } },
+      
+      // Lookup latest message
+      {
+        $lookup: {
+          from: "messages",
+          let: { conversationId: "$_id" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$conversation", "$$conversationId"] } } },
+            { $sort: { createdAt: -1 } },
+            { $limit: 1 }
+          ],
+          as: "lastMessageArray"
+        }
+      },
+      
+      // Unwind last message or set to null
+      {
+        $addFields: {
+          lastMessage: { $arrayElemAt: ["$lastMessageArray", 0] }
+        }
+      },
+      
+      // Count unread messages
+      {
+        $lookup: {
+          from: "messages",
+          let: { conversationId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$conversation", "$$conversationId"] },
+                    { $eq: ["$isRead", false] },
+                    { $ne: ["$sender", userId] }
+                  ]
+                }
+              }
+            },
+            { $count: "total" }
+          ],
+          as: "unreadArray"
+        }
+      },
+      
+      {
+        $addFields: {
+          unreadCount: { $arrayElemAt: ["$unreadArray.total", 0] }
+        }
+      },
+      
+      // Lookup participant details
+      {
+        $lookup: {
+          from: "users",
+          localField: "participants",
+          foreignField: "_id",
+          as: "participants"
+        }
+      },
+      
+      // Project needed fields
+      {
+        $project: {
+          _id: 1,
+          participants: { _id: 1, username: 1, name: 1, avatar: 1 },
+          lastMessage: 1,
+          unreadCount: { $ifNull: ["$unreadCount", 0] },
+          updatedAt: 1,
+          createdAt: 1
+        }
+      },
+      
+      // Sort by latest
+      { $sort: { updatedAt: -1 } }
+    ]);
 
-    const conversationsWithLastMessage = await Promise.all(
-      conversations.map(async (convo) => {
-        const lastMessage = await Message.findOne({ conversation: convo._id })
-          .sort({ createdAt: -1 });
-        
-        if (!lastMessage) return null;
+    // Populate sender details in lastMessage
+    for (let convo of conversations) {
+      if (convo.lastMessage && convo.lastMessage.sender) {
+        const sender = await Message.findById(convo.lastMessage._id).populate(
+          "sender",
+          "username name avatar"
+        );
+        if (sender) convo.lastMessage.sender = sender.sender;
+      }
+    }
 
-        return {
-          ...convo.toObject(),
-          lastMessage
-        };
-      })
-    );
-
-    res.json(conversationsWithLastMessage.filter(Boolean));
+    res.json(conversations);
 
   } catch (error) {
     res.status(500).json({

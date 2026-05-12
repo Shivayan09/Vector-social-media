@@ -425,11 +425,30 @@ export const getSuggestedUsers = async (req, res) => {
                 { _id: { $ne: currentUserId } },
                 { _id: { $nin: following } }
             ]
-        }).select("name username bio avatar followers following").limit(10);
+        }).select("name username bio avatar").limit(10).lean();
+
+        const suggestedUserIds = suggestedUsers.map((user) => user._id);
+        const requestedUsers = await User.find({
+            _id: { $in: suggestedUserIds },
+            followRequests: currentUserId,
+        }).select("_id").lean();
+
+        const requestedUserIds = new Set(
+            requestedUsers.map((user) => user._id.toString())
+        );
+        const followingUserIds = new Set(
+            following.map((id) => id.toString())
+        );
+
+        const users = suggestedUsers.map((user) => ({
+            ...user,
+            isFollowedByCurrentUser: followingUserIds.has(user._id.toString()),
+            isRequestedByCurrentUser: requestedUserIds.has(user._id.toString()),
+        }));
 
         res.status(200).json({
             success: true,
-            users: suggestedUsers
+            users
         });
     } catch (error) {
         res.status(500).json({
@@ -458,8 +477,29 @@ const { query } = req.query;
             { username: { $regex: query, $options: "i" } }
         ]
     })
-    .select("-password")
-    .limit(10);
+    .select("name username avatar")
+    .limit(10)
+    .lean();
+
+    const currentUserId = req.user._id || req.user.id;
+    const followingUserIds = new Set(
+        (req.user.following || []).map((id) => id.toString())
+    );
+    const searchedUserIds = users.map((user) => user._id);
+    const requestedUsers = await User.find({
+        _id: { $in: searchedUserIds },
+        followRequests: currentUserId,
+    }).select("_id").lean();
+
+    const requestedUserIds = new Set(
+        requestedUsers.map((user) => user._id.toString())
+    );
+
+    const usersWithFollowState = users.map((user) => ({
+        ...user,
+        isFollowedByCurrentUser: followingUserIds.has(user._id.toString()),
+        isRequestedByCurrentUser: requestedUserIds.has(user._id.toString()),
+    }));
 
     const posts = await Post.find({
         $or: [
@@ -471,7 +511,7 @@ const { query } = req.query;
     .limit(10);
 
     res.json({
-        users,
+        users: usersWithFollowState,
         posts
     });
 
