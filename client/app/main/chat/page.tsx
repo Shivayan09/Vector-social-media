@@ -36,24 +36,16 @@ export default function ChatListPage() {
 
                 setConversations(validConvos);
 
-                const unreadCountEntries = await Promise.all(
-                    validConvos.map(async (convo: Conversation) => {
-                        try {
-                            const { data } = await axios.get(
-                                `${BACKEND_URL}/api/messages/${convo._id}/unread-count`,
-                                { withCredentials: true }
-                            );
-                            return [convo._id, data.unreadCount] as const;
-                        } catch {
-                            return [convo._id, 0] as const;
-                        }
-                    })
-                );
+                // Extract unread counts from response (already aggregated in backend)
+                const counts: Record<string, number> = {};
+                validConvos.forEach((convo: Conversation) => {
+                    counts[convo._id] = convo.unreadCount || 0;
+                });
 
-                const counts = Object.fromEntries(unreadCountEntries) as Record<string, number>;
                 setUnreadCounts(counts);
                 setFilteredConversations(validConvos);
-            } catch {
+            } catch (error) {
+                console.error("Failed to fetch conversations:", error);
                 setConversations([]);
                 setFilteredConversations([]);
                 setUnreadCounts({});
