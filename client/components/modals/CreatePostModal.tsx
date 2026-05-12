@@ -244,7 +244,7 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                     )}
 
                     {/* Actions Row */}
-                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
+                    <div className="flex flex-col gap-3 items-center justify-between pt-4 border-t border-white/10">
                         <label className="cursor-pointer group flex items-center gap-2 text-primary hover:bg-primary/10 px-4 py-2 rounded-xl transition-all active:scale-95">
                             <ImageIcon size={22} className="group-hover:rotate-6 transition-transform" />
                             <span className="text-sm font-bold">Photo/Video</span>
@@ -261,11 +261,11 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                             />
                         </label>
 
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 w-full">
                             <Button 
                                 variant="ghost" 
                                 onClick={handleClose} 
-                                className="rounded-xl px-6 font-semibold"
+                                className="rounded-xl px-6 font-semibold border w-1/2"
                             >
                                 Cancel
                             </Button>
@@ -273,7 +273,7 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                                 disabled={loading || !intent || (!content.trim() && !imageFile) || charsLeft < 0} 
                                 onClick={handlePost} 
                                 className={cn(
-                                    "rounded-xl px-8 font-bold shadow-lg transition-all active:scale-95",
+                                    "rounded-xl w-1/2 px-8 font-bold shadow-lg transition-all active:scale-95",
                                     "bg-primary text-primary-foreground hover:opacity-90"
                                 )}
                             >
