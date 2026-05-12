@@ -49,6 +49,9 @@ export type Conversation = {
   _id: string;
   participants: UserSummary[];
   lastMessage?: Message;
+  unreadCount?: number;
+  updatedAt?: string;
+  createdAt?: string;
 };
 
 export type Message = {
