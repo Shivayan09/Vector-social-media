@@ -152,7 +152,7 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                     </button>
                 </div>
 
-                <div className="p-6">
+                <div className="p-6 max-h-[70vh] overflow-y-auto">
                     {/* Intent Selector */}
                     <div className="mb-6">
                         <label className="text-sm font-semibold text-foreground/80 mb-3 block">
@@ -231,7 +231,7 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                     {/* Image Preview */}
                     {imagePreview && (
                         <div className="relative mt-4 group">
-                            <div className="w-full max-h-64 rounded-2xl overflow-hidden border border-white/10 shadow-lg">
+                            <div className="w-full max-h-48 rounded-2xl overflow-hidden border border-white/10 shadow-lg">
                                 <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                             </div>
                             <button 
