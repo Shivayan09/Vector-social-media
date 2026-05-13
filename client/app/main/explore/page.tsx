@@ -68,6 +68,8 @@ const exploreCard =
 
 const exploreGridCard = `${exploreCard} cursor-pointer hover:-translate-y-0.5`;
 
+const ALL_INTENTS = ["ask", "build", "share", "discuss", "reflect"] as const;
+
 export default function Explore() {
   const [topPosts, setTopPosts] = useState<TopPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -212,334 +214,378 @@ export default function Explore() {
           </p>
         </header>
 
-        {/* Search */}
-        <section className="panel-card space-y-3" aria-labelledby="explore-search-heading">
-          <h2
-            id="explore-search-heading"
-            className="text-sm font-semibold text-foreground"
-          >
-            Search
-          </h2>
-          <div className="relative min-w-0" ref={wrapperRef}>
-            <div className="search-pill flex min-h-11 items-center gap-2 px-3 py-1">
-              <Search className="h-5 shrink-0 text-muted-foreground" aria-hidden />
-              <input
-                type="text"
-                placeholder="Search users and posts"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="min-h-10 min-w-0 flex-1 bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground"
-              />
-            </div>
-
-            {open && (
-              <div
-                className="absolute z-50 mt-2 max-h-75 w-full min-w-0 max-w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg"
+        <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
+          {/* Left: discovery — search, topic shortcuts, intent filters */}
+          <aside className="min-w-0 space-y-6 lg:col-span-1 lg:sticky lg:top-6 lg:self-start">
+            <section
+              className="panel-card space-y-3"
+              aria-labelledby="explore-search-heading"
+            >
+              <h2
+                id="explore-search-heading"
+                className="text-sm font-semibold text-foreground"
               >
-                {searching ? (
-                  <p className="p-4 text-sm text-muted-foreground">Searching...</p>
-                ) : results.length === 0 ? (
-                  <div className="p-4 text-center">
-                    <p className="text-sm font-medium text-foreground">
-                      No users found for &quot;{query}&quot;
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Try searching something else or explore by intent
-                    </p>
-                    <div className="mt-3 flex flex-wrap justify-center gap-2">
-                      {(["ask", "build", "share", "discuss", "reflect"] as const).map(
-                        (intent) => (
-                          <button
-                            key={intent}
-                            type="button"
-                            onClick={() => {
-                              setQuery(intent);
-                            }}
-                            className="min-h-10 rounded-full border border-border bg-card px-3 text-xs capitalize text-foreground/80 transition-colors duration-200 hover:border-border/70 hover:bg-accent/50"
-                          >
-                            #{intent}
-                          </button>
-                        )
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    {results
-                      .filter((user) => user?._id)
-                      .map((user) => (
-                        <div
-                          key={user._id}
-                          className="flex min-h-11 cursor-pointer items-center gap-3 p-3 transition-colors duration-200 hover:bg-accent/40"
-                          onClick={() => {
-                            if (!user?.username) return;
-                            router.push(`/main/user/${user.username}`);
-                          }}
-                        >
-                          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-muted">
-                            <img
-                              src={user.avatar || "/default-avatar.png"}
-                              alt={user.name}
-                              className="h-full w-full object-cover"
-                            />
-                          </div>
-
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium text-foreground">
-                              {user.name}
-                            </p>
-                            <p className="truncate text-xs text-muted-foreground">
-                              @{user?.username || "unknown"}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-
-                    {postResults.length > 0 && (
-                      <>
-                        <p className="border-t border-border px-3 pb-1 pt-3 text-xs font-semibold text-muted-foreground">
-                          Posts
-                        </p>
-
-                        {postResults.map((post) => (
-                          <div
-                            key={post._id}
-                            className="min-w-0 cursor-pointer border-t border-border p-3 transition-colors duration-200 hover:bg-accent/40"
-                            onClick={() => {
-                              router.push(`/main/post/${post._id}`);
-                            }}
-                          >
-                            <p className="line-clamp-2 text-sm">{post.content}</p>
-                            <p className="mt-1 text-xs text-blue-500">
-                              #{post.intent}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              @{post.author?.username || "unknown"}
-                            </p>
-                          </div>
-                        ))}
-                      </>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Trending domains */}
-        <section aria-labelledby="explore-domains-heading">
-          <h2
-            id="explore-domains-heading"
-            className="mb-3 flex items-center gap-2 font-semibold text-foreground"
-          >
-            <LayoutGrid className="h-5 shrink-0 text-blue-400" aria-hidden />
-            Trending domains
-          </h2>
-
-          {loading ? (
-            <p className="surface-text-muted text-sm">Loading domains...</p>
-          ) : topicCards.length === 0 ? (
-            <p className="surface-text-muted text-sm">No active domains yet</p>
-          ) : (
-            <div className="grid min-w-0 grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {topicCards.map((topic) => (
-                <div
-                  key={topic.intent}
-                  className={`${exploreGridCard} relative min-h-[10rem] overflow-hidden ${
-                    highlightedTopic === topic.intent
-                      ? "border-blue-400 shadow-md ring-2 ring-blue-400/25"
-                      : ""
-                  }`}
-                >
-                  <p className="absolute bottom-0 left-0 z-20 flex w-full items-center justify-between bg-black/40 p-2 text-sm text-white">
-                    <span className="flex min-w-0 items-center gap-2">
-                      <ExternalLink className="h-4 shrink-0 text-blue-400" />
-                      <span className="truncate">{topic.label}</span>
-                    </span>
-                    <span className="shrink-0 pl-2">{topic.count} posts</span>
-                  </p>
-                  <img
-                    src={intentImage[topic.intent]}
-                    alt={topic.label}
-                    className="h-full min-h-[10rem] w-full object-cover"
+                Search
+              </h2>
+              <div className="relative min-w-0" ref={wrapperRef}>
+                <div className="search-pill flex min-h-11 items-center gap-2 px-3 py-1">
+                  <Search
+                    className="h-5 shrink-0 text-muted-foreground"
+                    aria-hidden
+                  />
+                  <input
+                    type="text"
+                    placeholder="Search users and posts"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    className="min-h-10 min-w-0 flex-1 bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground"
                   />
                 </div>
-              ))}
-            </div>
-          )}
-        </section>
 
-        {/* Explore topics (shortcuts + random) */}
-        <section
-          className="panel-card space-y-4"
-          aria-labelledby="explore-topics-shortcuts-heading"
-        >
-          <h2
-            id="explore-topics-shortcuts-heading"
-            className="flex items-center gap-2 font-semibold text-foreground"
-          >
-            <Compass className="h-5 shrink-0 text-blue-400" aria-hidden />
-            Explore topics
-          </h2>
+                {open && (
+                  <div className="absolute z-50 mt-2 max-h-75 w-full min-w-0 max-w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
+                    {searching ? (
+                      <p className="p-4 text-sm text-muted-foreground">
+                        Searching...
+                      </p>
+                    ) : results.length === 0 ? (
+                      <div className="p-4 text-center">
+                        <p className="text-sm font-medium text-foreground">
+                          No users found for &quot;{query}&quot;
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Try searching something else or explore by intent
+                        </p>
+                        <div className="mt-3 flex flex-wrap justify-center gap-2">
+                          {ALL_INTENTS.map((intent) => (
+                            <button
+                              key={intent}
+                              type="button"
+                              onClick={() => {
+                                setQuery(intent);
+                              }}
+                              className="min-h-10 rounded-full border border-border bg-card px-3 text-xs capitalize text-foreground/80 transition-colors duration-200 hover:border-border/70 hover:bg-accent/50"
+                            >
+                              #{intent}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {results
+                          .filter((user) => user?._id)
+                          .map((user) => (
+                            <div
+                              key={user._id}
+                              className="flex min-h-11 cursor-pointer items-center gap-3 p-3 transition-colors duration-200 hover:bg-accent/40"
+                              onClick={() => {
+                                if (!user?.username) return;
+                                router.push(`/main/user/${user.username}`);
+                              }}
+                            >
+                              <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-muted">
+                                <img
+                                  src={user.avatar || "/default-avatar.png"}
+                                  alt={user.name}
+                                  className="h-full w-full object-cover"
+                                />
+                              </div>
 
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6">
-            {topicCards.slice(0, 2).map((topic) => (
-              <button
-                key={topic.intent}
-                type="button"
-                onClick={() => setHighlightedTopic(topic.intent)}
-                className={`${exploreCard} flex min-h-11 items-center justify-center gap-2 px-3 py-3 hover:-translate-y-0.5`}
-              >
-                {topic.intent === "build" ? (
-                  <Trophy className="h-4 shrink-0" />
-                ) : (
-                  <Lightbulb className="h-4 shrink-0" />
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium text-foreground">
+                                  {user.name}
+                                </p>
+                                <p className="truncate text-xs text-muted-foreground">
+                                  @{user?.username || "unknown"}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+
+                        {postResults.length > 0 && (
+                          <>
+                            <p className="border-t border-border px-3 pb-1 pt-3 text-xs font-semibold text-muted-foreground">
+                              Posts
+                            </p>
+
+                            {postResults.map((post) => (
+                              <div
+                                key={post._id}
+                                className="min-w-0 cursor-pointer border-t border-border p-3 transition-colors duration-200 hover:bg-accent/40"
+                                onClick={() => {
+                                  router.push(`/main/post/${post._id}`);
+                                }}
+                              >
+                                <p className="line-clamp-2 text-sm">
+                                  {post.content}
+                                </p>
+                                <p className="mt-1 text-xs text-blue-500">
+                                  #{post.intent}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  @{post.author?.username || "unknown"}
+                                </p>
+                              </div>
+                            ))}
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
                 )}
-                <span className="text-sm">{topic.label}</span>
-              </button>
-            ))}
+              </div>
+            </section>
 
-            <button
-              type="button"
-              onClick={handleRandomTopic}
-              className={`${exploreCard} col-span-2 flex min-h-11 items-center justify-center gap-2 px-3 py-3 hover:-translate-y-0.5 md:col-span-1`}
+            <section
+              className="panel-card space-y-4"
+              aria-labelledby="explore-topics-shortcuts-heading"
             >
-              <Shuffle className="h-4 shrink-0 opacity-80" />
-              <span className="text-sm">Random</span>
-            </button>
-          </div>
+              <h2
+                id="explore-topics-shortcuts-heading"
+                className="flex items-center gap-2 font-semibold text-foreground"
+              >
+                <Compass className="h-5 shrink-0 text-blue-400" aria-hidden />
+                Topics
+              </h2>
 
-          {highlightedTopic && (
-            <p className="text-sm text-blue-500">
-              Highlighted topic: {intentLabel[highlightedTopic]}
-            </p>
-          )}
-        </section>
+              <div className="flex flex-col gap-3">
+                {topicCards.slice(0, 2).map((topic) => (
+                  <button
+                    key={topic.intent}
+                    type="button"
+                    onClick={() => setHighlightedTopic(topic.intent)}
+                    className={`${exploreCard} flex min-h-11 w-full items-center justify-center gap-2 px-3 py-3 hover:-translate-y-0.5`}
+                  >
+                    {topic.intent === "build" ? (
+                      <Trophy className="h-4 shrink-0" />
+                    ) : (
+                      <Lightbulb className="h-4 shrink-0" />
+                    )}
+                    <span className="text-sm">{topic.label}</span>
+                  </button>
+                ))}
 
-        {/* Trending topics */}
-        <section
-          className="panel-card space-y-4"
-          aria-labelledby="explore-trending-topics-heading"
-        >
-          <h2
-            id="explore-trending-topics-heading"
-            className="flex items-center gap-2 font-semibold text-foreground"
-          >
-            <TrendingUp className="h-5 shrink-0 text-blue-400" aria-hidden />
-            Trending topics
-          </h2>
-
-          <div className="flex flex-col gap-3">
-            {loading ? (
-              <p className="surface-text-muted text-sm">
-                Loading trending topics...
-              </p>
-            ) : trendingTopics.length === 0 ? (
-              <p className="surface-text-muted text-sm">
-                No trending topics this month
-              </p>
-            ) : (
-              trendingTopics.map((topic) => (
                 <button
                   type="button"
-                  key={topic.id}
-                  onClick={() => router.push(`/main/post/${topic.id}`)}
-                  className={`${exploreCard} flex w-full min-w-0 items-start gap-3 p-3 text-left md:hover:-translate-y-0.5`}
+                  onClick={handleRandomTopic}
+                  className={`${exploreCard} flex min-h-11 w-full items-center justify-center gap-2 px-3 py-3 hover:-translate-y-0.5`}
                 >
-                  <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
-                    <img
-                      src={intentImage[topic.intent]}
-                      alt={intentLabel[topic.intent]}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="line-clamp-2 text-sm">{topic.title}</p>
-                    <p className="mt-1 text-xs text-blue-500">
-                      #{intentLabel[topic.intent]}
-                    </p>
-                  </div>
-
-                  <p className="surface-text-muted flex shrink-0 items-center gap-1 pt-1 text-xs">
-                    <Heart
-                      className="h-4 text-blue-400"
-                      fill="currentColor"
-                      aria-hidden
-                    />
-                    {topic.likes}
-                  </p>
+                  <Shuffle className="h-4 shrink-0 opacity-80" />
+                  <span className="text-sm">Random topic</span>
                 </button>
-              ))
-            )}
-          </div>
-        </section>
-
-        {/* Top posts */}
-        <section aria-labelledby="explore-top-posts-heading">
-          <h2
-            id="explore-top-posts-heading"
-            className="mb-3 flex items-center gap-2 font-semibold text-foreground"
-          >
-            <Flame className="h-5 shrink-0 text-blue-400" aria-hidden />
-            Top posts of the month
-          </h2>
-
-          <div className="grid min-w-0 grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {loading ? (
-              <div className="col-span-full">
-                <InlineLoader
-                  text="Loading top posts..."
-                  className="surface-text-muted"
-                />
               </div>
-            ) : topPosts.length === 0 ? (
-              <p className="surface-text-muted col-span-full text-sm">
-                No trending posts this month
+
+              {highlightedTopic && (
+                <p className="text-sm text-blue-500">
+                  Highlighted: {intentLabel[highlightedTopic]}
+                </p>
+              )}
+            </section>
+
+            <section
+              className="panel-card space-y-3"
+              aria-labelledby="explore-intents-heading"
+            >
+              <h2
+                id="explore-intents-heading"
+                className="text-sm font-semibold text-foreground"
+              >
+                Browse by intent
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Prefill search with an intent hashtag
               </p>
-            ) : (
-              topPosts
-                .filter((post) => post?._id)
-                .map((post) => (
-                  <div
-                    onClick={() => handleClick(post)}
-                    key={post._id}
-                    className="content-card glass-hover relative flex min-h-44 w-full min-w-0 cursor-pointer flex-col justify-between transition-all duration-200 hover:shadow-md md:hover:-translate-y-0.5"
+              <div className="flex flex-wrap gap-2">
+                {ALL_INTENTS.map((intent) => (
+                  <button
+                    key={intent}
+                    type="button"
+                    onClick={() => setQuery(intent)}
+                    className="min-h-10 rounded-full border border-border bg-card px-3 text-xs capitalize text-foreground/80 transition-colors duration-200 hover:border-border/70 hover:bg-accent/50"
                   >
-                    <p className="text-sm text-blue-500">
-                      {post.likes?.length || 0} likes
-                    </p>
+                    #{intent}
+                  </button>
+                ))}
+              </div>
+            </section>
+          </aside>
 
-                    <p className="absolute right-4 top-4 text-sm text-blue-600">
-                      #{post.intent}
-                    </p>
+          {/* Right: browse content */}
+          <div className="min-w-0 space-y-8 lg:col-span-2">
+            <section aria-labelledby="explore-domains-heading">
+              <h2
+                id="explore-domains-heading"
+                className="mb-3 flex items-center gap-2 font-semibold text-foreground"
+              >
+                <LayoutGrid className="h-5 shrink-0 text-blue-400" aria-hidden />
+                Trending domains
+              </h2>
 
-                    <p className="my-3 line-clamp-3 min-w-0 text-sm">
-                      {post.content}
-                    </p>
-
-                    <div className="min-w-0">
-                      <p
-                        className="w-fit max-w-full truncate text-sm hover:text-blue-500"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!post?.author?.username) return;
-                          router.push(`/main/user/${post.author.username}`);
-                        }}
-                      >
-                        @{post?.author?.username || "unknown"}
+              {loading ? (
+                <p className="surface-text-muted text-sm">
+                  Loading domains...
+                </p>
+              ) : topicCards.length === 0 ? (
+                <p className="surface-text-muted text-sm">
+                  No active domains yet
+                </p>
+              ) : (
+                <div className="grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                  {topicCards.map((topic) => (
+                    <div
+                      key={topic.intent}
+                      className={`${exploreGridCard} relative min-h-[10rem] overflow-hidden ${
+                        highlightedTopic === topic.intent
+                          ? "border-blue-400 shadow-md ring-2 ring-blue-400/25"
+                          : ""
+                      }`}
+                    >
+                      <p className="absolute bottom-0 left-0 z-20 flex w-full items-center justify-between bg-black/40 p-2 text-sm text-white">
+                        <span className="flex min-w-0 items-center gap-2">
+                          <ExternalLink className="h-4 shrink-0 text-blue-400" />
+                          <span className="truncate">{topic.label}</span>
+                        </span>
+                        <span className="shrink-0 pl-2">{topic.count} posts</span>
                       </p>
-
-                      <p className="surface-text-muted text-xs">
-                        {new Date(post.createdAt).toLocaleDateString("en-GB")}
-                      </p>
+                      <img
+                        src={intentImage[topic.intent]}
+                        alt={topic.label}
+                        className="h-full min-h-[10rem] w-full object-cover"
+                      />
                     </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section
+              className="panel-card space-y-4"
+              aria-labelledby="explore-trending-topics-heading"
+            >
+              <h2
+                id="explore-trending-topics-heading"
+                className="flex items-center gap-2 font-semibold text-foreground"
+              >
+                <TrendingUp className="h-5 shrink-0 text-blue-400" aria-hidden />
+                Trending topics
+              </h2>
+
+              <div className="flex flex-col gap-3">
+                {loading ? (
+                  <p className="surface-text-muted text-sm">
+                    Loading trending topics...
+                  </p>
+                ) : trendingTopics.length === 0 ? (
+                  <p className="surface-text-muted text-sm">
+                    No trending topics this month
+                  </p>
+                ) : (
+                  trendingTopics.map((topic) => (
+                    <button
+                      type="button"
+                      key={topic.id}
+                      onClick={() => router.push(`/main/post/${topic.id}`)}
+                      className={`${exploreCard} flex w-full min-w-0 items-start gap-3 p-3 text-left md:hover:-translate-y-0.5`}
+                    >
+                      <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
+                        <img
+                          src={intentImage[topic.intent]}
+                          alt={intentLabel[topic.intent]}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="line-clamp-2 text-sm">{topic.title}</p>
+                        <p className="mt-1 text-xs text-blue-500">
+                          #{intentLabel[topic.intent]}
+                        </p>
+                      </div>
+
+                      <p className="surface-text-muted flex shrink-0 items-center gap-1 pt-1 text-xs">
+                        <Heart
+                          className="h-4 text-blue-400"
+                          fill="currentColor"
+                          aria-hidden
+                        />
+                        {topic.likes}
+                      </p>
+                    </button>
+                  ))
+                )}
+              </div>
+            </section>
+
+            <section aria-labelledby="explore-top-posts-heading">
+              <h2
+                id="explore-top-posts-heading"
+                className="mb-3 flex items-center gap-2 font-semibold text-foreground"
+              >
+                <Flame className="h-5 shrink-0 text-blue-400" aria-hidden />
+                Top posts of the month
+              </h2>
+
+              <div className="grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                {loading ? (
+                  <div className="col-span-full">
+                    <InlineLoader
+                      text="Loading top posts..."
+                      className="surface-text-muted"
+                    />
                   </div>
-                ))
-            )}
+                ) : topPosts.length === 0 ? (
+                  <p className="surface-text-muted col-span-full text-sm">
+                    No trending posts this month
+                  </p>
+                ) : (
+                  topPosts
+                    .filter((post) => post?._id)
+                    .map((post) => (
+                      <div
+                        onClick={() => handleClick(post)}
+                        key={post._id}
+                        className="content-card glass-hover relative flex min-h-44 w-full min-w-0 cursor-pointer flex-col justify-between transition-all duration-200 hover:shadow-md md:hover:-translate-y-0.5"
+                      >
+                        <p className="text-sm text-blue-500">
+                          {post.likes?.length || 0} likes
+                        </p>
+
+                        <p className="absolute right-4 top-4 text-sm text-blue-600">
+                          #{post.intent}
+                        </p>
+
+                        <p className="my-3 line-clamp-3 min-w-0 text-sm">
+                          {post.content}
+                        </p>
+
+                        <div className="min-w-0">
+                          <p
+                            className="w-fit max-w-full truncate text-sm hover:text-blue-500"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!post?.author?.username) return;
+                              router.push(
+                                `/main/user/${post.author.username}`
+                              );
+                            }}
+                          >
+                            @{post?.author?.username || "unknown"}
+                          </p>
+
+                          <p className="surface-text-muted text-xs">
+                            {new Date(post.createdAt).toLocaleDateString(
+                              "en-GB"
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                )}
+              </div>
+            </section>
           </div>
-        </section>
+        </div>
       </div>
     </div>
   );
