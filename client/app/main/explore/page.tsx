@@ -214,20 +214,19 @@ export default function Explore() {
           </p>
         </header>
 
-        <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
-          {/* Left: discovery — search, topic shortcuts, intent filters */}
-          <aside className="min-w-0 space-y-6 lg:col-span-1 lg:sticky lg:top-6 lg:self-start">
-            <section
-              className="panel-card space-y-3"
-              aria-labelledby="explore-search-heading"
+        {/* Single column: app layout already includes Sidebar — avoid a second column/aside. */}
+        <div className="min-w-0 space-y-8">
+          <section
+            className="panel-card space-y-3"
+            aria-labelledby="explore-search-heading"
+          >
+            <h2
+              id="explore-search-heading"
+              className="text-sm font-semibold text-foreground"
             >
-              <h2
-                id="explore-search-heading"
-                className="text-sm font-semibold text-foreground"
-              >
-                Search
-              </h2>
-              <div className="relative min-w-0" ref={wrapperRef}>
+              Search
+            </h2>
+            <div className="relative min-w-0" ref={wrapperRef}>
                 <div className="search-pill flex min-h-11 items-center gap-2 px-3 py-1">
                   <Search
                     className="h-5 shrink-0 text-muted-foreground"
@@ -409,10 +408,7 @@ export default function Explore() {
                 ))}
               </div>
             </section>
-          </aside>
 
-          {/* Right: browse content */}
-          <div className="min-w-0 space-y-8 lg:col-span-2">
             <section aria-labelledby="explore-domains-heading">
               <h2
                 id="explore-domains-heading"
@@ -584,7 +580,6 @@ export default function Explore() {
                 )}
               </div>
             </section>
-          </div>
         </div>
       </div>
     </div>
