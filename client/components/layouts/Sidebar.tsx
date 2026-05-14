@@ -9,7 +9,7 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import LogoutWarning from "../modals/LogoutWarning";
-import Themetoggle from "@/app/theme-toggle";
+import ThemeToggle from "@/app/theme-toggle";
 import type { Notification, Post } from "@/lib/types";
 import { socket } from "@/socket/socket";
 
@@ -100,7 +100,7 @@ export default function Sidebar() {
         <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={() => setOpen(false)} />
       )}
 
-      <aside className={`fixed md:static top-0 left-0 z-50 h-screen overflow-y-auto hide-scrollbar text-slate-900 dark:text-white 
+      <aside className={`fixed md:static top-0 left-0 z-50 h-screen !overflow-hidden hide-scrollbar text-slate-900 dark:text-white 
   ${open ? "w-50 md:w-55" : "w-0 md:w-16"} 
   border-r border-border shadow-lg flex flex-col gap-5 px-2 py-5 font-serif text-[1.1rem] bg-background
   transform transition-all duration-300 ${open ? "translate-x-0" : "-translate-x-full"}`}>
@@ -119,66 +119,68 @@ export default function Sidebar() {
           </div>
         </div>
 
-        <div className="w-full flex items-center gap-2 md:pl-5">
-          <Themetoggle />
+
+        <div className="flex-1 overflow-y-auto hide-scrollbar flex flex-col gap-2">
+          <SidebarItem
+            icon={<Home className="h-5 md:h-7" />}
+            label="Home"
+            href="/main"
+            active={pathname === "/main"}
+          />
+
+          <SidebarItem
+            icon={<Search className="h-5 md:h-7" />}
+            label="Explore"
+            href="/main/explore"
+            active={pathname === "/main/explore"}
+          />
+
+          <SidebarItem
+            icon={<Plus className="h-5 md:h-7" />}
+            label="Create"
+            onClick={() => setCreateOpen(true)}
+          />
+
+          <SidebarItem
+            icon={<Bell className="h-5 md:h-7" />}
+            label="Activity"
+            href="/main/activity"
+            active={pathname === "/main/activity"}
+            unreadCount={unreadCount}
+          />
+
+          <SidebarItem
+            icon={<Send className="h-5 md:h-7" />}
+            label="Messages"
+            href="/main/chat"
+            active={pathname === "/main/chat"}
+          />
+
+          <SidebarItem
+            icon={<User className="h-5 md:h-7" />}
+            label="Profile"
+            href={`/main/user/${userData?.username}`}
+            active={pathname === `/main/user/${userData?.username}`}
+          />
+
+          <SidebarItem
+            icon={<Settings className="h-5 md:h-7" />}
+            label="Settings"
+            href="/main/settings"
+            active={pathname === "/main/settings"}
+          />
         </div>
 
-        <SidebarItem
-          icon={<Home className="h-5 md:h-7" />}
-          label="Home"
-          href="/main"
-          active={pathname === "/main"}
-        />
-
-        <SidebarItem
-          icon={<Search className="h-5 md:h-7" />}
-          label="Explore"
-          href="/main/explore"
-          active={pathname === "/main/explore"}
-        />
-
-        <SidebarItem
-          icon={<Plus className="h-5 md:h-7" />}
-          label="Create"
-          onClick={() => setCreateOpen(true)}
-        />
-
-        <SidebarItem
-          icon={<Bell className="h-5 md:h-7" />}
-          label="Activity"
-          href="/main/activity"
-          active={pathname === "/main/activity"}
-          unreadCount={unreadCount}
-        />
-
-        <SidebarItem
-          icon={<Send className="h-5 md:h-7" />}
-          label="Messages"
-          href="/main/chat"
-          active={pathname === "/main/chat"}
-        />
-
-        <SidebarItem
-          icon={<User className="h-5 md:h-7" />}
-          label="Profile"
-          href={`/main/user/${userData?.username}`}
-          active={pathname === `/main/user/${userData?.username}`}
-        />
-
-        <SidebarItem
-          icon={<Settings className="h-5 md:h-7" />}
-          label="Settings"
-          href="/main/settings"
-          active={pathname === "/main/settings"}
-        />
-
-        <p
-          className="flex mr-auto pl-2 md:pl-5 gap-2 mt-auto transition-all duration-300 hover:bg-black/10 w-full h-10 rounded-lg items-center cursor-pointer text-slate-700 hover:text-slate-900 dark:text-white dark:hover:text-white/70"
-          onClick={() => setLogoutOpen(true)}
-        >
-          <LogOut className="opacity-60" />
-          {isLoggedIn ? "Log out" : "Log in"}
-        </p>
+        <div className="mt-auto flex items-center justify-between w-full pr-2 pt-4 border-t border-border/50">
+          <p
+            className="flex mr-auto pl-2 md:pl-5 gap-2 transition-all duration-300 hover:bg-black/10 w-auto h-10 rounded-lg items-center cursor-pointer text-slate-700 hover:text-slate-900 dark:text-white dark:hover:text-white/70"
+            onClick={() => setLogoutOpen(true)}
+          >
+            <LogOut className="opacity-60" />
+            {isLoggedIn ? "Log out" : "Log in"}
+          </p>
+          <ThemeToggle />
+        </div>
       </aside>
 
       {logoutOpen && (
