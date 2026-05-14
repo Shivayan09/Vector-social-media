@@ -120,7 +120,7 @@ export default function Sidebar() {
         </div>
 
 
-        <div className="flex-1 overflow-y-auto hide-scrollbar flex flex-col gap-2">
+        <div className="flex-1 overflow-y-auto hide-scrollbar flex flex-col gap-5">
           <SidebarItem
             icon={<Home className="h-5 md:h-7" />}
             label="Home"
