@@ -2,7 +2,7 @@
 
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
-import { Bookmark, Heart, MessageCircle, HelpCircle, Hammer, Share2, MessagesSquare, MoreHorizontal, Trash2, Flag, Forward } from "lucide-react";
+import { Bookmark, Heart, MessageCircle, HelpCircle, Hammer, Share2, MessagesSquare, MoreHorizontal, Trash2, Flag, Forward, Pencil } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
@@ -15,6 +15,8 @@ import { reportPost } from "@/lib/reportApi";
 import SkeletonLoader from "@/components/loaders/SkeletonLoader";
 import Linkify from "../ui/Linkify";
 import Avatar from "../ui/Avatar";
+import EditPostModal from "../modals/EditPostModal";
+import Portal from "../ui/Portal";
 
 
 type PostCardProps = {
@@ -37,6 +39,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
     const [showLikesModal, setShowLikesModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
     type PostLike = Post["likes"][number];
     const getLikeUserId = (like: PostLike) =>
         typeof like === "string" ? like : like._id;
@@ -143,6 +146,16 @@ export default function PostCard({ post, setPost }: PostCardProps) {
 
     const handleReport = async (reason: ReportReason, details?: string) => {
         await reportPost(post._id, reason, details);
+    };
+
+    const handlePostUpdate = (updatedPost: Post) => {
+        if (setPost) {
+            setPost(updatedPost);
+        } else {
+            setPosts(prevPosts =>
+                prevPosts.map(p => p._id === updatedPost._id ? updatedPost : p)
+            );
+        }
     };
 
     useEffect(() => {
@@ -261,6 +274,18 @@ Report post </button>
 )}
 
                             {isOwner && (
+                                <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-black/3 dark:hover:bg-white/5"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setMenuOpen(false);
+                                        setShowEditModal(true);
+                                    }}>
+                                    <Pencil size={14} />
+                                    Edit post
+                                </button>
+                            )}
+
+                            {isOwner && (
                                 <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-black/3 dark:hover:bg-white/5"
                                     onClick={(e) => {
                                         e.stopPropagation();
@@ -348,6 +373,16 @@ Report post </button>
                 onClose={() => setShowLikesModal(false)}
                 likers={uniqueLikes}
             />
+
+            {showEditModal && (
+                <Portal>
+                    <EditPostModal
+                        post={post}
+                        onClose={() => setShowEditModal(false)}
+                        onPostUpdated={handlePostUpdate}
+                    />
+                </Portal>
+            )}
         </div>
     );
 }

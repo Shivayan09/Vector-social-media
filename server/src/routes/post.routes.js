@@ -8,7 +8,8 @@ import {
     getTopPostsOfWeek,
     getTopPostsOfMonth,
     toggleLike, 
-    incrementShare 
+    incrementShare,
+    updatePost
 } from "../controllers/post.controller.js";
 import authMiddleware from "../middlewares/auth.middleware.js";
 import upload from "../middlewares/upload.middleware.js";
@@ -39,6 +40,7 @@ postRouter.get("/", getPosts);
 postRouter.get("/:postId", optionalAuth, getSinglePost);
 postRouter.put("/:id/like", authMiddleware, toggleLike);
 postRouter.put("/:id/share", authMiddleware, incrementShare);
+postRouter.put("/:id", authMiddleware, upload.single("image"), updatePost);
 postRouter.delete("/:id", authMiddleware, deletePost);
 postRouter.get("/user/:userId", optionalAuth, getPostsByUser);
 

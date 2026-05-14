@@ -121,6 +121,97 @@ export const deletePost = async (req, res) => {
     }
 };
 
+export const updatePost = async (req, res) => {
+    try {
+        const postId = req.params.id;
+        const userId = req.user.id;
+        const { content = "", intent, removeImage } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid post ID format",
+            });
+        }
+
+        const validIntents = ["ask", "build", "share", "discuss", "reflect"];
+        if (!intent || !validIntents.includes(intent)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid intent. Must be one of: ask, build, share, discuss, reflect",
+            });
+        }
+
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({
+                success: false,
+                message: "Post not found",
+            });
+        }
+
+        if (post.author.toString() !== userId) {
+            return res.status(403).json({
+                success: false,
+                message: "You are not allowed to edit this post",
+            });
+        }
+
+        const normalizedContent = content.trim();
+        const shouldRemoveImage = removeImage === "true" || removeImage === true;
+
+        if (normalizedContent.length > 1000) {
+            return res.status(400).json({
+                success: false,
+                message: "Content must be 1000 characters or less",
+            });
+        }
+
+        if (!normalizedContent && !req.file && (shouldRemoveImage || !post.image)) {
+            return res.status(400).json({
+                success: false,
+                message: "Either content or image is required",
+            });
+        }
+
+        if ((req.file || shouldRemoveImage) && post.imagePublicId) {
+            await cloudinary.uploader.destroy(post.imagePublicId);
+        }
+
+        if (req.file || shouldRemoveImage) {
+            post.image = null;
+            post.imagePublicId = null;
+        }
+
+        if (req.file) {
+            const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+                folder: "posts",
+            });
+            post.image = uploadResult.secure_url;
+            post.imagePublicId = uploadResult.public_id;
+        }
+
+        post.content = normalizedContent;
+        post.intent = intent;
+
+        await post.save();
+        const populatedPost = await post.populate([
+            { path: "author", select: "username name surname avatar" },
+            { path: "likes", select: "username name avatar _id" },
+        ]);
+
+        res.status(200).json({
+            success: true,
+            post: populatedPost,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
 export const toggleLike = async (req, res) => {
     const post = await Post.findById(req.params.id);
     if (!post) {
