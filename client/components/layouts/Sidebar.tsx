@@ -100,7 +100,7 @@ export default function Sidebar() {
         <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={() => setOpen(false)} />
       )}
 
-      <aside className={`fixed md:static top-0 left-0 z-50 h-screen !overflow-hidden hide-scrollbar text-slate-900 dark:text-white 
+      <aside className={`fixed md:static top-0 left-0 z-50 h-screen overflow-hidden! hide-scrollbar text-slate-900 dark:text-white 
   ${open ? "w-50 md:w-55" : "w-0 md:w-16"} 
   border-r border-border shadow-lg flex flex-col gap-5 px-2 py-5 font-serif text-[1.1rem] bg-background
   transform transition-all duration-300 ${open ? "translate-x-0" : "-translate-x-full"}`}>
