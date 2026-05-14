@@ -11,6 +11,7 @@ type ReportPostProps = {
   open: boolean;
   onClose: () => void;
   onSubmit: (reason: ReportReason, details?: string) => Promise<void>;
+  targetLabel?: string;
 };
 
 const REPORT_REASONS = [
@@ -23,7 +24,12 @@ const REPORT_REASONS = [
   { label: "Other", value: "other" },
 ];
 
-export default function ReportPost({ open, onClose, onSubmit }: ReportPostProps) {
+export default function ReportPost({
+  open,
+  onClose,
+  onSubmit,
+  targetLabel = "post",
+}: ReportPostProps) {
   const [reason, setReason] = useState<ReportReason | "">("");
   const [details, setDetails] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -52,11 +58,11 @@ export default function ReportPost({ open, onClose, onSubmit }: ReportPostProps)
     try {
       setSubmitting(true);
       await onSubmit(reason, details.trim() || undefined);
-      toast.success("Post reported successfully");
+      toast.success(`${targetLabel[0].toUpperCase()}${targetLabel.slice(1)} reported successfully`);
       closeModal();
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 409) {
-        toast.error("You already reported this post");
+        toast.error(`You already reported this ${targetLabel}`);
       } else {
         toast.error("Failed to submit report");
       }
@@ -79,11 +85,11 @@ export default function ReportPost({ open, onClose, onSubmit }: ReportPostProps)
         }`}
       >
         <h2 className="text-[1.2rem] font-semibold text-blue-600 dark:text-white mb-3">
-          Report post
+          Report {targetLabel}
         </h2>
 
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Tell us what&apos;s wrong with this post.
+          Tell us what&apos;s wrong with this {targetLabel}.
         </p>
 
         <select

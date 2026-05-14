@@ -1,6 +1,9 @@
+import mongoose from "mongoose";
 import Post from "../models/post.model.js";
+import User from "../models/user.model.js";
 import Notification from "../models/notification.model.js";
 import cloudinary from "../config/cloudinary.js";
+import { getIO, onlineUsers } from "../socket/socket.js";
 
 export const removePostById = async (postId) => {
     const post = await Post.findById(postId);
@@ -23,6 +26,14 @@ export const createPost = async (req, res) => {
             return res.json({
                 success: false,
                 message: "Intent and either content or image are required"
+            });
+        }
+
+        const validIntents = ["ask", "build", "share", "discuss", "reflect"];
+        if (!validIntents.includes(intent)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid intent. Must be one of: ask, build, share, discuss, reflect"
             });
         }
         
@@ -116,20 +127,36 @@ export const toggleLike = async (req, res) => {
         return res.status(404).json({ success: false });
     }
     const userId = req.user.id;
-    const index = post.likes.indexOf(userId);
-    const liked = index === -1;
-    if (index === -1) {
+    const likesWithoutDuplicates = Array.from(
+        new Map(post.likes.map((likeId) => [likeId.toString(), likeId])).values()
+    );
+    const existingIndex = likesWithoutDuplicates.findIndex(
+        (likeId) => likeId.toString() === userId
+    );
+    const liked = existingIndex === -1;
+
+    post.likes = likesWithoutDuplicates;
+
+    if (liked) {
         post.likes.push(userId);
         if (post.author.toString() !== userId) {
-            await Notification.create({
+            const notification = await Notification.create({
                 recipient: post.author,
                 sender: userId,
                 type: "like",
                 post: post._id,
             });
+
+            const recipientSocket = onlineUsers.get(post.author.toString());
+            if (recipientSocket) {
+                getIO().to(recipientSocket).emit("notification:new", {
+                    notificationId: notification._id,
+                    type: notification.type,
+                });
+            }
         }
     } else {
-        post.likes.splice(index, 1);
+        post.likes = post.likes.filter((likeId) => likeId.toString() !== userId);
     }
     await post.save();
     res.json({
@@ -142,28 +169,72 @@ export const toggleLike = async (req, res) => {
 export const getPostsByUser = async (req, res) => {
     try {
         const { userId } = req.params;
+        
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid user ID format",
+            });
+        }
+
+        // Fetch target user to check privacy status
+        const targetUser = await User.findById(userId);
+        if (!targetUser) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+
+        // Check if current user is allowed to see posts
+        const isSelf = req.user?.id === userId;
+        const isFollower = targetUser.followers.some(id => id.toString() === req.user?.id);
+
+        if (targetUser.isPrivate && !isSelf && !isFollower) {
+            return res.status(200).json({
+                success: true,
+                posts: [],
+                message: "This account is private. Follow to see posts."
+            });
+        }
+
         const posts = await Post.find({ author: userId }).populate("author", "username name avatar").populate("likes", "username name avatar _id").sort({ createdAt: -1 });
         return res.status(200).json({
             success: true,
             posts,
         });
-    } catch {
+    } catch (error) {
         return res.status(500).json({
             success: false,
-            message: "Failed to fetch user posts",
+            message: "Failed to fetch user posts: " + error.message,
         });
     }
 };
 
 export const getSinglePost = async (req, res) => {
     try {
-        const post = await Post.findById(req.params.postId).populate("author", "username name avatar").populate("likes", "username name avatar _id");
+        const { postId } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).json({ message: "Invalid post ID format" });
+        }
+
+        const post = await Post.findById(postId).populate("author", "username name avatar isPrivate followers").populate("likes", "username name avatar _id");
         if (!post) {
             return res.status(404).json({ message: "Post not found" });
         }
+
+        // Privacy check for single post
+        const author = post.author;
+        const isSelf = req.user?.id === author._id.toString();
+        const isFollower = author.followers?.some(id => id.toString() === req.user?.id);
+
+        if (author.isPrivate && !isSelf && !isFollower) {
+            return res.status(403).json({ message: "This post is from a private account. Follow them to see it." });
+        }
+
         res.json(post);
-    } catch {
-        res.status(500).json({ message: "Server error" });
+    } catch (error) {
+        res.status(500).json({ message: "Server error: " + error.message });
     }
 };
 

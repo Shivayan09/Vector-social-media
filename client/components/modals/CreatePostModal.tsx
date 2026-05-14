@@ -21,14 +21,69 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [isDragActive, setIsDragActive] = useState(false);
+    const [dragCounter, setDragCounter] = useState(0);
 
     const router = useRouter();
 
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
-    
+    const MAX_CHARS = 500;
+    const charsLeft = MAX_CHARS - content.length;
+
     const handleClose = () => {
         setVisible(false);
         setTimeout(onClose, 200);
+    };
+
+    const processFile = (file: File) => {
+        if (!file.type.startsWith("image/")) {
+            toast.error("Only image files are allowed");
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+            toast.error("File size must be less than 2MB");
+            return;
+        }
+        setImageFile(file);
+        setImagePreview(URL.createObjectURL(file));
+    };
+
+    const handleDragEnter = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragCounter(prev => prev + 1);
+        setIsDragActive(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragCounter(prev => prev - 1);
+        if (dragCounter === 1) {
+            setIsDragActive(false);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragActive(false);
+        setDragCounter(0);
+
+        const files = e.dataTransfer.files;
+        if (files.length === 0) return;
+
+        if (files.length > 1) {
+            toast.warning("Please drop only one image file");
+            return;
+        }
+
+        processFile(files[0]);
     };
 
     const handlePost = async (e: React.FormEvent) => {
@@ -97,7 +152,7 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                     </button>
                 </div>
 
-                <div className="p-6">
+                <div className="p-6 max-h-[70vh] overflow-y-auto">
                     {/* Intent Selector */}
                     <div className="mb-6">
                         <label className="text-sm font-semibold text-foreground/80 mb-3 block">
@@ -123,9 +178,9 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                     </div>
 
                     {/* Content Area */}
-                    <div className="relative group">
+                    <div className="relative">
                         <textarea 
-                            placeholder="What&apos;s on your mind? Share your thoughts..." 
+                            placeholder="What's on your mind? Share your thoughts..." 
                             value={content} 
                             onChange={(e) => setContent(e.target.value)} 
                             className={cn(
@@ -134,12 +189,49 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                                 "text-foreground placeholder:text-foreground/40 text-lg leading-relaxed"
                             )} 
                         />
+                        
                     </div>
+
+                    <div className={cn(
+                        "text-xs mt-1 text-right font-medium transition-colors",
+                        charsLeft < 0 ? "text-red-500" :
+                        charsLeft < 100 ? "text-yellow-500" :
+                        "text-foreground/40"
+                    )}>
+                        {charsLeft} / {MAX_CHARS}
+                    </div>
+
+                    {/* Drop Zone - Visible when no image selected */}
+                    {!imagePreview && (
+                        <div
+                            onDragEnter={handleDragEnter}
+                            onDragLeave={handleDragLeave}
+                            onDragOver={handleDragOver}
+                            onDrop={handleDrop}
+                            className={cn(
+                                "mt-4 p-4 rounded-2xl border-2 border-dashed transition-all duration-200 flex flex-col items-center justify-center cursor-pointer",
+                                isDragActive
+                                    ? "bg-primary/10 border-primary ring-2 ring-primary/30"
+                                    : "border-foreground/20 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 hover:border-foreground/40"
+                            )}
+                        >
+                            <ImageIcon size={28} className={cn(
+                                "mb-2 transition-all duration-200",
+                                isDragActive ? "text-primary animate-bounce" : "text-foreground/50"
+                            )} />
+                            <p className="text-xs font-semibold text-foreground/70 text-center">
+                                Drag and drop your photo here
+                            </p>
+                            <p className="text-xs text-foreground/50 mt-0.5 text-center">
+                                or use the button below
+                            </p>
+                        </div>
+                    )}
 
                     {/* Image Preview */}
                     {imagePreview && (
                         <div className="relative mt-4 group">
-                            <div className="w-full max-h-64 rounded-2xl overflow-hidden border border-white/10 shadow-lg">
+                            <div className="w-full max-h-48 rounded-2xl overflow-hidden border border-white/10 shadow-lg">
                                 <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                             </div>
                             <button 
@@ -152,7 +244,7 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                     )}
 
                     {/* Actions Row */}
-                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
+                    <div className="flex flex-col gap-3 items-center justify-between pt-4 border-t border-white/10">
                         <label className="cursor-pointer group flex items-center gap-2 text-primary hover:bg-primary/10 px-4 py-2 rounded-xl transition-all active:scale-95">
                             <ImageIcon size={22} className="group-hover:rotate-6 transition-transform" />
                             <span className="text-sm font-bold">Photo/Video</span>
@@ -163,26 +255,25 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                                 onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (file) {
-                                        setImageFile(file);
-                                        setImagePreview(URL.createObjectURL(file));
+                                        processFile(file);
                                     }
                                 }} 
                             />
                         </label>
 
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 w-full">
                             <Button 
                                 variant="ghost" 
                                 onClick={handleClose} 
-                                className="rounded-xl px-6 font-semibold"
+                                className="rounded-xl px-6 font-semibold border w-1/2"
                             >
                                 Cancel
                             </Button>
                             <Button 
-                                disabled={loading || !intent || (!content.trim() && !imageFile)} 
+                                disabled={loading || !intent || (!content.trim() && !imageFile) || charsLeft < 0} 
                                 onClick={handlePost} 
                                 className={cn(
-                                    "rounded-xl px-8 font-bold shadow-lg transition-all active:scale-95",
+                                    "rounded-xl w-1/2 px-8 font-bold shadow-lg transition-all active:scale-95",
                                     "bg-primary text-primary-foreground hover:opacity-90"
                                 )}
                             >

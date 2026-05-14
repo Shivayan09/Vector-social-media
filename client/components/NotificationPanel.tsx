@@ -5,12 +5,20 @@ import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import { Trash2, MessageCircle, UserPlus } from "lucide-react";
+import { Trash2, MessageCircle, ArrowRight } from "lucide-react";
 import ConfirmModal from "./modals/DeleteWarning";
-import type { Notification } from "@/lib/types";
+import FollowRequestsModal from "./modals/FollowRequestsModal";
+import FollowButton from "./ui/FollowButton";
+import type { Notification, UserSummary } from "@/lib/types";
+import { socket } from "@/socket/socket";
 
 type Props = {
   search?: string;
+};
+
+type UserSummaryWithFollowState = UserSummary & {
+  isFollowedByCurrentUser?: boolean;
+  isRequestedByCurrentUser?: boolean;
 };
 
 export default function NotificationPanel({ search = "" }: Props) {
@@ -24,7 +32,67 @@ export default function NotificationPanel({ search = "" }: Props) {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [followLoading, setFollowLoading] = useState<Record<string, boolean>>({});
+  const [senderFollowState, setSenderFollowState] = useState<
+    Record<string, { isFollowing: boolean; isRequested: boolean }>
+  >({});
   const [messageLoading, setMessageLoading] = useState<Record<string, boolean>>({});
+  const [deleteLoading, setDeleteLoading] = useState<Record<string, boolean>>({});
+  const [modalOpen, setModalOpen] = useState(false);
+  const getSenderName = (notification: Notification) =>
+    notification.sender?.name || notification.sender?.username || "Someone";
+  const getSenderUsername = (notification: Notification) =>
+    notification.sender?.username || "unknown";
+  const getSenderAvatar = (notification: Notification) =>
+    notification.sender?.avatar || "/default-avatar.png";
+
+  const hydrateSenderFollowState = useCallback(
+    async (notificationsToHydrate: Notification[]) => {
+      const senders = notificationsToHydrate.filter(
+        (notification): notification is Notification & { sender: NonNullable<Notification["sender"]> } =>
+          !!notification.sender?._id && !!notification.sender?.username
+      );
+
+      const uniqueSenders = Array.from(
+        new Map(
+          senders.map((notification) => [
+            notification.sender._id,
+            notification.sender,
+          ])
+        ).values()
+      );
+
+      const states = await Promise.all(
+        uniqueSenders.map(async (sender) => {
+          try {
+            const { data } = await axios.get<UserSummaryWithFollowState>(
+              `${BACKEND_URL}/api/users/${sender.username}`,
+              { withCredentials: true }
+            );
+
+            return [
+              sender._id,
+              {
+                isFollowing: data.isFollowedByCurrentUser ?? false,
+                isRequested: data.isRequestedByCurrentUser ?? false,
+              },
+            ] as const;
+          } catch (error) {
+            console.error("Failed to hydrate notification follow state", error);
+            return [
+              sender._id,
+              {
+                isFollowing: false,
+                isRequested: false,
+              },
+            ] as const;
+          }
+        })
+      );
+
+      setSenderFollowState(Object.fromEntries(states));
+    },
+    [BACKEND_URL]
+  );
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -34,6 +102,7 @@ export default function NotificationPanel({ search = "" }: Props) {
         { withCredentials: true }
       );
       setNotifications(data);
+      await hydrateSenderFollowState(data);
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         toast.error(
@@ -46,9 +115,12 @@ export default function NotificationPanel({ search = "" }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [BACKEND_URL]);
+  }, [BACKEND_URL, hydrateSenderFollowState]);
 
   const deleteSingle = async (id: string) => {
+    if (deleteLoading[id]) return;
+
+    setDeleteLoading((prev) => ({ ...prev, [id]: true }));
     try {
       await axios.delete(
         `${BACKEND_URL}/api/notifications/${id}`,
@@ -62,6 +134,8 @@ export default function NotificationPanel({ search = "" }: Props) {
       } else {
         toast.error("Delete failed");
       }
+    } finally {
+      setDeleteLoading((prev) => ({ ...prev, [id]: false }));
     }
   };
 
@@ -137,28 +211,50 @@ export default function NotificationPanel({ search = "" }: Props) {
     }
   }, [BACKEND_URL, notifications]);
 
-  const isFollowingUser = (userId: string) => {
-    return userData?.following?.includes(userId) ?? false;
-  };
-
-  const handleFollowBack = async (senderId: string) => {
+  const handleAcceptRequest = async (senderId: string) => {
     try {
       setFollowLoading((prev) => ({ ...prev, [senderId]: true }));
-      const res = await axios.put(
-        `${BACKEND_URL}/api/users/${senderId}/follow`,
+      await axios.put(
+        `${BACKEND_URL}/api/users/${senderId}/accept`,
         {},
         { withCredentials: true }
       );
-      if (res.data.followed) {
-        toast.success("Followed successfully");
-      } else {
-        toast.success("Unfollowed successfully");
-      }
+      toast.success("Follow request accepted");
+      // Update local state to remove the request notification or change its type
+      setNotifications(prev => prev.map(n => 
+        (n.sender?._id === senderId && n.type === "follow_request") 
+        ? { ...n, type: "follow" as const } 
+        : n
+      ));
+      setSenderFollowState((prev) => ({
+        ...prev,
+        [senderId]: prev[senderId] || {
+          isFollowing: false,
+          isRequested: false,
+        },
+      }));
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || "Follow action failed");
-      } else {
-        toast.error("Follow action failed");
+        toast.error(err.response?.data?.message || "Action failed");
+      }
+    } finally {
+      setFollowLoading((prev) => ({ ...prev, [senderId]: false }));
+    }
+  };
+
+  const handleRejectRequest = async (senderId: string) => {
+    try {
+      setFollowLoading((prev) => ({ ...prev, [senderId]: true }));
+      await axios.put(
+        `${BACKEND_URL}/api/users/${senderId}/reject`,
+        {},
+        { withCredentials: true }
+      );
+      toast.success("Follow request rejected");
+      setNotifications(prev => prev.filter(n => !(n.sender?._id === senderId && n.type === "follow_request")));
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        toast.error(err.response?.data?.message || "Action failed");
       }
     } finally {
       setFollowLoading((prev) => ({ ...prev, [senderId]: false }));
@@ -196,7 +292,24 @@ export default function NotificationPanel({ search = "" }: Props) {
     const timeoutId = window.setTimeout(() => {
       void fetchNotifications();
     }, 0);
-    return () => window.clearTimeout(timeoutId);
+    const interval = window.setInterval(() => {
+      void fetchNotifications();
+    }, 10000);
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.clearInterval(interval);
+    };
+  }, [fetchNotifications, userData]);
+
+  useEffect(() => {
+    if (!userData) return;
+    const handleNotification = () => {
+      void fetchNotifications();
+    };
+    socket.on("notification:new", handleNotification);
+    return () => {
+      socket.off("notification:new", handleNotification);
+    };
   }, [fetchNotifications, userData]);
 
   useEffect(() => {
@@ -214,11 +327,14 @@ export default function NotificationPanel({ search = "" }: Props) {
     like: "like liked",
     comment: "comment commented",
     message: "message messaged",
+    follow_request: "follow request requested",
+    follow_request_accepted: "accepted your follow request",
   };
 
   const filteredNotifications = notifications.filter((n) => {
+    if (n.type === "follow_request") return false;
     const query = search.toLowerCase();
-    const searchable = `${n.sender.name} ${n.sender.username} ${typeText[n.type]}`.toLowerCase();
+    const searchable = `${getSenderName(n)} ${getSenderUsername(n)} ${typeText[n.type]}`.toLowerCase();
     return searchable.includes(query);
   });
 
@@ -256,6 +372,21 @@ export default function NotificationPanel({ search = "" }: Props) {
         </div>
       </div>
 
+      {userData?.isPrivate && (userData?.followRequests?.length || 0) > 0 && (
+        <div 
+          onClick={() => setModalOpen(true)} 
+          className="mb-4 p-3 rounded-lg border border-border/50 bg-secondary/50 cursor-pointer flex justify-between items-center transition hover:bg-secondary"
+        >
+          <div>
+            <p className="font-medium text-foreground text-sm">Pending follow requests</p>
+            <p className="text-xs text-muted-foreground">{userData.followRequests?.length} requests waiting for approval</p>
+          </div>
+          <ArrowRight className="h-4 w-4 text-muted-foreground" />
+        </div>
+      )}
+
+      <FollowRequestsModal open={modalOpen} onClose={() => setModalOpen(false)} />
+
       {loading ? (
         <p className="surface-text-muted text-sm">
           Loading notifications...
@@ -288,20 +419,28 @@ export default function NotificationPanel({ search = "" }: Props) {
                   if (!selectMode) {
                     if (n.post?._id) {
                       router.push(`/main/post/${n.post._id}`);
+                    } else if (n.type === "message") {
+                      if (n.sender?._id) {
+                        void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
+                      }
                     } else {
-                      router.push(`/main/user/${n.sender.username}`);
+                      if (n.sender?.username) {
+                        router.push(`/main/user/${n.sender.username}`);
+                      }
                     }
                   }
                 }}
                 className="flex gap-3 flex-1 cursor-pointer p-2 rounded-lg">
-                <img alt={n.sender.name || "Notification sender"} src={n.sender.avatar || "/default-avatar.png"} className="h-10 w-10 rounded-full object-cover" />
+                <img alt={getSenderName(n)} src={getSenderAvatar(n)} className="h-10 w-10 rounded-full object-cover" />
 
                 <div>
                   <p className="text-foreground">
                     <span className="font-semibold">
-                      {n.sender.name}
+                      {getSenderName(n)}
                     </span>{" "}
                     {n.type === "follow" && "followed you"}
+                    {n.type === "follow_request" && "wants to follow you"}
+                    {n.type === "follow_request_accepted" && "accepted your follow request"}
                     {n.type === "like" && "liked your post"}
                     {n.type === "comment" &&
                       "commented on your post"}
@@ -319,44 +458,74 @@ export default function NotificationPanel({ search = "" }: Props) {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
+                          if (n.sender?._id) {
+                            void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
+                          }
                         }}
-                        disabled={messageLoading[n._id]}
+                        disabled={messageLoading[n._id] || !n.sender?._id}
                         className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:opacity-70 text-white rounded-md transition"
                       >
                         <MessageCircle className="h-4 w-4" />
                         {messageLoading[n._id] ? "Loading..." : "Reply"}
                       </button>
                     )}
-                    {n.type === "follow" && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!isFollowingUser(n.sender._id)) {
-                            handleFollowBack(n.sender._id);
-                          }
-                        }}
-                        disabled={followLoading[n.sender._id] || isFollowingUser(n.sender._id)}
-                        className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-md transition ${
-                          isFollowingUser(n.sender._id)
-                            ? "bg-gray-600 text-gray-300 cursor-default"
-                            : "bg-blue-600 hover:bg-blue-700 text-white"
-                        }`}
-                      >
-                        <UserPlus className="h-4 w-4" />
-                        {followLoading[n.sender._id]
-                          ? "Loading..."
-                          : isFollowingUser(n.sender._id)
-                          ? "Following"
-                          : "Follow back"}
-                      </button>
+                    {n.type === "follow_request" && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (n.sender?._id) {
+                              handleAcceptRequest(n.sender._id);
+                            }
+                          }}
+                          disabled={!n.sender?._id || followLoading[n.sender?._id || ""]}
+                          className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
+                        >
+                          {followLoading[n.sender?._id || ""] ? "..." : "Accept"}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (n.sender?._id) {
+                              handleRejectRequest(n.sender._id);
+                            }
+                          }}
+                          disabled={!n.sender?._id || followLoading[n.sender?._id || ""]}
+                          className="px-3 py-1.5 text-sm bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-foreground rounded-md transition"
+                        >
+                          {followLoading[n.sender?._id || ""] ? "..." : "Reject"}
+                        </button>
+                      </div>
+                    )}
+                    {(n.type === "follow" || n.type === "follow_request_accepted") && (
+                      n.sender?._id ? (
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <FollowButton
+                            userId={n.sender._id}
+                            isFollowing={senderFollowState[n.sender._id]?.isFollowing ?? false}
+                            isRequested={senderFollowState[n.sender._id]?.isRequested ?? false}
+                            onFollowChange={(next) =>
+                              setSenderFollowState((prev) => ({
+                                ...prev,
+                                [n.sender!._id]: {
+                                  isFollowing: next,
+                                  isRequested: false,
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                      ) : null
                     )}
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        deleteSingle(n._id);
+                        if (deleteLoading[n._id]) return;
+                        void deleteSingle(n._id);
                       }}
-                      className="p-1 text-foreground transition hover:text-red-400"
+                      disabled={deleteLoading[n._id]}
+                      className="p-1 text-foreground transition hover:text-red-400 disabled:pointer-events-none disabled:opacity-50"
                     >
                       <Trash2 className="h-5 cursor-pointer" />
                     </button>

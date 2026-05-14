@@ -1,7 +1,7 @@
 import User from "../models/user.model.js"
+import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "../validators/user.validator.js";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import validator from 'validator';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 
@@ -14,7 +14,7 @@ const sendResetEmail = async (email, token) => {
         },
     });
 
-    const resetLink = `http://localhost:3000/reset-password/${token}`;
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${token}`;
 
     const mailOptions = {
         from: process.env.EMAIL,
@@ -28,6 +28,15 @@ const sendResetEmail = async (email, token) => {
 
 export const register = async (req, res) => {
     try {
+        const validation = registerSchema.safeParse(req.body);
+
+        if (!validation.success) {
+            return res.json({
+                success: false,
+                message: validation.error.errors[0].message,
+            });
+        }
+
         const {
             name,
             surname,
@@ -37,62 +46,9 @@ export const register = async (req, res) => {
             username,
             bio,
             description,
-        } = req.body;
+            isPrivate,
+        } = validation.data;
 
-        // basic validations
-        if (!name) {
-            return res.json({ success: false, message: "Please enter your name!" });
-        }
-
-        if (!email) {
-            return res.json({ success: false, message: "Please enter your email!" });
-        }
-
-        if (!validator.isEmail(email)) {
-            return res.json({ success: false, message: "Please enter a valid email!" });
-        }
-
-        if (!phoneNumber) {
-            return res.json({
-                success: false,
-                message: "Please enter your phone number!",
-            });
-        }
-
-        if (!validator.isMobilePhone(phoneNumber, "any")) {
-            return res.json({
-                success: false,
-                message: "Please enter a valid phone number!",
-            });
-        }
-
-        if (!password) {
-            return res.json({
-                success: false,
-                message: "Please enter a password!",
-            });
-        }
-
-        if (!username) {
-            return res.json({
-                success: false,
-                message: "Please enter a username!",
-            });
-        }
-
-        if (!bio) {
-            return res.json({
-                success: false,
-                message: "Please enter a bio!",
-            });
-        }
-
-        if (!description) {
-            return res.json({
-                success: false,
-                message: "Please enter a description!",
-            });
-        }
 
         // check existing email
         const existingUser = await User.findOne({ email });
@@ -123,6 +79,7 @@ export const register = async (req, res) => {
             username,
             bio,
             description,
+            isPrivate: isPrivate === true,
             isProfileComplete: true,
         });
 
@@ -158,6 +115,7 @@ export const getMe = (req, res) => {
         success: true,
         user: {
             id: user._id,
+            _id: user._id,
             name: user.name,
             surname: user.surname,
             email: user.email,
@@ -165,26 +123,28 @@ export const getMe = (req, res) => {
             bio: user.bio,
             description: user.description,
             avatar: user.avatar,
+            isProfileComplete: user.isProfileComplete,
+            signupStep: user.signupStep,
             followers: user.followers.map(id => id.toString()),
             following: user.following.map(id => id.toString()),
+            isPrivate: user.isPrivate,
+            followRequests: user.followRequests.map(id => id.toString()),
         },
     });
 };
 
 export const login = async (req, res) => {
-    const { username, password } = req.body;
-    if (!username) {
+    const validation = loginSchema.safeParse(req.body);
+
+    if (!validation.success) {
         return res.json({
             success: false,
-            message: "Enter your username!"
-        })
+            message: validation.error.errors[0].message,
+        });
     }
-    if (!password) {
-        return res.json({
-            success: false,
-            message: "Enter your password!"
-        })
-    }
+
+    const { username, password } = validation.data;
+
     try {
         const user = await User.findOne({ username }).select("+password");
         if (!user) {
@@ -242,10 +202,16 @@ export const logout = async (req, res) => {
 
 export const forgotPassword = async (req, res) => {
     try {
-        const { email } = req.body;
-        if (!email) {
-            return res.json({ success: false, message: "Please enter your email!" });
+        const validation = forgotPasswordSchema.safeParse(req.body);
+
+        if (!validation.success) {
+            return res.json({
+                success: false,
+                message: validation.error.errors[0].message,
+            });
         }
+
+        const { email } = validation.data;
         
         const user = await User.findOne({ email });
         if (!user) {
@@ -272,10 +238,16 @@ export const forgotPassword = async (req, res) => {
 
 export const resetPassword = async (req, res) => {
     try {
-        const { resetToken, newPassword } = req.body;
-        if (!resetToken || !newPassword) {
-            return res.json({ success: false, message: "Please provide token and new password!" });
+        const validation = resetPasswordSchema.safeParse(req.body);
+
+        if (!validation.success) {
+            return res.json({
+                success: false,
+                message: validation.error.errors[0].message,
+            });
         }
+
+        const { resetToken, newPassword } = validation.data;
 
         const user = await User.findOne({
             resetToken,

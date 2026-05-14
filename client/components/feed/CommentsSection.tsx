@@ -5,10 +5,15 @@ import { useEffect, useState } from "react";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import { Trash2 } from "lucide-react";
+import { Flag, MoreHorizontal, Trash2 } from "lucide-react";
 import DeleteWarning from "@/components/modals/DeleteWarning";
 import InlineLoader from "../loaders/InlineLoader";
 import type { Comment } from "@/lib/types";
+import ReportPost from "../modals/ReportPost";
+import type { ReportReason } from "@/lib/types";
+import { reportComment } from "@/lib/reportApi";
+import Linkify from "../ui/Linkify";
+
 
 export default function CommentsSection({ postId }: { postId: string }) {
     const { userData } = useAppContext();
@@ -18,7 +23,10 @@ export default function CommentsSection({ postId }: { postId: string }) {
     const router = useRouter();
     const [buttonLoading, setButtonLoading] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
     const [selectedComment, setSelectedComment] = useState<Comment | null>(null);
+    const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+    const [visibleCount, setVisibleCount] = useState(5);
 
     function timeAgo(dateString: string) {
         const now = new Date().getTime();
@@ -90,21 +98,29 @@ export default function CommentsSection({ postId }: { postId: string }) {
         }
     };
 
+    const handleReportComment = async (reason: ReportReason, details?: string) => {
+        if (!selectedComment?._id) return;
+        await reportComment(selectedComment._id, reason, details);
+        setMenuOpenId(null);
+    };
+
     if (loading) {
         return <div className="py-2"><InlineLoader text="Loading comments..." /></div>;
     }
 
     return (
-        <div className="mt-3 rounded-b-xl border-t border-border/80 px-3 pt-3 pb-5 md:px-5">
+        <div className="mt-3 rounded-b-xl px-3 pt-4 pb-5 md:px-5">
+            <p className="text-[0.8rem] font-semibold uppercase tracking-wide surface-text-muted mb-4">
+                Comments {comments.length > 0 && `· ${comments.length}`}
+            </p>
             {userData && (
-                <div className="flex gap-2 my-4">
-                    <textarea value={text} onChange={(e) => setText(e.target.value)} onKeyDown={handleKeyDown} placeholder="Write a comment.." className="form-textarea mt-0 flex-1" rows={1} />
-                    <button disabled={!text.trim() || buttonLoading} onClick={handlePost} className="w-20 md:w-25 h-9 md:h-10 cursor-pointer bg-blue-500 text-white rounded-md disabled:opacity-50">
+                <div className="flex gap-2 mb-5">
+                    <textarea value={text} onChange={(e) => setText(e.target.value)} onKeyDown={handleKeyDown} placeholder="Write a comment.." className="form-textarea mt-0 flex-1" rows={2} />
+                    <button disabled={!text.trim() || buttonLoading} onClick={handlePost} className="w-20 md:w-25 h-9 md:h-10 cursor-pointer bg-blue-500 text-white text-sm font-medium rounded-md disabled:opacity-50 self-end">
                         Post
                     </button>
                 </div>
             )}
-
             <div className="flex flex-col">
                 {comments.length === 0 && (
                     <p className="surface-text-muted py-3 text-center text-[0.9rem]">
@@ -112,12 +128,12 @@ export default function CommentsSection({ postId }: { postId: string }) {
                     </p>
                 )}
 
-                {comments.map((c) => {
+                {comments.slice(0, visibleCount).map((c) => {
                     const isOwner =
                         String(c.author?._id) === String(userData?.id);
 
                     return (
-                        <div key={c._id} className="flex gap-3 py-3 px-2 rounded-lg">
+                        <div key={c._id} className="flex gap-3 py-3 px-2 rounded-lg border-b border-border/50 last:border-b-0">
                             <img alt={c.author?.name || "Comment author"} src={c.author?.avatar || "/default-avatar.png"} className="h-8 w-8 md:h-9 md:w-9 object-cover rounded-full shrink-0"/>
 
                             <div className="flex flex-col w-full">
@@ -132,20 +148,55 @@ export default function CommentsSection({ postId }: { postId: string }) {
                                         {c.author?.name}
                                     </p>
 
-                                    {isOwner && (
-                                        <Trash2
-                                            size={16}
-                                            className="surface-text-muted ml-auto cursor-pointer"
+                                    <div className="ml-auto relative">
+                                        <button
+                                            type="button"
+                                            className="surface-text-muted cursor-pointer"
                                             onClick={() => {
-                                                setSelectedComment(c);
-                                                setShowDeleteModal(true);
+                                                setMenuOpenId((prev) => (prev === c._id ? null : c._id));
                                             }}
-                                        />
-                                    )}
+                                        >
+                                            <MoreHorizontal size={16} />
+                                        </button>
+
+                                        {menuOpenId === c._id && (
+                                            <div className="absolute right-0 top-6 z-20 w-36 overflow-hidden rounded-md border border-black/10 bg-white shadow-lg dark:border-white/10 dark:bg-blue-950">
+                                                {!isOwner && (
+                                                    <button
+                                                        type="button"
+                                                        className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-black/3 dark:hover:bg-white/5"
+                                                        onClick={() => {
+                                                            setSelectedComment(c);
+                                                            setShowReportModal(true);
+                                                            setMenuOpenId(null);
+                                                        }}
+                                                    >
+                                                        <Flag size={14} />
+                                                        Report comment
+                                                    </button>
+                                                )}
+
+                                                {isOwner && (
+                                                    <button
+                                                        type="button"
+                                                        className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-black/3 dark:hover:bg-white/5"
+                                                        onClick={() => {
+                                                            setSelectedComment(c);
+                                                            setShowDeleteModal(true);
+                                                            setMenuOpenId(null);
+                                                        }}
+                                                    >
+                                                        <Trash2 size={14} />
+                                                        Delete comment
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <p className="surface-text-muted text-[0.9rem] wrap-break-word">
-                                    {c?.content}
+                                    <Linkify text={c?.content || ""} />
                                 </p>
 
                                 <p className="text-[0.75rem] text-gray-500 mt-1">
@@ -156,6 +207,15 @@ export default function CommentsSection({ postId }: { postId: string }) {
                         </div>
                     );
                 })}
+
+                {comments.length > visibleCount && (
+                    <button
+                        onClick={() => setVisibleCount(prev => prev + 5)}
+                        className="mt-3 w-full text-sm text-blue-500 hover:text-blue-600 font-medium transition"
+                    >
+                        Load more comments ({comments.length - visibleCount} remaining)
+                    </button>
+                )}
             </div>
 
             <DeleteWarning
@@ -166,6 +226,16 @@ export default function CommentsSection({ postId }: { postId: string }) {
                 }}
                 onConfirm={handleDeleteComment}
                 content={selectedComment?.content}
+            />
+
+            <ReportPost
+                open={showReportModal}
+                onClose={() => {
+                    setShowReportModal(false);
+                    setSelectedComment(null);
+                }}
+                onSubmit={handleReportComment}
+                targetLabel="comment"
             />
         </div>
     );

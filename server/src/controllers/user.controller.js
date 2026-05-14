@@ -1,15 +1,33 @@
 import cloudinary from "../config/cloudinary.js";
 import User from "../models/user.model.js";
 import Notification from "../models/notification.model.js";
+import Post from "../models/post.model.js";
+import { getIO, onlineUsers } from "../socket/socket.js";
 
 export const uploadAvatar = async (req, res) => {
     try {
-        if (!req.file) {
+       if (!req.file) {
             return res.status(400).json({
                 success: false,
                 message: "No file uploaded",
             });
         }
+
+        const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+        if (!allowedTypes.includes(req.file.mimetype)) {
+            return res.status(400).json({
+                success: false,
+                message: "Only JPEG, PNG and WEBP images are allowed",
+            });
+        }
+
+        if (req.file.size > 5 * 1024 * 1024) {
+            return res.status(400).json({
+                success: false,
+                message: "File size must be under 5MB",
+            });
+        }
+
         const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({
@@ -45,7 +63,7 @@ export const uploadAvatar = async (req, res) => {
 export const updateProfile = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { username, name, surname, phoneNumber, bio, description } = req.body;
+        const { username, name, surname, phoneNumber, bio, description, isPrivate } = req.body;
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({
@@ -66,15 +84,19 @@ export const updateProfile = async (req, res) => {
             user.phoneNumber = phoneNumber;
         }
         if (bio !== undefined) {
+            if (bio.length > 30) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Bio length exceeds word limit!"
+                });
+            }
             user.bio = bio;
-        }
-        if (bio.length > 30) {
-            return res.json({
-                message: "Bio length exceeds word limit!"
-            })
         }
         if (description !== undefined) {
             user.description = description;
+        }
+        if (isPrivate !== undefined) {
+            user.isPrivate = isPrivate;
         }
         await user.save();
         return res.status(200).json({
@@ -90,6 +112,8 @@ export const updateProfile = async (req, res) => {
                 avatar: user.avatar,
                 isProfileComplete: user.isProfileComplete,
                 signupStep: user.signupStep,
+                isPrivate: user.isPrivate,
+                followRequests: user.followRequests.map(id => id.toString()),
             },
             message: "Profile updated successfully!"
         });
@@ -112,29 +136,100 @@ export const toggleFollowUser = async (req, res) => {
         }
         const currentUser = await User.findById(currentUserId);
         const targetUser = await User.findById(targetUserId);
+        if (!currentUser) {
+            return res.status(404).json({
+                message: "Current user not found"
+            });
+        }
         if (!targetUser) {
             return res.status(404).json({
                 message: "User not found"
             });
         }
-        const isFollowing = currentUser.following.includes(targetUserId);
+        const isFollowing = currentUser.following.some(id => id.toString() === targetUserId);
         if (isFollowing) {
-            await User.findByIdAndUpdate(currentUserId, { $pull: { following: targetUserId }, $inc: { followingCount: -1 } });
-            await User.findByIdAndUpdate(targetUserId, { $pull: { followers: currentUserId }, $inc: { followersCount: -1 } });
+            // Unfollow logic
+            const result = await User.updateOne(
+                { _id: currentUserId, following: targetUserId },
+                { $pull: { following: targetUserId }, $inc: { followingCount: -1 } }
+            );
+            if (result.modifiedCount > 0) {
+                await User.updateOne(
+                    { _id: targetUserId, followers: currentUserId },
+                    { $pull: { followers: currentUserId }, $inc: { followersCount: -1 } }
+                );
+            }
             return res.json({
                 followed: false
             });
         } else {
-            await User.findByIdAndUpdate(currentUserId, { $addToSet: { following: targetUserId }, $inc: { followingCount: 1 } });
-            await User.findByIdAndUpdate(targetUserId, { $addToSet: { followers: currentUserId }, $inc: { followersCount: 1 }, });
-            await Notification.create({
-                recipient: targetUser._id,
-                sender: req.user._id,
-                type: "follow",
-            });
-            return res.json({
-                followed: true
-            });
+            // Check if account is private
+            if (targetUser.isPrivate) {
+                const alreadyRequested = targetUser.followRequests.some(id => id.toString() === currentUserId);
+                if (alreadyRequested) {
+                    // Cancel follow request
+                    await User.findByIdAndUpdate(targetUserId, { $pull: { followRequests: currentUserId } });
+                    // Optionally delete the notification
+                    await Notification.deleteOne({ recipient: targetUserId, sender: currentUserId, type: "follow_request" });
+                    return res.json({
+                        requested: false,
+                        message: "Follow request cancelled"
+                    });
+                } else {
+                    // Create follow request
+                    const result = await User.updateOne(
+                        { _id: targetUserId, followRequests: { $ne: currentUserId }, followers: { $ne: currentUserId } },
+                        { $addToSet: { followRequests: currentUserId } }
+                    );
+
+                    if (result.modifiedCount > 0) {
+                        const notification = await Notification.create({
+                            recipient: targetUser._id,
+                            sender: req.user._id,
+                            type: "follow_request",
+                        });
+                        const recipientSocket = onlineUsers.get(targetUser._id.toString());
+                        if (recipientSocket) {
+                            getIO().to(recipientSocket).emit("notification:new", {
+                                notificationId: notification._id,
+                                type: notification.type,
+                            });
+                        }
+                    }
+                    return res.json({
+                        requested: true,
+                        message: "Follow request sent"
+                    });
+                }
+            } else {
+                // Public account follow (immediate)
+                const result = await User.updateOne(
+                    { _id: currentUserId, following: { $ne: targetUserId } },
+                    { $addToSet: { following: targetUserId }, $inc: { followingCount: 1 } }
+                );
+
+                if (result.modifiedCount > 0) {
+                    await User.updateOne(
+                        { _id: targetUserId, followers: { $ne: currentUserId } },
+                        { $addToSet: { followers: currentUserId }, $inc: { followersCount: 1 } }
+                    );
+                    const notification = await Notification.create({
+                        recipient: targetUser._id,
+                        sender: req.user._id,
+                        type: "follow",
+                    });
+                    const recipientSocket = onlineUsers.get(targetUser._id.toString());
+                    if (recipientSocket) {
+                        getIO().to(recipientSocket).emit("notification:new", {
+                            notificationId: notification._id,
+                            type: notification.type,
+                        });
+                    }
+                }
+                return res.json({
+                    followed: true
+                });
+            }
         }
     } catch (error) {
         res.status(500).json({
@@ -144,16 +239,116 @@ export const toggleFollowUser = async (req, res) => {
     }
 };
 
+export const getFollowRequests = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).populate("followRequests", "name username avatar");
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        res.status(200).json(user.followRequests);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+export const acceptFollowRequest = async (req, res) => {
+    try {
+        const currentUserId = req.user.id;
+        const requesterId = req.params.id;
+        const user = await User.findById(currentUserId);
+        
+        if (!user.followRequests.some(id => id.toString() === requesterId)) {
+            return res.status(400).json({ message: "No follow request from this user" });
+        }
+
+        const result = await User.updateOne(
+            { _id: currentUserId, followRequests: requesterId, followers: { $ne: requesterId } },
+            { 
+                $pull: { followRequests: requesterId },
+                $addToSet: { followers: requesterId },
+                $inc: { followersCount: 1 }
+            }
+        );
+
+        if (result.modifiedCount > 0) {
+            await User.updateOne(
+                { _id: requesterId, following: { $ne: currentUserId } },
+                {
+                    $addToSet: { following: currentUserId },
+                    $inc: { followingCount: 1 }
+                }
+            );
+            const notification = await Notification.create({
+                recipient: requesterId,
+                sender: currentUserId,
+                type: "follow_request_accepted",
+            });
+            const recipientSocket = onlineUsers.get(requesterId.toString());
+            if (recipientSocket) {
+                getIO().to(recipientSocket).emit("notification:new", {
+                    notificationId: notification._id,
+                    type: notification.type,
+                });
+            }
+        }
+
+        res.json({ success: true, message: "Follow request accepted" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+export const rejectFollowRequest = async (req, res) => {
+    try {
+        const currentUserId = req.user.id;
+        const requesterId = req.params.id;
+        const user = await User.findById(currentUserId);
+
+        if (!user.followRequests.some(id => id.toString() === requesterId)) {
+            return res.status(400).json({ message: "No follow request from this user" });
+        }
+
+        await User.findByIdAndUpdate(currentUserId, { 
+            $pull: { followRequests: requesterId }
+        });
+
+        res.json({ success: true, message: "Follow request rejected" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
 export const getUserProfile = async (req, res) => {
     try {
         const { username } = req.params;
-        const user = await User.findOne({ username }).select("name surname username avatar bio description followersCount followingCount").lean();
+        const user = await User.findOne({ username }).select("_id name surname username avatar bio description followersCount followingCount followers isPrivate").lean();
         if (!user) {
             return res.status(404).json({
                 message: "User not found"
             });
         }
-        res.json(user);
+        
+        const response = { ...user };
+        
+        // Check if current user is following or has requested to follow this profile
+        if (req.user) {
+            const currentUserId = req.user._id.toString();
+            response.isFollowedByCurrentUser = user.followers.some(follower => 
+                follower.toString() === currentUserId
+            );
+            
+            // Check for pending follow request
+            // We need to fetch the user again with followRequests or use the lean object if it was included
+            const fullUser = await User.findById(user._id).select("followRequests").lean();
+            response.isRequestedByCurrentUser = fullUser.followRequests?.some(id => 
+                id.toString() === currentUserId
+            );
+        }
+        
+        // Don't expose the followers array in the response
+        delete response.followers;
+        
+        res.json(response);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -161,11 +356,20 @@ export const getUserProfile = async (req, res) => {
 
 export const getFollowers = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id).populate("followers", "name username avatar followers");
-        if (!user) {
+        const targetUser = await User.findById(req.params.id);
+        if (!targetUser) {
             return res.status(404).json({ message: "User not found" });
         }
-        res.status(200).json(user.followers);
+
+        const isSelf = req.user.id === req.params.id;
+        const isFollower = targetUser.followers.some(id => id.toString() === req.user.id);
+
+        if (targetUser.isPrivate && !isSelf && !isFollower) {
+            return res.status(403).json({ message: "This account is private. Follow to see their followers." });
+        }
+
+        const userWithFollowers = await User.findById(req.params.id).populate("followers", "name username avatar followers");
+        res.status(200).json(userWithFollowers.followers);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -173,11 +377,20 @@ export const getFollowers = async (req, res) => {
 
 export const getFollowing = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id).populate("following", "name username avatar followers");
-        if (!user) {
+        const targetUser = await User.findById(req.params.id);
+        if (!targetUser) {
             return res.status(404).json({ message: "User not found" });
         }
-        res.status(200).json(user.following);
+
+        const isSelf = req.user.id === req.params.id;
+        const isFollower = targetUser.followers.some(id => id.toString() === req.user.id);
+
+        if (targetUser.isPrivate && !isSelf && !isFollower) {
+            return res.status(403).json({ message: "This account is private. Follow to see who they follow." });
+        }
+
+        const userWithFollowing = await User.findById(req.params.id).populate("following", "name username avatar followers");
+        res.status(200).json(userWithFollowing.following);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -188,7 +401,7 @@ export const getAllUsers = async (req, res) => {
         const page = Number(req.query.page) || 1;
         const limit = 10;
         const skip = (page - 1) * limit;
-        const users = await User.find().select("-password").limit(limit).skip(skip);
+        const users = await User.find({ _id: { $ne: req.user.id } }).select("-password").limit(limit).skip(skip);
         res.status(200).json({
             success: true,
             users
@@ -212,11 +425,30 @@ export const getSuggestedUsers = async (req, res) => {
                 { _id: { $ne: currentUserId } },
                 { _id: { $nin: following } }
             ]
-        }).select("name username bio avatar followers following").limit(10);
+        }).select("name username bio avatar").limit(10).lean();
+
+        const suggestedUserIds = suggestedUsers.map((user) => user._id);
+        const requestedUsers = await User.find({
+            _id: { $in: suggestedUserIds },
+            followRequests: currentUserId,
+        }).select("_id").lean();
+
+        const requestedUserIds = new Set(
+            requestedUsers.map((user) => user._id.toString())
+        );
+        const followingUserIds = new Set(
+            following.map((id) => id.toString())
+        );
+
+        const users = suggestedUsers.map((user) => ({
+            ...user,
+            isFollowedByCurrentUser: followingUserIds.has(user._id.toString()),
+            isRequestedByCurrentUser: requestedUserIds.has(user._id.toString()),
+        }));
 
         res.status(200).json({
             success: true,
-            users: suggestedUsers
+            users
         });
     } catch (error) {
         res.status(500).json({
@@ -228,16 +460,66 @@ export const getSuggestedUsers = async (req, res) => {
 };
 
 export const searchUsers = async (req, res) => {
-    try {
-        const { query } = req.query;
-        if (!query) {
-            return res.json({ users: [] });
-        }
-        const users = await User.find({ $or: [{ name: { $regex: query, $options: "i" } }, { username: { $regex: query, $options: "i" } }] }).select("-password").limit(10);
-        res.json({ users });
-    } catch {
-        res.status(500).json({
-            message: "Search failed"
+try {
+const { query } = req.query;
+
+
+    if (!query) {
+        return res.json({
+            users: [],
+            posts: []
         });
     }
+
+    const users = await User.find({
+        $or: [
+            { name: { $regex: query, $options: "i" } },
+            { username: { $regex: query, $options: "i" } }
+        ]
+    })
+    .select("name username avatar")
+    .limit(10)
+    .lean();
+
+    const currentUserId = req.user._id || req.user.id;
+    const followingUserIds = new Set(
+        (req.user.following || []).map((id) => id.toString())
+    );
+    const searchedUserIds = users.map((user) => user._id);
+    const requestedUsers = await User.find({
+        _id: { $in: searchedUserIds },
+        followRequests: currentUserId,
+    }).select("_id").lean();
+
+    const requestedUserIds = new Set(
+        requestedUsers.map((user) => user._id.toString())
+    );
+
+    const usersWithFollowState = users.map((user) => ({
+        ...user,
+        isFollowedByCurrentUser: followingUserIds.has(user._id.toString()),
+        isRequestedByCurrentUser: requestedUserIds.has(user._id.toString()),
+    }));
+
+    const posts = await Post.find({
+        $or: [
+            { content: { $regex: query, $options: "i" } },
+            { intent: { $regex: query, $options: "i" } }
+        ]
+    })
+    .populate("author", "username")
+    .limit(10);
+
+    res.json({
+        users: usersWithFollowState,
+        posts
+    });
+
+} catch {
+    res.status(500).json({
+        message: "Search failed"
+    });
+}
+
 };
+

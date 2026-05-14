@@ -22,6 +22,8 @@ export type UserSummary = {
   following?: string[];
   followersCount?: number;
   followingCount?: number;
+  isPrivate?: boolean;
+  followRequests?: string[] | UserSummary[];
 };
 
 export type Post = {
@@ -46,6 +48,10 @@ export type Comment = {
 export type Conversation = {
   _id: string;
   participants: UserSummary[];
+  lastMessage?: Message;
+  unreadCount?: number;
+  updatedAt?: string;
+  createdAt?: string;
 };
 
 export type Message = {
@@ -58,8 +64,8 @@ export type Message = {
 
 export type Notification = {
   _id: string;
-  type: "follow" | "like" | "comment" | "message";
-  sender: UserSummary;
+  type: "follow" | "like" | "comment" | "message" | "follow_request" | "follow_request_accepted";
+  sender: UserSummary | null;
   post?: {
     _id: string;
   };
@@ -77,6 +83,7 @@ export type ProfileFormData = {
   phoneNumber: string;
   bio: string;
   description: string;
+  isPrivate: boolean;
 };
 
 export type GoogleCredentialResponseLite = {
@@ -108,7 +115,7 @@ export type ReportTargetPost = {
 
 export type Report = {
   _id: string;
-  targetType: "post";
+  targetType: "post" | "comment";
   targetId: ReportTargetPost | string;
   reportedBy: UserSummary;
   postAuthor: UserSummary;

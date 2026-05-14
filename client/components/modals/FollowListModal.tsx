@@ -6,24 +6,15 @@ import { useMounted } from "@/lib/useMounted";
 import UserRow from "../profile/UserRow";
 import type { UserSummary } from "@/lib/types";
 
-type LikesModalProps = {
+type FollowListModalProps = {
   open: boolean;
   onClose: () => void;
-  likers: (string | UserSummary)[];
+  users: UserSummary[];
+  title: string;
 };
 
-export default function LikesModal({ open, onClose, likers }: LikesModalProps) {
+export default function FollowListModal({ open, onClose, users, title }: FollowListModalProps) {
   const mounted = useMounted();
-
-  // Backend always populates likes with full user objects (username, name, avatar, _id)
-  // Filter ensures we only render valid user objects, ignoring any legacy string IDs
-  const userLikers = Array.from(
-    new Map(
-      likers
-        .filter((liker) => typeof liker === "object")
-        .map((liker) => [(liker as UserSummary)._id, liker as UserSummary])
-    ).values()
-  );
 
   if (!mounted) return null;
 
@@ -43,20 +34,18 @@ export default function LikesModal({ open, onClose, likers }: LikesModalProps) {
         }`}
       >
         <div className="flex justify-between items-center mb-4">
-          <p className="text-[1.2rem] font-semibold">
-            {userLikers.length} {userLikers.length === 1 ? "Like" : "Likes"}
-          </p>
+          <p className="text-[1.2rem] font-semibold">{title}</p>
           <button onClick={onClose} className="cursor-pointer">
             <X />
           </button>
         </div>
 
-        {userLikers.length === 0 ? (
-          <p className="text-center text-gray-500 py-8">No likes yet</p>
+        {users.length === 0 ? (
+          <p className="text-center text-gray-500 py-8">No users to show</p>
         ) : (
           <div className="max-h-96 overflow-y-auto">
             <div className="flex flex-col gap-3">
-              {userLikers.map((user) => (
+              {users.map((user) => (
                 <UserRow key={user._id} user={user} />
               ))}
             </div>
