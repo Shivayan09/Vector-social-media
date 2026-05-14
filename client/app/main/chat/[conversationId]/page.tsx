@@ -5,7 +5,7 @@ import axios from "axios";
 import { socket } from "@/socket/socket";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
-import { Trash2, ArrowLeft, MoreVertical } from "lucide-react";
+import { Trash2, ArrowLeft, MoreHorizontal } from "lucide-react";
 import ConfirmModal from "@/components/modals/DeleteWarning";
 import type { Conversation, Message, UserSummary } from "@/lib/types";
 
@@ -264,18 +264,18 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
                 <div
                   className={`${
                     isMe
-                      ? "chat-bubble-self"
+                      ? "chat-bubble-self !rounded-none"
                       : "chat-bubble-other"
                   }`}
                 >
 
                   {isMe && (
-                    <div className="absolute -top-2 -right-2">
+                    <div className="absolute top-1 right-1">
                       <button
                         className="cursor-pointer opacity-70 hover:opacity-100"
                         onClick={() => setOpenMenuId(openMenuId === m._id ? null : m._id)}
                       >
-                        <MoreVertical size={14} />
+                        <MoreHorizontal size={14} />
                       </button>
                       {openMenuId === m._id && (
                         <>
@@ -283,7 +283,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
                             className="fixed inset-0 z-10"
                             onClick={() => setOpenMenuId(null)}
                           />
-                          <div className="absolute right-0 top-5 z-20 min-w-[140px] rounded-md border bg-background shadow-md">
+                          <div className="absolute right-0 bottom-full mb-1 z-20 min-w-[140px] rounded-md border bg-background shadow-md">
                             <button
                               className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-accent"
                               onClick={() => {
