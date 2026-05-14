@@ -117,9 +117,6 @@ export default function Sidebar() {
           </div>
         </div>
 
-        <div className="w-full flex items-center gap-2 md:pl-5">
-          <Themetoggle />
-        </div>
 
         <SidebarItem
           icon={<Home className="h-5 md:h-7" />}
@@ -170,13 +167,16 @@ export default function Sidebar() {
           active={pathname === "/main/settings"}
         />
 
-        <p
-          className="sidebar-item mt-auto mr-auto h-10 items-center pl-2 md:pl-5"
-          onClick={() => setLogoutOpen(true)}
-        >
-          <LogOut className="sidebar-icon opacity-60" />
-          {isLoggedIn ? "Log out" : "Log in"}
-        </p>
+        <div className="mt-auto flex items-center justify-between w-full pr-2">
+          <p
+            className="sidebar-item w-auto h-10 items-center pl-2 md:pl-5"
+            onClick={() => setLogoutOpen(true)}
+          >
+            <LogOut className="sidebar-icon opacity-60" />
+            {isLoggedIn ? "Log out" : "Log in"}
+          </p>
+          <Themetoggle />
+        </div>
       </aside>
 
       {logoutOpen && (

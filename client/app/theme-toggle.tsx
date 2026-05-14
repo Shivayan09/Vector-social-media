@@ -2,6 +2,7 @@
 
 import { useTheme } from "next-themes";
 import { useMounted } from "@/lib/useMounted";
+import { Sun, Moon } from "lucide-react";
 
 export default function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -14,22 +15,14 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="flex cursor-pointer items-center gap-3 text-foreground"
+      className="flex cursor-pointer items-center justify-center rounded-lg p-2 transition-colors duration-300 hover:bg-black/5 dark:hover:bg-white/5"
+      aria-label="Toggle theme"
     >
-      <div
-        className={`flex h-6 w-12 border-2 items-center rounded-full p-1 transition-colors duration-300 ${
-          isDark ? "bg-primary" : "glass-surface"
-        }`}
-      >
-        <div
-          className={`h-4 w-4 rounded-full bg-black/30 dark:bg-white shadow-md transform transition-transform duration-300 ${
-            isDark ? "translate-x-6" : "translate-x-0"
-          }`}
-        />
-      </div>
-      <span className="font-medium surface-text-muted">
-        {isDark ? "Dark" : "Light"}
-      </span>
+      {isDark ? (
+        <Sun className="h-5 w-5 text-foreground" />
+      ) : (
+        <Moon className="h-5 w-5 text-foreground" />
+      )}
     </button>
   );
 }
