@@ -74,24 +74,29 @@ export default function LoginForm() {
     };
 
     return (
-        <div className="form-card w-80 md:w-100">
-            <p className="form-title">
-                Welcome back!
-            </p>
+        <div className="form-card w-full max-w-md md:max-w-lg">
+            <div className="mb-6 space-y-2">
+                <p className="form-title">
+                    Welcome back!
+                </p>
 
-            <p className="form-subtitle md:text-[1.1rem]">
-                Log in to get right back in!
-            </p>
+                <p className="form-subtitle md:text-[1.1rem]">
+                    Log in to get right back in!
+                </p>
+            </div>
 
             {/* GOOGLE BUTTON */}
-            <GoogleLogin
+            <div className="flex justify-center">
+                <GoogleLogin
                     onSuccess={handleGoogle}
                     onError={() => toast.error("Google login failed")}
                     theme="outline"
                     size="medium"
+                    width="100%"
                 />
+            </div>
 
-            <div className="relative flex items-center justify-center mt-5">
+            <div className="relative my-5 flex items-center justify-center">
                 <div className="form-divider"></div>
                 <span className="form-divider-text backdrop-blur-3xl">
                     or
@@ -138,7 +143,7 @@ export default function LoginForm() {
 
             <Button
                 disabled={loading}
-                className={`w-full mt-5 cursor-pointer dark:text-white ${
+                className={`mt-6 w-full cursor-pointer dark:text-white ${
                     loading
                         ? "bg-blue-400"
                         : "bg-blue-500 hover:bg-blue-600"
@@ -148,7 +153,7 @@ export default function LoginForm() {
                 {loading ? "Logging in" : "Log in"}
             </Button>
 
-            <div className="flex items-center justify-between gap-2 mt-5 text-sm">
+            <div className="mt-5 flex items-center justify-between gap-2 text-sm">
                 <p className=" text-foreground">
                     Don&apos;t have an account?
                 </p>
