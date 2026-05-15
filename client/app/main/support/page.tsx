@@ -39,7 +39,7 @@ export default function SupportPage() {
 
             <div className="rounded-xl border border-border p-6 space-y-2 cursor-pointer transition-all duration-300 hover:border-primary hover:shadow-md active:opacity-60">
               <h2 className="text-lg font-semibold text-foreground">Report a Bug</h2>
-              <p className="text-sm text-foreground/70">Found something that doesn't look right? Let us know and we will fix it as soon as possible.</p>
+              <p className="text-sm text-foreground/70">Found something that does not look right? Let us know and we will fix it as soon as possible.</p>
             </div>
 
             <div className="rounded-xl border border-border p-6 space-y-2 cursor-pointer transition-all duration-300 hover:border-primary hover:shadow-md active:opacity-60">
