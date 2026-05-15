@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema(
     surname: {
       type: String,
       default: "",
+      maxlength: 100,
     },
 
     username: {
@@ -81,6 +82,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: "",
+      maxlength: 20,
     },
 
     isPrivate: {
