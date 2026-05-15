@@ -46,8 +46,8 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
   const getDateString = (date: string) => {
     const messageDate = new Date(date);
     const today = new Date();
-    
-    const isToday = 
+
+    const isToday =
       messageDate.getDate() === today.getDate() &&
       messageDate.getMonth() === today.getMonth() &&
       messageDate.getFullYear() === today.getFullYear();
@@ -61,7 +61,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
 
     if (isToday) return "Today";
     if (isYesterday) return "Yesterday";
-    
+
     return messageDate.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
@@ -90,11 +90,22 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
       messageId: string;
       conversationId: string;
     }) => {
+
       if (convo === conversationId) {
+
         setMessages((prev) =>
-          prev.filter((m) => m._id !== messageId)
+          prev.map((m) =>
+            m._id === messageId
+              ? {
+                ...m,
+                isDeleted: true,
+              }
+              : m
+          )
         );
+
       }
+
     };
 
     socket.on("receive_message", handleReceiveMessage);
@@ -198,14 +209,25 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
       );
 
       setMessages((prev) =>
-        prev.filter((m) => m._id !== selectedMessage._id)
+        prev.map((m) =>
+          m._id === selectedMessage._id
+            ? {
+              ...m,
+              isDeleted: true,
+            }
+            : m
+        )
       );
 
     } catch (err) {
+
       console.error(err);
+
     } finally {
+
       setWarningOpen(false);
       setSelectedMessage(null);
+
     }
   };
 
@@ -221,7 +243,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
           <ArrowLeft size={24} className="text-foreground" />
         </button>
 
-        <img alt={otherUser?.name || "User avatar"} src={otherUser?.avatar || "/default-avatar.png"} className="h-12 w-12 rounded-full object-cover border ml-3"/>
+        <img alt={otherUser?.name || "User avatar"} src={otherUser?.avatar || "/default-avatar.png"} className="h-12 w-12 rounded-full object-cover border ml-3" />
 
         <p
           onClick={() =>
@@ -235,86 +257,91 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
       <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
 
         {messages.length === 0 ? (
-  <p className="surface-text-muted mt-4 text-center">
-    No messages
-  </p>
-) : (
-  messages.map((m, index) => {
+          <p className="surface-text-muted mt-4 text-center">
+            No messages
+          </p>
+        ) : (
+          messages.map((m, index) => {
 
-          const isMe = m.sender._id === userData?.id;
-          const showDateSeparator = 
-            index === 0 || 
-            getDateString(m.createdAt) !== getDateString(messages[index - 1].createdAt);
+            const isMe = m.sender._id === userData?.id;
+            const showDateSeparator =
+              index === 0 ||
+              getDateString(m.createdAt) !== getDateString(messages[index - 1].createdAt);
 
-          return (
-            <div key={m._id}>
-              {showDateSeparator && (
-                <div className="flex justify-center my-3">
-                  <span className="chat-date-pill">
-                    {getDateString(m.createdAt)}
-                  </span>
-                </div>
-              )}
-              
-              <div
-                className={`flex ${
-                  isMe ? "justify-end" : "justify-start"
-                }`} >
+            return (
+              <div key={m._id}>
+                {showDateSeparator && (
+                  <div className="flex justify-center my-3">
+                    <span className="chat-date-pill">
+                      {getDateString(m.createdAt)}
+                    </span>
+                  </div>
+                )}
 
                 <div
-                  className={`${
-                    isMe
+                  className={`flex ${isMe ? "justify-end" : "justify-start"
+                    }`} >
+
+                  <div
+                    className={`${isMe
                       ? "chat-bubble-self !rounded-none"
                       : "chat-bubble-other"
-                  }`}
-                >
+                      }`}
+                  >
 
-                  {isMe && (
-                    <div className="absolute top-1 right-1">
-                      <button
-                        className="cursor-pointer opacity-70 hover:opacity-100"
-                        onClick={() => setOpenMenuId(openMenuId === m._id ? null : m._id)}
-                      >
-                        <MoreHorizontal size={14} />
-                      </button>
-                      {openMenuId === m._id && (
-                        <>
-                          <div
-                            className="fixed inset-0 z-10"
-                            onClick={() => setOpenMenuId(null)}
-                          />
-                          <div className="absolute right-0 bottom-full mb-1 z-20 min-w-[140px] rounded-md border bg-background shadow-md">
-                            <button
-                              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-accent"
-                              onClick={() => {
-                                setSelectedMessage(m);
-                                setWarningOpen(true);
-                                setOpenMenuId(null);
-                              }}
-                            >
-                              <Trash2 size={12} />
-                              Delete message
-                            </button>
-                          </div>
-                        </>
+                    {isMe && !m.isDeleted && (
+                      <div className="absolute top-1 right-1">
+                        <button
+                          className="cursor-pointer opacity-70 hover:opacity-100"
+                          onClick={() => setOpenMenuId(openMenuId === m._id ? null : m._id)}
+                        >
+                          <MoreHorizontal size={14} />
+                        </button>
+                        {openMenuId === m._id && (
+                          <>
+                            <div
+                              className="fixed inset-0 z-10"
+                              onClick={() => setOpenMenuId(null)}
+                            />
+                            <div className="absolute right-0 bottom-full mb-1 z-20 min-w-[140px] rounded-md border bg-background shadow-md">
+                              <button
+                                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-accent"
+                                onClick={() => {
+                                  setSelectedMessage(m);
+                                  setWarningOpen(true);
+                                  setOpenMenuId(null);
+                                }}
+                              >
+                                <Trash2 size={12} />
+                                Delete message
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    <p className="whitespace-pre-wrap wrap-break-word">
+                      {m.isDeleted ? (
+                        <span className="italic opacity-60">
+                          This message was deleted
+                        </span>
+                      ) : (
+                        m.content
                       )}
-                    </div>
-                  )}
 
-                  <p className="whitespace-pre-wrap wrap-break-word">
-                    {m.content}
-                    <span className="ml-2 text-[10px] opacity-70 relative top-0.5">
-                      {formatTime(m.createdAt)}
-                    </span>
-                  </p>
+                      <span className="ml-2 text-[10px] opacity-70 relative top-0.5">
+                        {formatTime(m.createdAt)}
+                      </span>
+                    </p>
+
+                  </div>
 
                 </div>
-
               </div>
-            </div>
-          );
-       }))
-}
+            );
+          }))
+        }
 
         <div ref={bottomRef} />
       </div>
@@ -335,14 +362,13 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
           placeholder="Type a message..."
         />
 
-        <button 
-          onClick={sendMessage} 
+        <button
+          onClick={sendMessage}
           disabled={isSending}
-          className={`text-white px-5 rounded-md transition-all ${
-            isSending 
-              ? "bg-blue-400 cursor-not-allowed opacity-60" 
-              : "bg-blue-500 cursor-pointer hover:bg-blue-600"
-          }`}
+          className={`text-white px-5 rounded-md transition-all ${isSending
+            ? "bg-blue-400 cursor-not-allowed opacity-60"
+            : "bg-blue-500 cursor-pointer hover:bg-blue-600"
+            }`}
         >
           {isSending ? "Sending..." : "Send"}
         </button>

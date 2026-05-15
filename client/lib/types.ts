@@ -58,6 +58,10 @@ export type Message = {
   _id: string;
   sender: UserSummary;
   content: string;
+
+  isDeleted?: boolean;
+  deletedAt?: string | null;
+
   createdAt: string;
   conversation: string;
 };
