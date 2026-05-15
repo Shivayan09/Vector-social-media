@@ -26,30 +26,30 @@ export default function SupportPage() {
                 How can we help?
               </h1>
               <p className="max-w-3xl text-base leading-7 text-foreground/70 md:text-lg">
-                Browse the topics below or reach out to us directly. We're here to help you get the most out of Vector.
+                Browse the topics below or reach out to us directly. We are here to help you get the most out of Vector.
               </p>
             </div>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-xl border border-border p-6 space-y-2 cursor-pointer transition-all duration-300 hover:border-primary hover:shadow-md hover:scale-105 active:opacity-60">
+            <div className="rounded-xl border border-border p-6 space-y-2 cursor-pointer transition-all duration-300 hover:border-primary hover:shadow-md active:opacity-60">
               <h2 className="text-lg font-semibold text-foreground">Account Issues</h2>
               <p className="text-sm text-foreground/70">Having trouble logging in or managing your account? We can help you get back on track.</p>
             </div>
 
-            <div className="rounded-xl border border-border p-6 space-y-2 cursor-pointer transition-all duration-300 hover:border-primary hover:shadow-md hover:scale-105 active:opacity-60">
+            <div className="rounded-xl border border-border p-6 space-y-2 cursor-pointer transition-all duration-300 hover:border-primary hover:shadow-md active:opacity-60">
               <h2 className="text-lg font-semibold text-foreground">Report a Bug</h2>
-              <p className="text-sm text-foreground/70">Found something that doesn't look right? Let us know and we'll fix it as soon as possible.</p>
+              <p className="text-sm text-foreground/70">Found something that doesn't look right? Let us know and we will fix it as soon as possible.</p>
             </div>
 
-            <div className="rounded-xl border border-border p-6 space-y-2 cursor-pointer transition-all duration-300 hover:border-primary hover:shadow-md hover:scale-105 active:opacity-60">
+            <div className="rounded-xl border border-border p-6 space-y-2 cursor-pointer transition-all duration-300 hover:border-primary hover:shadow-md active:opacity-60">
               <h2 className="text-lg font-semibold text-foreground">Privacy & Safety</h2>
               <p className="text-sm text-foreground/70">Questions about your data or how to stay safe on Vector? Find answers here.</p>
             </div>
 
-            <div className="rounded-xl border border-border p-6 space-y-2 cursor-pointer transition-all duration-300 hover:border-primary hover:shadow-md hover:scale-105 active:opacity-60">
+            <div className="rounded-xl border border-border p-6 space-y-2 cursor-pointer transition-all duration-300 hover:border-primary hover:shadow-md active:opacity-60">
               <h2 className="text-lg font-semibold text-foreground">Contact Us</h2>
-              <p className="text-sm text-foreground/70">Still need help? Send us a message and we'll get back to you.</p>
+              <p className="text-sm text-foreground/70">Still need help? Send us a message and we will get back to you.</p>
             </div>
           </div>
 
