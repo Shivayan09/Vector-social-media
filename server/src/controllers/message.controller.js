@@ -143,22 +143,51 @@ export const markConversationAsRead = async (req, res) => {
 
 export const deleteMessage = async (req, res) => {
   try {
+
     const message = await Message.findById(req.params.messageId);
+
     if (!message) {
-      return res.status(404).json({ message: "Message not found" });
+      return res.status(404).json({
+        message: "Message not found"
+      });
     }
+
     if (message.sender.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Not allowed" });
+      return res.status(403).json({
+        message: "Not allowed"
+      });
     }
-    await message.deleteOne();
+
+    if (message.isDeleted) {
+      return res.status(400).json({
+        message: "Message already deleted"
+      });
+    }
+
+    message.isDeleted = true;
+    message.deletedAt = new Date();
+
+    await message.save();
+
     const io = getIO();
+
     io.emit("message_deleted", {
       messageId: message._id,
       conversationId: message.conversation,
     });
-    res.json({ success: true });
+
+    res.json({
+      success: true,
+      message: "Message deleted successfully"
+    });
+
   } catch (error) {
+
     console.error("DELETE MESSAGE ERROR:", error);
-    res.status(500).json({ message: error.message });
+
+    res.status(500).json({
+      message: error.message
+    });
+
   }
 };
