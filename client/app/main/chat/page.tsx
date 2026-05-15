@@ -19,6 +19,7 @@ export default function ChatListPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [allUserResults, setAllUserResults] = useState<UserSummary[]>([]);
     const [chatToDelete, setChatToDelete] = useState<Conversation | null>(null);
+    const [clearAllOpen, setClearAllOpen] = useState(false);
     const [hasMessages, setHasMessages] = useState(false);
     const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
     const [loading, setLoading] = useState(true);
@@ -162,13 +163,44 @@ export default function ChatListPage() {
         }
     };
 
+    const clearAllChats = async () => {
+        try {
+            await axios.delete(
+                `${BACKEND_URL}/api/conversation/clear-all`,
+                { withCredentials: true }
+            );
+
+            setConversations([]);
+            setFilteredConversations([]);
+            setUnreadCounts({});
+            toast.success("All chats cleared successfully");
+        } catch (error) {
+            console.error("Failed to clear chats", error);
+            toast.error("Failed to clear chats");
+        } finally {
+            setClearAllOpen(false);
+        }
+    };
+
     return (
         <div className="flex w-full h-screen">
             <div className="flex-1 h-screen overflow-y-auto hide-scrollbar">
 
-                <h1 className="px-5 pt-3 text-xl text-center md:text-left font-bold text-foreground">
-                    Your chats
-                </h1>
+                <div className="flex items-center justify-between gap-3 px-5 pt-3">
+                    <h1 className="text-xl text-center md:text-left font-bold text-foreground">
+                        Your chats
+                    </h1>
+                    {conversations.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => setClearAllOpen(true)}
+                            className="inline-flex items-center gap-2 rounded-md border border-red-200 px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-900/60 dark:text-red-400 dark:hover:bg-red-950/40"
+                        >
+                            <Trash2 size={16} />
+                            Clear all
+                        </button>
+                    )}
+                </div>
                 <div className="p-5 pb-0">
                     <input
                         type="text"
@@ -279,6 +311,15 @@ export default function ChatListPage() {
                         : "Are you sure you want to delete this chat?"
                 }
                 confirmText="Delete"
+            />
+
+            <ConfirmModal
+                open={clearAllOpen}
+                onClose={() => setClearAllOpen(false)}
+                onConfirm={clearAllChats}
+                title="Clear all chats?"
+                description="This will permanently remove every chat and message in your inbox."
+                confirmText="Clear all"
             />
         </div>
     );

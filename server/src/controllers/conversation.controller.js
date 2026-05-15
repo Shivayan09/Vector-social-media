@@ -1,5 +1,6 @@
 import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
+import Notification from "../models/notification.model.js";
 
 export const createConversation = async (req, res) => {
     try {
@@ -134,7 +135,7 @@ export const getUserConversations = async (req, res) => {
 
 export const deleteConversation = async (req, res) => {
     try {
-        const convo = await Conversation.findOneAndDelete({
+        const convo = await Conversation.findOne({
             _id: req.params.conversationId,
             participants: req.user._id
         });
@@ -143,7 +144,51 @@ export const deleteConversation = async (req, res) => {
             return res.status(404).json({ message: "Conversation not found or unauthorized" });
         }
 
+        await Message.deleteMany({ conversation: convo._id });
+        await Notification.deleteMany({
+            type: "message",
+            conversation: convo._id
+        });
+        await convo.deleteOne();
+
         res.json({ message: "Conversation deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const clearUserConversations = async (req, res) => {
+    try {
+        const conversations = await Conversation.find({
+            participants: req.user._id
+        }).select("_id");
+
+        const conversationIds = conversations.map((conversation) => conversation._id);
+
+        if (conversationIds.length === 0) {
+            return res.json({
+                message: "No conversations to clear",
+                deletedCount: 0
+            });
+        }
+
+        await Message.deleteMany({
+            conversation: { $in: conversationIds }
+        });
+        await Notification.deleteMany({
+            type: "message",
+            conversation: { $in: conversationIds }
+        });
+
+        const deletedConversations = await Conversation.deleteMany({
+            _id: { $in: conversationIds },
+            participants: req.user._id
+        });
+
+        res.json({
+            message: "All chats cleared successfully",
+            deletedCount: deletedConversations.deletedCount
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
