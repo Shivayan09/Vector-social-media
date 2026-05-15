@@ -74,7 +74,7 @@ export default function LoginForm() {
     };
 
     return (
-        <div className="form-card w-full max-w-md md:max-w-lg">
+        <div className="form-card w-80 md:w-100">
             <div className="mb-6 space-y-2">
                 <p className="form-title">
                     Welcome back!
