@@ -180,9 +180,18 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                     {/* Content Area */}
                     <div className="relative">
                         <textarea 
+                            maxLength={MAX_CHARS}
                             placeholder="What's on your mind? Share your thoughts..." 
                             value={content} 
-                            onChange={(e) => setContent(e.target.value)} 
+                            onChange={(e) => {
+                                const value = e.target.value;
+
+                                if (value.length <= MAX_CHARS) {
+                                    setContent(value);
+                                } else {
+                                    toast.error("Post content cannot exceed 500 characters");
+                                }
+                            }} 
                             className={cn(
                                 "w-full h-40 resize-none rounded-2xl p-4 outline-none transition-all duration-200",
                                 "bg-black/5 dark:bg-white/5 border-2 border-transparent focus:border-primary/30",
@@ -194,11 +203,13 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
 
                     <div className={cn(
                         "text-xs mt-1 text-right font-medium transition-colors",
-                        charsLeft < 0 ? "text-red-500" :
-                        charsLeft < 100 ? "text-yellow-500" :
-                        "text-foreground/40"
+                        content.length >= MAX_CHARS
+                            ? "text-red-500"
+                            : content.length >= 400
+                            ? "text-yellow-500"
+                            : "text-foreground/40"
                     )}>
-                        {charsLeft} / {MAX_CHARS}
+                        {content.length} / {MAX_CHARS}
                     </div>
 
                     {/* Drop Zone - Visible when no image selected */}
@@ -270,7 +281,7 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                                 Cancel
                             </Button>
                             <Button 
-                                disabled={loading || !intent || (!content.trim() && !imageFile) || charsLeft < 0} 
+                                disabled={loading || !intent || (!content.trim() && !imageFile)}
                                 onClick={handlePost} 
                                 className={cn(
                                     "rounded-xl w-1/2 px-8 font-bold shadow-lg transition-all active:scale-95",
