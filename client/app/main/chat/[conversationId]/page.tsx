@@ -303,7 +303,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
                               className="fixed inset-0 z-10"
                               onClick={() => setOpenMenuId(null)}
                             />
-                            <div className="absolute right-0 bottom-full mb-1 z-20 min-w-[140px] rounded-md border bg-background shadow-md">
+                            <div className="absolute right-0 bottom-full mb-1 z-20 min-w-35 rounded-md border bg-background shadow-md">
                               <button
                                 className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-accent"
                                 onClick={() => {
