@@ -2,15 +2,11 @@
 
 import axios from "axios";
 import {
-  Compass,
   ExternalLink,
   Flame,
   Heart,
   LayoutGrid,
-  Lightbulb,
   Search,
-  Shuffle,
-  Trophy,
   TrendingUp,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -78,7 +74,6 @@ export default function Explore() {
   const [postResults, setPostResults] = useState<SearchPost[]>([]);
   const [searching, setSearching] = useState(false);
   const [open, setOpen] = useState(false);
-  const [highlightedTopic, setHighlightedTopic] = useState<Intent | null>(null);
   const router = useRouter();
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -182,13 +177,6 @@ export default function Explore() {
     router.push(`/main/post/${post._id}`);
   };
 
-  const handleRandomTopic = () => {
-    if (topicCards.length === 0) return;
-    const random =
-      topicCards[Math.floor(Math.random() * topicCards.length)];
-    setHighlightedTopic(random.intent);
-  };
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -217,7 +205,7 @@ export default function Explore() {
         {/* Single column: app layout already includes Sidebar — avoid a second column/aside. */}
         <div className="min-w-0 space-y-8">
           <section
-            className="panel-card space-y-3"
+            className="space-y-3"
             aria-labelledby="explore-search-heading"
           >
             <h2
@@ -227,7 +215,7 @@ export default function Explore() {
               Search
             </h2>
             <div className="relative min-w-0" ref={wrapperRef}>
-                <div className="search-pill flex min-h-11 items-center gap-2 px-3 py-1">
+                <div className="search-pill flex min-h-11 items-center gap-2 border-0 px-3 py-1">
                   <Search
                     className="h-5 shrink-0 text-muted-foreground"
                     aria-hidden
@@ -337,52 +325,6 @@ export default function Explore() {
             </section>
 
             <section
-              className="panel-card space-y-4"
-              aria-labelledby="explore-topics-shortcuts-heading"
-            >
-              <h2
-                id="explore-topics-shortcuts-heading"
-                className="flex items-center gap-2 font-semibold text-foreground"
-              >
-                <Compass className="h-5 shrink-0 text-blue-400" aria-hidden />
-                Topics
-              </h2>
-
-              <div className="flex flex-col gap-3">
-                {topicCards.slice(0, 2).map((topic) => (
-                  <button
-                    key={topic.intent}
-                    type="button"
-                    onClick={() => setHighlightedTopic(topic.intent)}
-                    className={`${exploreCard} flex min-h-11 w-full items-center justify-center gap-2 px-3 py-3 hover:-translate-y-0.5`}
-                  >
-                    {topic.intent === "build" ? (
-                      <Trophy className="h-4 shrink-0" />
-                    ) : (
-                      <Lightbulb className="h-4 shrink-0" />
-                    )}
-                    <span className="text-sm">{topic.label}</span>
-                  </button>
-                ))}
-
-                <button
-                  type="button"
-                  onClick={handleRandomTopic}
-                  className={`${exploreCard} flex min-h-11 w-full items-center justify-center gap-2 px-3 py-3 hover:-translate-y-0.5`}
-                >
-                  <Shuffle className="h-4 shrink-0 opacity-80" />
-                  <span className="text-sm">Random topic</span>
-                </button>
-              </div>
-
-              {highlightedTopic && (
-                <p className="text-sm text-blue-500">
-                  Highlighted: {intentLabel[highlightedTopic]}
-                </p>
-              )}
-            </section>
-
-            <section
               className="panel-card space-y-3"
               aria-labelledby="explore-intents-heading"
             >
@@ -431,11 +373,7 @@ export default function Explore() {
                   {topicCards.map((topic) => (
                     <div
                       key={topic.intent}
-                      className={`${exploreGridCard} relative min-h-[10rem] overflow-hidden ${
-                        highlightedTopic === topic.intent
-                          ? "border-blue-400 shadow-md ring-2 ring-blue-400/25"
-                          : ""
-                      }`}
+                      className={`${exploreGridCard} relative min-h-[10rem] overflow-hidden`}
                     >
                       <p className="absolute bottom-0 left-0 z-20 flex w-full items-center justify-between bg-black/40 p-2 text-sm text-white">
                         <span className="flex min-w-0 items-center gap-2">
