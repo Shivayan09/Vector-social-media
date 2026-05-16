@@ -26,14 +26,26 @@ const sendResetEmail = async (email, token) => {
     await transporter.sendMail(mailOptions);
 };
 
+const getValidationMessage = (validationResult, fallbackMessage) => {
+    const firstIssue = validationResult?.error?.issues?.[0];
+    return firstIssue?.message || fallbackMessage;
+};
+
 export const register = async (req, res) => {
     try {
+        if (typeof req.body?.name !== "string" || !req.body.name.trim()) {
+            return res.json({
+                success: false,
+                message: "Please enter your name!",
+            });
+        }
+
         const validation = registerSchema.safeParse(req.body);
 
         if (!validation.success) {
             return res.json({
                 success: false,
-                message: validation.error.errors[0].message,
+                message: getValidationMessage(validation, "Invalid registration data"),
             });
         }
 
@@ -139,7 +151,7 @@ export const login = async (req, res) => {
     if (!validation.success) {
         return res.json({
             success: false,
-            message: validation.error.errors[0].message,
+            message: getValidationMessage(validation, "Invalid login data"),
         });
     }
 
@@ -207,7 +219,7 @@ export const forgotPassword = async (req, res) => {
         if (!validation.success) {
             return res.json({
                 success: false,
-                message: validation.error.errors[0].message,
+                message: getValidationMessage(validation, "Invalid email"),
             });
         }
 
@@ -244,7 +256,7 @@ export const resetPassword = async (req, res) => {
         if (!validation.success) {
             return res.json({
                 success: false,
-                message: validation.error.errors[0].message,
+                message: getValidationMessage(validation, "Invalid password reset request"),
             });
         }
 

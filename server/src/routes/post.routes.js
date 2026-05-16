@@ -38,6 +38,7 @@ postRouter.get("/top-week", getTopPostsOfWeek);
 postRouter.get("/top-month", getTopPostsOfMonth);
 postRouter.get("/", getPosts);
 postRouter.get("/:postId", optionalAuth, getSinglePost);
+postRouter.post("/like/:id", authMiddleware, toggleLike);
 postRouter.put("/:id/like", authMiddleware, toggleLike);
 postRouter.put("/:id/share", authMiddleware, incrementShare);
 postRouter.put("/:id", authMiddleware, upload.single("image"), updatePost);
