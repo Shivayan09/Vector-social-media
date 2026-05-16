@@ -152,7 +152,7 @@
 
 @layer components {
   .app-body {
-    @apply h-screen overflow-y-auto;
+    @apply h-screen overflow-hidden;
   }
 
   .app-shell {
@@ -172,7 +172,7 @@
   }
 
   .auth-page {
-    @apply flex min-h-screen items-center justify-center px-4 py-10 overflow-y-auto;
+    @apply flex max-h-screen items-center justify-center px-4 py-10 overflow-y-auto;
   }
 
   .glass-surface {
