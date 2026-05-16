@@ -245,21 +245,18 @@ function EditableInput({
 }: EditableFieldProps) {
   return (
     <div>
-      <div className="flex justify-between mb-1">
-        <label className="font-medium">{label}</label>
-        {!editable && (
-          <button onClick={onEdit} className="text-blue-600 text-sm cursor-pointer">
-            Edit
-          </button>
-        )}
-      </div>
+      <label className="font-medium block mb-1">{label}</label>
       <input
         name={name}
         value={value}
         disabled={!editable}
         onChange={onChange}
-        className={`w-full px-3 py-2 rounded-lg border ${editable ? "border-blue-500" : "bg-gray-100 cursor-not-allowed"
-          }`}
+        onClick={onEdit}
+        className={`w-full px-3 py-2 rounded-lg border transition-all duration-200 ${
+          editable
+            ? "border-blue-500 bg-white dark:bg-zinc-800 shadow-sm outline-none"
+            : "bg-gray-100 dark:bg-zinc-700 cursor-pointer hover:border-blue-300"
+        }`}
       />
     </div>
   );
@@ -275,22 +272,19 @@ function EditableTextarea({
 }: EditableFieldProps) {
   return (
     <div className="md:col-span-2">
-      <div className="flex justify-between mb-1">
-        <label className="font-medium">{label}</label>
-        {!editable && (
-          <button onClick={onEdit} className="text-blue-600 text-sm cursor-pointer">
-            Edit
-          </button>
-        )}
-      </div>
+      <label className="font-medium block mb-1">{label}</label>
       <textarea
         name={name}
         value={value}
         disabled={!editable}
         onChange={onChange}
+        onClick={onEdit}
         rows={3}
-        className={`w-full px-3 py-2 rounded-lg border ${editable ? "border-blue-500" : "bg-gray-100 cursor-not-allowed"
-          }`}
+        className={`w-full px-3 py-2 rounded-lg border transition-all duration-200 ${
+          editable
+            ? "border-blue-500 bg-white dark:bg-zinc-800 shadow-sm outline-none"
+            : "bg-gray-100 dark:bg-zinc-700 cursor-pointer hover:border-blue-300"
+        }`}
       />
     </div>
   );
