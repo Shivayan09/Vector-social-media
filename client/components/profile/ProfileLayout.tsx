@@ -158,7 +158,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
                 emptyText={
                   isSelfProfile
                     ? "You haven't posted anything yet."
-                    : "This user hasn&apos;t posted yet."
+                    : "This user hasn't posted yet."
                 }
               />
             )}
