@@ -284,7 +284,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
 
                   <div
                     className={`${isMe
-                      ? "chat-bubble-self !rounded-none"
+                      ? "chat-bubble-self"
                       : "chat-bubble-other"
                       }`}
                   >
@@ -313,7 +313,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
                                 }}
                               >
                                 <Trash2 size={12} />
-                                Delete message
+                                Delete
                               </button>
                             </div>
                           </>
@@ -321,7 +321,10 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
                       </div>
                     )}
 
-                    <p className="whitespace-pre-wrap wrap-break-word">
+                    <p
+                      className={`whitespace-pre-wrap wrap-break-word ${isMe && !m.isDeleted ? "pr-6" : ""
+                        }`}
+                    >
                       {m.isDeleted ? (
                         <span className="italic opacity-60">
                           This message was deleted
