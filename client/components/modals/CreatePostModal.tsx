@@ -138,12 +138,12 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
             />
 
             <div className={cn(
-                "fixed z-60 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] md:w-[45vw] lg:w-[35vw]",
+                "fixed z-60 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] md:w-[45vw] lg:w-[50vw]",
                 "glass-surface-strong rounded-3xl shadow-2xl p-0 overflow-hidden transition-all duration-300 ease-out border-t border-white/20",
                 visible ? "opacity-100 scale-100 translate-y-[-50%]" : "opacity-0 scale-95 translate-y-[-48%]"
             )}>
                 {/* Header */}
-                <div className="flex justify-between items-center px-6 py-4 border-b border-white/10">
+                <div className="flex justify-between items-center px-6 pt-5 border-b border-white/10">
                     <h2 className="text-xl font-bold text-foreground">Create New Post</h2>
                     <button 
                         onClick={handleClose} 
