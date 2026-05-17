@@ -72,7 +72,14 @@ export const updateProfile = async (req, res) => {
             });
         }
         if (username !== undefined) {
-            user.username = username;
+            const trimmedUsername = username.trim();
+            if (trimmedUsername === "") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Username cannot be empty"
+                });
+            }
+            user.username = trimmedUsername;
         }
         if (name !== undefined) {
             user.name = name;
