@@ -63,10 +63,6 @@ export const sendMessage = async (req, res) => {
       "username name avatar"
     );
 
-    const receiverId = conversation.participants.find(
-      (id) => id.toString() !== req.user._id.toString()
-    );
-
     if (receiverId) {
 
       const notification = await Notification.create({
