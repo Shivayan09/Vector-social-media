@@ -7,6 +7,7 @@ import PostsDisplay from "./PostsDisplay";
 import FollowButton from "@/components/ui/FollowButton";
 import FollowersDisplay from "./FollowersDisplay";
 import FollowingDisplay from "./FollowingDisplay";
+import MutualFollowersBar from "./MutualFollowersBar";
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -113,6 +114,14 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
           <p className="surface-text-muted text-sm">
             {user.description}
           </p>
+
+          {/* Social proof — only visible to logged-in users visiting someone else's profile */}
+          {!isSelfProfile && (
+            <MutualFollowersBar
+              mutualFollowers={user.mutualFollowers ?? []}
+              mutualFollowersCount={user.mutualFollowersCount ?? 0}
+            />
+          )}
 
           <div className="mt-2 flex justify-center gap-6 font-semibold text-foreground">
             <span>{user.followersCount ?? user.followers?.length ?? 0} Followers</span>

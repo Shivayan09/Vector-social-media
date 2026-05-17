@@ -5,6 +5,13 @@ export type Intent =
   | "discuss"
   | "reflect";
 
+export type MutualFollower = {
+  _id: string;
+  name: string;
+  username: string;
+  avatar?: string;
+};
+
 export type UserSummary = {
   _id: string;
   id: string;
@@ -26,6 +33,8 @@ export type UserSummary = {
   followRequests?: string[] | UserSummary[];
   isFollowedByCurrentUser?: boolean;
   isRequestedByCurrentUser?: boolean;
+  mutualFollowers?: MutualFollower[];
+  mutualFollowersCount?: number;
 };
 
 export type Post = {
