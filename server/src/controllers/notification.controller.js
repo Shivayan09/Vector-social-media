@@ -1,4 +1,5 @@
 import Notification from "../models/notification.model.js";
+import User from "../models/user.model.js";
 
 export const getNotifications = async (req, res) => {
     const currentUserId = req.user?._id || req.user?.id;
@@ -6,8 +7,35 @@ export const getNotifications = async (req, res) => {
         .populate("sender", "name username avatar _id")
         .populate("post")
         .populate("conversation")
-        .sort({ createdAt: -1 });
-    return res.json(notifications);
+        .sort({ createdAt: -1 })
+        .lean();
+
+    const followingUserIds = new Set(
+        (req.user?.following || []).map(id => id.toString())
+    );
+
+    const senderIds = notifications
+        .map(n => n.sender?._id)
+        .filter(id => id);
+
+    const requestedUsers = await User.find({
+        _id: { $in: senderIds },
+        followRequests: currentUserId,
+    }).select("_id").lean();
+
+    const requestedUserIds = new Set(
+        requestedUsers.map((user) => user._id.toString())
+    );
+
+    const notificationsWithFollowState = notifications.map(notification => {
+        if (notification.sender) {
+            notification.sender.isFollowedByCurrentUser = followingUserIds.has(notification.sender._id.toString());
+            notification.sender.isRequestedByCurrentUser = requestedUserIds.has(notification.sender._id.toString());
+        }
+        return notification;
+    });
+
+    return res.json(notificationsWithFollowState);
 };
 
 export const markAsRead = async (req, res) => {
