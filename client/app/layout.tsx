@@ -1,9 +1,20 @@
 import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ToastProvider from "@/components/ToastProvider";
 import Providers from "@/components/Providers";
 import GlobalLoader from "@/components/GlobalLoader";
 import { Analytics } from "@vercel/analytics/next";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
   title: "Vector",
@@ -18,12 +29,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className="app-body"
-        style={{
-          "--font-geist-sans": 'Arial, Helvetica, "Segoe UI", sans-serif',
-          "--font-geist-mono":
-            '"Courier New", Consolas, "Liberation Mono", monospace',
-        } as React.CSSProperties}
+        className={`${geistSans.variable} ${geistMono.variable} app-body`}
       >
         <Providers>
           <GlobalLoader /> {/* ✅ Global loader */}
