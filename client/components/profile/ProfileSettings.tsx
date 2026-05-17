@@ -164,121 +164,123 @@ export default function ProfileSettings() {
     <div className="page-scroll px-5 py-5 md:px-20 md:pt-5">
       <h1 className="mb-3 text-center text-xl font-semibold text-foreground md:text-left md:text-2xl">Edit Profile</h1>
 
-      <div className="flex flex-col md:flex-row items-center gap-2 md:gap-6 mb-6">
-        <div className="h-22 md:h-24 w-22 md:w-24 rounded-full overflow-hidden border">
-          <img alt="Profile preview" src={preview || avatar || "/avatar-placeholder.png"} className="h-full w-full object-cover" />
+      <div className="content-card">
+        <div className="mb-6 flex flex-col items-center gap-3 md:flex-row md:gap-6">
+          <div className="h-22 w-22 overflow-hidden rounded-full border md:h-24 md:w-24">
+            <img alt="Profile preview" src={preview || avatar || "/avatar-placeholder.png"} className="h-full w-full object-cover" />
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-3 md:justify-start">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="cursor-pointer font-medium text-primary"
+            >
+              Change photo
+            </button>
+
+            {selectedFile && (
+              <>
+                <button
+                  type="button"
+                  disabled={uploadingAvatar}
+                  onClick={handleAvatarUpload}
+                  className="h-9 cursor-pointer rounded-md bg-blue-500 px-5 text-sm text-white hover:bg-blue-600"
+                >
+                  {uploadingAvatar ? "Uploading..." : "Set as profile pic"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleAvatarDiscard}
+                  className="h-9 cursor-pointer rounded-md border border-border bg-background px-5 text-sm text-foreground hover:bg-accent"
+                >
+                  Discard
+                </button>
+              </>
+            )}
+          </div>
+
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="cursor-pointer font-medium text-primary"
-          >
-            Change photo
-          </button>
+        <div className="grid grid-cols-1 gap-x-10 gap-y-5 text-foreground md:grid-cols-2">
+          <EditableInput
+            label="Username"
+            name="username"
+            value={formData.username}
+            editable={editable.username}
+            onEdit={() => toggleEdit("username")}
+            onChange={handleChange}
+          />
 
-          {selectedFile && (
-            <>
-              <button
-                type="button"
-                disabled={uploadingAvatar}
-                onClick={handleAvatarUpload}
-                className="h-9 px-5 text-sm rounded-md bg-blue-500 hover:bg-blue-600 text-white cursor-pointer"
-              >
-                {uploadingAvatar ? "Uploading..." : "Set as profile pic"}
-              </button>
+          <EditableInput
+            label="First name"
+            name="name"
+            value={formData.name}
+            editable={editable.name}
+            onEdit={() => toggleEdit("name")}
+            onChange={handleChange}
+          />
 
-              <button
-                type="button"
-                onClick={handleAvatarDiscard}
-                className="glass-surface-strong h-9 cursor-pointer rounded-md px-5 text-sm text-foreground hover:bg-accent/70"
-              >
-                Discard
-              </button>
-            </>
-          )}
-        </div>
+          <EditableInput
+            label="Last name"
+            name="surname"
+            value={formData.surname}
+            editable={editable.surname}
+            onEdit={() => toggleEdit("surname")}
+            onChange={handleChange}
+          />
 
-        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-      </div>
+          <EditableInput
+            label="Phone number"
+            name="phoneNumber"
+            value={formData.phoneNumber}
+            editable={editable.phoneNumber}
+            onEdit={() => toggleEdit("phoneNumber")}
+            onChange={handleChange}
+          />
 
-      <div className="grid grid-cols-1 gap-x-10 gap-y-5 md:grid-cols-2 text-foreground">
-        <EditableInput
-          label="Username"
-          name="username"
-          value={formData.username}
-          editable={editable.username}
-          onEdit={() => toggleEdit("username")}
-          onChange={handleChange}
-        />
+          <EditableTextarea
+            label="Bio"
+            name="bio"
+            value={formData.bio}
+            editable={editable.bio}
+            onEdit={() => toggleEdit("bio")}
+            onChange={handleChange}
+          />
 
-        <EditableInput
-          label="First name"
-          name="name"
-          value={formData.name}
-          editable={editable.name}
-          onEdit={() => toggleEdit("name")}
-          onChange={handleChange}
-        />
+          <EditableTextarea
+            label="Description"
+            name="description"
+            value={formData.description}
+            editable={editable.description}
+            onEdit={() => toggleEdit("description")}
+            onChange={handleChange}
+          />
 
-        <EditableInput
-          label="Last name"
-          name="surname"
-          value={formData.surname}
-          editable={editable.surname}
-          onEdit={() => toggleEdit("surname")}
-          onChange={handleChange}
-        />
-
-        <EditableInput
-          label="Phone number"
-          name="phoneNumber"
-          value={formData.phoneNumber}
-          editable={editable.phoneNumber}
-          onEdit={() => toggleEdit("phoneNumber")}
-          onChange={handleChange}
-        />
-
-        <EditableTextarea
-          label="Bio"
-          name="bio"
-          value={formData.bio}
-          editable={editable.bio}
-          onEdit={() => toggleEdit("bio")}
-          onChange={handleChange}
-        />
-
-        <EditableTextarea
-          label="Description"
-          name="description"
-          value={formData.description}
-          editable={editable.description}
-          onEdit={() => toggleEdit("description")}
-          onChange={handleChange}
-        />
-
-        <div className="md:col-span-2 mt-2">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setFormData(prev => prev ? { ...prev, isPrivate: !prev.isPrivate } : prev)}>
-            <input 
-              type="checkbox" 
-              checked={formData.isPrivate} 
-              onChange={(e) => setFormData({ ...formData, isPrivate: e.target.checked })} 
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
-            />
-            <div className="flex flex-col">
-              <p className="font-medium text-foreground">Private Account</p>
-              <p className="text-xs text-muted-foreground">Only your followers will see your posts and lists.</p>
+          <div className="mt-2 md:col-span-2">
+            <div className="flex cursor-pointer items-center gap-2" onClick={() => setFormData(prev => prev ? { ...prev, isPrivate: !prev.isPrivate } : prev)}>
+              <input 
+                type="checkbox" 
+                checked={formData.isPrivate} 
+                onChange={(e) => setFormData({ ...formData, isPrivate: e.target.checked })} 
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
+              />
+              <div className="flex flex-col">
+                <p className="font-medium text-foreground">Private Account</p>
+                <p className="text-xs text-muted-foreground">Only your followers will see your posts and lists.</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="flex justify-end gap-4 mt-7">
-        <button className="w-40 py-2 bg-blue-600 text-white cursor-pointer rounded-lg" onClick={handleCancel}>Cancel</button>
-        <button disabled={loading || !isFormChanged} onClick={handleSave} className={`w-40 py-2 text-white rounded-lg ${isFormChanged ? 'bg-blue-600 cursor-pointer' : 'cursor-not-allowed bg-blue-400'} ${loading ? 'cursor-not-allowed bg-blue-400' : ''}`}>
-          {loading ? 'Saving..' : 'Save changes'}
-        </button>
+        <div className="mt-7 flex flex-wrap justify-end gap-4">
+          <button className="w-40 cursor-pointer rounded-lg border border-border bg-background py-2 text-foreground hover:bg-accent" onClick={handleCancel}>Cancel</button>
+          <button disabled={loading || !isFormChanged} onClick={handleSave} className={`w-40 py-2 text-white rounded-lg ${isFormChanged ? 'bg-blue-600 cursor-pointer' : 'cursor-not-allowed bg-blue-400'} ${loading ? 'cursor-not-allowed bg-blue-400' : ''}`}>
+            {loading ? 'Saving..' : 'Save changes'}
+          </button>
+        </div>
       </div>
     </div>
   );
