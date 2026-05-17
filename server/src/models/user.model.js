@@ -96,6 +96,7 @@ const userSchema = new mongoose.Schema(
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     followRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
     followersCount: { type: Number, default: 0 },
     followingCount: { type: Number, default: 0 },
