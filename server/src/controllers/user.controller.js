@@ -346,19 +346,21 @@ export const rejectFollowRequest = async (req, res) => {
 export const getUserProfile = async (req, res) => {
     try {
         const { username } = req.params;
-        const user = await User.findOne({ username }).select("_id name surname username avatar bio description followersCount followingCount followers isPrivate blockedUsers").lean();
+
+        // Single query — include followRequests and blockedUsers so we don't need second fetches below
+        const user = await User.findOne({ username })
+            .select("_id name surname username avatar bio description followersCount followingCount followers followRequests isPrivate blockedUsers")
+            .lean();
+
         if (!user) {
-            return res.status(404).json({
-                message: "User not found"
-            });
+            return res.status(404).json({ message: "User not found" });
         }
-        
+
         const response = { ...user };
-        
-        // Check if current user is following or has requested to follow this profile
+
         if (req.user) {
             const currentUserId = req.user._id.toString();
-            
+
             // If target user has blocked current user, return redacted profile
             const isBlockedByTarget = user.blockedUsers?.some(id => id.toString() === currentUserId);
             if (isBlockedByTarget) {
@@ -384,21 +386,44 @@ export const getUserProfile = async (req, res) => {
             const isBlockedByMe = currentUser?.blockedUsers?.some(id => id.toString() === user._id.toString());
             response.isBlockedByCurrentUser = !!isBlockedByMe;
 
-            response.isFollowedByCurrentUser = user.followers.some(follower => 
-                follower.toString() === currentUserId
+            // Is the current user already following this profile?
+            response.isFollowedByCurrentUser = user.followers.some(
+                (id) => id.toString() === currentUserId
             );
-            
-            // Check for pending follow request
-            // We need to fetch the user again with followRequests or use the lean object if it was included
-            const fullUser = await User.findById(user._id).select("followRequests").lean();
-            response.isRequestedByCurrentUser = fullUser.followRequests?.some(id => 
-                id.toString() === currentUserId
+
+            // Has the current user sent a pending follow request?
+            // Uses data already loaded above — no extra DB query needed
+            response.isRequestedByCurrentUser = user.followRequests?.some(
+                (id) => id.toString() === currentUserId
             );
+
+            // Compute mutual followers only when viewing someone else's profile
+            if (currentUserId !== user._id.toString()) {
+                // req.user is already loaded by optionalAuth middleware — no extra DB query needed
+                const currentUserFollowingSet = new Set(
+                    (req.user.following || []).map((id) => id.toString())
+                );
+
+                // Intersection: target's followers ∩ people the current user follows
+                const mutualFollowerIds = user.followers
+                    .map((id) => id.toString())
+                    .filter((id) => currentUserFollowingSet.has(id));
+
+                // Populate the top 3 mutual followers for the UI avatar stack
+                const mutualFollowers = await User.find({ _id: { $in: mutualFollowerIds } })
+                    .select("name username avatar")
+                    .limit(3)
+                    .lean();
+
+                response.mutualFollowers = mutualFollowers;
+                response.mutualFollowersCount = mutualFollowerIds.length;
+            }
         }
-        
-        // Don't expose the followers array in the response
+
+        // Strip internal arrays — never expose raw follower/request IDs to the client
         delete response.followers;
-        
+        delete response.followRequests;
+
         res.json(response);
     } catch (error) {
         res.status(500).json({ message: error.message });
