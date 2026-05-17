@@ -352,11 +352,23 @@ export const getUserProfile = async (req, res) => {
         if (req.user) {
             const currentUserId = req.user._id.toString();
             
-            // If target user has blocked current user, return 404
+            // If target user has blocked current user, return redacted profile
             const isBlockedByTarget = user.blockedUsers?.some(id => id.toString() === currentUserId);
             if (isBlockedByTarget) {
-                return res.status(404).json({
-                    message: "User not found"
+                return res.status(200).json({
+                    _id: user._id,
+                    username: "User",
+                    name: "Vector User",
+                    surname: "",
+                    avatar: "",
+                    bio: "",
+                    description: "",
+                    followersCount: 0,
+                    followingCount: 0,
+                    followers: [],
+                    isPrivate: true,
+                    isBlockedByTarget: true,
+                    isBlockedByCurrentUser: false
                 });
             }
 

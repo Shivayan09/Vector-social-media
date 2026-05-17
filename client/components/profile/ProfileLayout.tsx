@@ -177,7 +177,11 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
       </div>
 
       <div className="mt-4">
-        {blocked ? (
+        {user.isBlockedByTarget ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center border-t border-dashed border-border/50">
+            <Lock className="h-12 w-12 mb-3 opacity-30 text-foreground" />
+          </div>
+        ) : blocked ? (
           <div className="flex flex-col items-center justify-center py-20 text-center border-t border-dashed border-border/50">
             <Lock className="h-12 w-12 mb-3 opacity-30 text-foreground" />
             <h3 className="text-lg font-semibold text-foreground">You have blocked this user</h3>
