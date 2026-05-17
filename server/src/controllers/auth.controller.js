@@ -1,5 +1,5 @@
 import User from "../models/user.model.js"
-import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "../validators/user.validator.js";
+import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "../validator/user.validator.js";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
