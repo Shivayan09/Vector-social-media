@@ -215,7 +215,7 @@ export default function Explore() {
               Search
             </h2>
             <div className="relative min-w-0" ref={wrapperRef}>
-                <div className="search-pill flex min-h-11 items-center gap-2 border-0 px-3 py-1">
+                <div className="search-pill flex min-h-11 items-center gap-2 px-3 py-1">
                   <Search
                     className="h-5 shrink-0 text-muted-foreground"
                     aria-hidden
