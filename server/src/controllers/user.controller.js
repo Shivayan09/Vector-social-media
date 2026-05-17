@@ -258,6 +258,17 @@ export const getFollowRequests = async (req, res) => {
     }
 };
 
+export const getSentFollowRequests = async (req, res) => {
+    try {
+        const currentUserId = req.user.id;
+        const sentRequests = await User.find({ followRequests: currentUserId }).select("name username avatar bio");
+        res.status(200).json(sentRequests);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+
 export const acceptFollowRequest = async (req, res) => {
     try {
         const currentUserId = req.user.id;
