@@ -1,0 +1,26 @@
+{
+  "name": "vector-social-media",
+  "version": "1.0.0",
+  "description": "Vector is a full-stack social media platform built with a Next.js frontend and an Express + MongoDB backend. It supports authentication, profiles, posts, comments, notifications, and real-time direct messaging.",
+  "homepage": "https://github.com/kunal-yelgate/Vector-social-media#readme",
+  "bugs": {
+    "url": "https://github.com/kunal-yelgate/Vector-social-media/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kunal-yelgate/Vector-social-media.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "dev": "npm run dev --prefix client",
+    "dev:client": "npm run dev --prefix client",
+    "dev:server": "npm run dev --prefix server",
+    "install:all": "npm install --prefix client && npm install --prefix server",
+    "install:client": "npm install --prefix client",
+    "install:server": "npm install --prefix server",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
