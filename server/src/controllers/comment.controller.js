@@ -1,5 +1,6 @@
 import Comment from "../models/comment.model.js";
 import Post from "../models/post.model.js";
+import User from "../models/user.model.js";
 import Notification from '../models/notification.model.js'
 import { getIO, onlineUsers } from "../socket/socket.js";
 
@@ -14,6 +15,15 @@ export const addComment = async (req, res) => {
     const post = await Post.findById(postId);
     if (!post) {
         return res.status(404).json({ message: "Post not found" });
+    }
+    const authorUser = await User.findById(post.author);
+    if (req.user) {
+        const currentUserId = req.user.id;
+        const isBlocked = req.user.blockedUsers?.some(id => id.toString() === post.author.toString()) ||
+                          authorUser?.blockedUsers?.some(id => id.toString() === currentUserId);
+        if (isBlocked) {
+            return res.status(403).json({ message: "Action forbidden due to block status" });
+        }
     }
     const comment = await Comment.create({
         post: postId,
