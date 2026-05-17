@@ -11,10 +11,29 @@ export const getNotifications = async (req, res) => {
 };
 
 export const markAsRead = async (req, res) => {
-    await Notification.findByIdAndUpdate(req.params.id, { isRead: true });
-    return res.json({
-        success: true
-    });
+    try {
+        const currentUserId = req.user?._id || req.user?.id;
+        const notification = await Notification.findOneAndUpdate(
+            { _id: req.params.id, recipient: currentUserId },
+            { isRead: true }
+        );
+        
+        if (!notification) {
+            return res.status(404).json({
+                success: false,
+                message: "Notification not found"
+            });
+        }
+
+        return res.json({
+            success: true
+        });
+    } catch {
+        return res.status(500).json({
+            success: false,
+            message: "Server error"
+        });
+    }
 };
 
 export const deleteNotification = async (req, res) => {
