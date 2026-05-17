@@ -289,7 +289,7 @@ function EditableTextarea({
         disabled={!editable}
         onChange={onChange}
         rows={3}
-        className={`w-full px-3 py-2 rounded-lg border ${editable ? "border-blue-500" : "bg-gray-100 cursor-not-allowed"
+        className={`w-full px-3 py-2 rounded-lg border ${editable ? "border-blue-500 bg-white dark:bg-gray-800" : "bg-gray-100 cursor-not-allowed"
           }`}
       />
     </div>
