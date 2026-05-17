@@ -50,11 +50,11 @@ export default function NotificationPanel({ search = "" }: Props) {
         isFirstLoad.current = false;
       }
       const { data } = await axios.get<Notification[]>(
-        `${BACKEND_URL}/api/notifications?page=${pageNum}&limit=20`,
+        `${BACKEND_URL}/api/notifications?page=${pageNum}&limit=10`,
         { withCredentials: true }
       );
       
-      if (data.length < 20) {
+      if (data.length < 10) {
         setHasMore(false);
       } else {
         setHasMore(true);
