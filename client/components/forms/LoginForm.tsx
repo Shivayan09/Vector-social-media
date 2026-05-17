@@ -74,7 +74,7 @@ export default function LoginForm() {
     };
 
     return (
-        <div className="form-card w-80 md:w-100">
+        <div className="form-card w-full max-w-md mx-auto">
             <div className="mb-6 space-y-2">
                 <p className="form-title">
                     Welcome back!
@@ -143,11 +143,10 @@ export default function LoginForm() {
 
             <Button
                 disabled={loading}
-                className={`mt-6 w-full cursor-pointer dark:text-white ${
-                    loading
-                        ? "bg-blue-400"
-                        : "bg-blue-500 hover:bg-blue-600"
-                }`}
+                className={`mt-6 w-full cursor-pointer dark:text-white ${loading
+                    ? "bg-blue-400"
+                    : "bg-blue-500 hover:bg-blue-600"
+                    }`}
                 onClick={handleLogin}
             >
                 {loading ? "Logging in" : "Log in"}

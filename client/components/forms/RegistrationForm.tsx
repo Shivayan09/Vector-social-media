@@ -104,7 +104,7 @@ export default function RegistrationForm() {
   };
 
   return (
-    <div className="form-card w-80 md:w-fit">
+    <div className="form-card w-full max-w-md mx-auto">
 
       <div className="mb-5 h-0.75 w-full rounded-full bg-border/70">
         <div className={`h-full bg-blue-500 transition-all duration-300 ${step === 1 ? "w-1/2" : "w-full"}`} />
@@ -173,20 +173,20 @@ export default function RegistrationForm() {
           </div>
 
           <Button className="w-full text-white mt-5 cursor-pointer bg-blue-500 hover:bg-blue-600" onClick={nextStep}>
-             Continue
+            Continue
           </Button>
           <div className="flex items-center justify-between gap-2 mt-5 text-sm">
-              <p className="text-foreground">
-                  Already have an account?
-              </p>
-              <span
-                  className="cursor-pointer font-semibold text-primary underline"
-                  onClick={() => router.push("/auth/login")}
-              >
-                  Login
-              </span>
-          </div>    
-          
+            <p className="text-foreground">
+              Already have an account?
+            </p>
+            <span
+              className="cursor-pointer font-semibold text-primary underline"
+              onClick={() => router.push("/auth/login")}
+            >
+              Login
+            </span>
+          </div>
+
           <p className="mt-4 text-center text-[0.82rem] leading-6 surface-text-muted">
             By continuing, you agree to Vector&apos;s{" "}
             <Link href="/terms" className="text-primary underline underline-offset-4">
@@ -224,20 +224,20 @@ export default function RegistrationForm() {
 
           <p className="form-label">Set a bio</p>
 
-          <textarea placeholder="Enter your bio (30 words max)" className="form-textarea h-12 md:w-90" onChange={(e) => setBio(e.target.value)} />
+          <textarea placeholder="Enter your bio (30 words max)" className="form-textarea h-12 w-full" onChange={(e) => setBio(e.target.value)} />
 
           <p className="form-label mt-3">
             Set a description
           </p>
 
-          <textarea placeholder="Enter your bio (200 words max)" className="form-textarea h-24" onChange={(e) => setDescription(e.target.value)} />
+          <textarea placeholder="Enter your bio (200 words max)" className="form-textarea h-24 w-full" onChange={(e) => setDescription(e.target.value)} />
 
           <div className="flex items-center gap-2 mt-4 cursor-pointer" onClick={() => setIsPrivate(!isPrivate)}>
-            <input 
-              type="checkbox" 
-              checked={isPrivate} 
-              onChange={(e) => setIsPrivate(e.target.checked)} 
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
+            <input
+              type="checkbox"
+              checked={isPrivate}
+              onChange={(e) => setIsPrivate(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <p className="text-sm font-medium text-foreground">Private Account</p>
           </div>
