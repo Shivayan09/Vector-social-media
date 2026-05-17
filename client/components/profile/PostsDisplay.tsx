@@ -31,7 +31,7 @@ export default function PostsDisplay({ userId, emptyText, onPostsLoaded }: Posts
             }
         };
         fetchPosts();
-    }, [BACKEND_URL, userId]);
+    }, [BACKEND_URL, userId, onPostsLoaded]);
     if (loading) {
         return (
             <div className="mt-4">

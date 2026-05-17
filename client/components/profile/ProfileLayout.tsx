@@ -24,7 +24,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
   const router = useRouter();
   const { userData } = useAppContext();
   const isSelfProfile = userData?.id === user._id;
-  const [postsCount, setPostsCount] = useState<number>((user as Record<string, any>).postsCount ?? 0);
+  const [postsCount, setPostsCount] = useState<number>(0);
   const [following, setFollowing] = useState<boolean>(isFollowing ?? false);
   const [requested] = useState<boolean>(isRequested ?? false);
   const [blocked, setBlocked] = useState<boolean>(user.isBlockedByCurrentUser ?? false);
