@@ -111,7 +111,7 @@ export default function EditPostModal({
 
       <div
         className={cn(
-          "fixed z-60 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] md:w-[45vw] lg:w-[35vw]",
+          "fixed z-60 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto",
           "glass-surface-strong rounded-3xl shadow-2xl p-0 overflow-hidden transition-all duration-300 ease-out border-t border-white/20",
           visible
             ? "opacity-100 scale-100 translate-y-[-50%]"
