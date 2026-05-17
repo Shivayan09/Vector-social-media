@@ -3,11 +3,17 @@ import User from "../models/user.model.js";
 
 export const getNotifications = async (req, res) => {
     const currentUserId = req.user?._id || req.user?.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
     const notifications = await Notification.find({ recipient: currentUserId })
         .populate("sender", "name username avatar _id")
         .populate("post")
         .populate("conversation")
         .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
         .lean();
 
     const followingUserIds = new Set(
