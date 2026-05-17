@@ -26,8 +26,28 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
   const isSelfProfile = userData?.id === user._id;
   const [following, setFollowing] = useState<boolean>(isFollowing ?? false);
   const [requested] = useState<boolean>(isRequested ?? false);
+  const [blocked, setBlocked] = useState<boolean>(user.isBlockedByCurrentUser ?? false);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
+
+  const toggleBlock = async () => {
+    try {
+      const endpoint = blocked ? `/api/users/${user._id}/unblock` : `/api/users/${user._id}/block`;
+      const { data } = await axios.put(`${BACKEND_URL}${endpoint}`, {}, { withCredentials: true });
+      if (data.success) {
+        setBlocked(!blocked);
+        toast.success(data.message);
+        if (!blocked) {
+          setFollowing(false);
+        }
+      }
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message
+        : "Failed to complete action";
+      toast.error(message || "Failed to complete action");
+    }
+  };
 
   const startChat = async () => {
     try {
@@ -84,16 +104,28 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
                 </div>
               ) : (
                 <div className="flex w-full flex-wrap justify-center gap-2 sm:justify-start md:w-fit md:justify-end">
-                  <FollowButton
-                    userId={user._id}
-                    isFollowing={following}
-                    isRequested={requested}
-                    onFollowChange={setFollowing}
-                  />
+                  {blocked ? (
+                    <button onClick={toggleBlock} className="h-9 cursor-pointer rounded-md bg-red-500 px-4 text-sm font-semibold text-white transition hover:bg-red-600">
+                      Unblock
+                    </button>
+                  ) : (
+                    <>
+                      <FollowButton
+                        userId={user._id}
+                        isFollowing={following}
+                        isRequested={requested}
+                        onFollowChange={setFollowing}
+                      />
 
-                  <button onClick={startChat} className="h-9 w-28 cursor-pointer rounded-md bg-blue-500 text-white transition hover:bg-blue-600">
-                    Chat
-                  </button>
+                      <button onClick={startChat} className="h-9 w-28 cursor-pointer rounded-md bg-blue-500 text-white transition hover:bg-blue-600">
+                        Chat
+                      </button>
+
+                      <button onClick={toggleBlock} className="h-9 cursor-pointer rounded-md bg-red-500 px-4 text-sm font-semibold text-white transition hover:bg-red-600">
+                        Block
+                      </button>
+                    </>
+                  )}
 
                   <button onClick={copyProfileLink}
                     className="flex h-9 w-28 cursor-pointer items-center justify-center gap-1 rounded-md border border-border bg-background text-sm text-foreground transition hover:bg-accent">
@@ -142,7 +174,18 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
       </div>
 
       <div className="mt-8 ml-auto max-w-[68rem]">
-        {!canSeeContent ? (
+        {user.isBlockedByTarget ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center border-t border-dashed border-border/50">
+            <Lock className="h-12 w-12 mb-3 opacity-30 text-foreground" />
+            <h3 className="text-lg font-semibold text-foreground">This user is unavailable</h3>
+          </div>
+        ) : blocked ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center border-t border-dashed border-border/50">
+            <Lock className="h-12 w-12 mb-3 opacity-30 text-foreground" />
+            <h3 className="text-lg font-semibold text-foreground">You have blocked this user</h3>
+            <p className="text-sm text-slate-700 dark:text-slate-300">Unblock them to see their posts and follow them.</p>
+          </div>
+        ) : !canSeeContent ? (
           <div className="flex flex-col items-center justify-center py-20 text-center border-t border-dashed border-border/50">
             <Lock className="h-12 w-12 mb-3 opacity-30 text-foreground" />
             <h3 className="text-lg font-semibold text-foreground">This account is private</h3>

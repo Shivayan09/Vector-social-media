@@ -31,6 +31,7 @@ export type User = {
   following?: string[];
   isPrivate?: boolean;
   followRequests?: string[];
+  blockedUsers?: string[];
 };
 
 type AppContextType = {
@@ -100,7 +101,13 @@ export function AppContextProvider({
   }, [refreshAuth]);
 
   useEffect(() => {
-    if (!userData?.id) return;
+    if (!userData?.id) {
+      if (socket.connected) {
+        socket.disconnect();
+      }
+      return;
+    }
+    socket.connect();
     socket.emit("register", userData.id);
   }, [userData?.id]);
 

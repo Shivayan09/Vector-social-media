@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
@@ -9,16 +9,11 @@ import { Trash2, MessageCircle, ArrowRight } from "lucide-react";
 import ConfirmModal from "./modals/DeleteWarning";
 import FollowRequestsModal from "./modals/FollowRequestsModal";
 import FollowButton from "./ui/FollowButton";
-import type { Notification, UserSummary } from "@/lib/types";
+import type { Notification } from "@/lib/types";
 import { socket } from "@/socket/socket";
 
 type Props = {
   search?: string;
-};
-
-type UserSummaryWithFollowState = UserSummary & {
-  isFollowedByCurrentUser?: boolean;
-  isRequestedByCurrentUser?: boolean;
 };
 
 export default function NotificationPanel({ search = "" }: Props) {
@@ -38,6 +33,7 @@ export default function NotificationPanel({ search = "" }: Props) {
   const [messageLoading, setMessageLoading] = useState<Record<string, boolean>>({});
   const [deleteLoading, setDeleteLoading] = useState<Record<string, boolean>>({});
   const [modalOpen, setModalOpen] = useState(false);
+  const isFirstLoad = useRef(true);
   const getSenderName = (notification: Notification) =>
     notification.sender?.name || notification.sender?.username || "Someone";
   const getSenderUsername = (notification: Notification) =>
@@ -45,64 +41,46 @@ export default function NotificationPanel({ search = "" }: Props) {
   const getSenderAvatar = (notification: Notification) =>
     notification.sender?.avatar || "/default-avatar.png";
 
-  const hydrateSenderFollowState = useCallback(
-    async (notificationsToHydrate: Notification[]) => {
-      const senders = notificationsToHydrate.filter(
-        (notification): notification is Notification & { sender: NonNullable<Notification["sender"]> } =>
-          !!notification.sender?._id && !!notification.sender?.username
-      );
-
-      const uniqueSenders = Array.from(
-        new Map(
-          senders.map((notification) => [
-            notification.sender._id,
-            notification.sender,
-          ])
-        ).values()
-      );
-
-      const states = await Promise.all(
-        uniqueSenders.map(async (sender) => {
-          try {
-            const { data } = await axios.get<UserSummaryWithFollowState>(
-              `${BACKEND_URL}/api/users/${sender.username}`,
-              { withCredentials: true }
-            );
-
-            return [
-              sender._id,
-              {
-                isFollowing: data.isFollowedByCurrentUser ?? false,
-                isRequested: data.isRequestedByCurrentUser ?? false,
-              },
-            ] as const;
-          } catch (error) {
-            console.error("Failed to hydrate notification follow state", error);
-            return [
-              sender._id,
-              {
-                isFollowing: false,
-                isRequested: false,
-              },
-            ] as const;
-          }
-        })
-      );
-
-      setSenderFollowState(Object.fromEntries(states));
-    },
-    [BACKEND_URL]
-  );
-
   const fetchNotifications = useCallback(async () => {
     try {
-      setLoading(true);
+      if (isFirstLoad.current) {
+        setLoading(true);
+        isFirstLoad.current = false;
+      }
       const { data } = await axios.get<Notification[]>(
         `${BACKEND_URL}/api/notifications`,
         { withCredentials: true }
       );
-      setNotifications(data);
-      await hydrateSenderFollowState(data);
+      
+      setNotifications((prev) => {
+        if (prev.length === 0) return data;
+
+        const existingIds = new Set(prev.map((n) => n._id));
+        const newNotifications = data.filter((n) => !existingIds.has(n._id));
+
+        // Keep existing notifications that are still in fetched data, updating them with any new details
+        const updatedPrev = prev
+          .filter((p) => data.some((d) => d._id === p._id))
+          .map((p) => {
+            const latest = data.find((d) => d._id === p._id);
+            return latest ? latest : p;
+          });
+
+        return [...newNotifications, ...updatedPrev];
+      });
+      
+      setSenderFollowState((prev) => {
+        const followStates = { ...prev };
+        data.forEach(notification => {
+          if (notification.sender?._id) {
+            followStates[notification.sender._id] = {
+              isFollowing: notification.sender.isFollowedByCurrentUser ?? false,
+              isRequested: notification.sender.isRequestedByCurrentUser ?? false,
+            };
+          }
+        });
+        return followStates;
+      });
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         toast.error(
@@ -115,7 +93,7 @@ export default function NotificationPanel({ search = "" }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [BACKEND_URL, hydrateSenderFollowState]);
+  }, [BACKEND_URL]);
 
   const deleteSingle = async (id: string) => {
     if (deleteLoading[id]) return;

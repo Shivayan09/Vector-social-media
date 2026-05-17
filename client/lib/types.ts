@@ -24,6 +24,10 @@ export type UserSummary = {
   followingCount?: number;
   isPrivate?: boolean;
   followRequests?: string[] | UserSummary[];
+  isFollowedByCurrentUser?: boolean;
+  isRequestedByCurrentUser?: boolean;
+  isBlockedByCurrentUser?: boolean;
+  isBlockedByTarget?: boolean;
 };
 
 export type Post = {

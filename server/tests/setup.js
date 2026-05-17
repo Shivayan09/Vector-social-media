@@ -13,7 +13,13 @@ jest.setTimeout(60000);
 
 beforeAll(async () => {
   try {
-    mongoServer = await MongoMemoryServer.create();
+    mongoServer = await MongoMemoryServer.create({
+      instance: {
+        // Increase timeout for slow CI runners (Windows)
+        // This resolves the "Instance failed to start within 10000ms" error
+        launchTimeout: 60000
+      }
+    });
     const uri = mongoServer.getUri();
     await mongoose.connect(uri);
   } catch (error) {
