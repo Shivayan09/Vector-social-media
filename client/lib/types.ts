@@ -24,6 +24,8 @@ export type UserSummary = {
   followingCount?: number;
   isPrivate?: boolean;
   followRequests?: string[] | UserSummary[];
+  isFollowedByCurrentUser?: boolean;
+  isRequestedByCurrentUser?: boolean;
 };
 
 export type Post = {

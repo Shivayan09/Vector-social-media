@@ -9,16 +9,11 @@ import { Trash2, MessageCircle, ArrowRight } from "lucide-react";
 import ConfirmModal from "./modals/DeleteWarning";
 import FollowRequestsModal from "./modals/FollowRequestsModal";
 import FollowButton from "./ui/FollowButton";
-import type { Notification, UserSummary } from "@/lib/types";
+import type { Notification } from "@/lib/types";
 import { socket } from "@/socket/socket";
 
 type Props = {
   search?: string;
-};
-
-type UserSummaryWithFollowState = UserSummary & {
-  isFollowedByCurrentUser?: boolean;
-  isRequestedByCurrentUser?: boolean;
 };
 
 export default function NotificationPanel({ search = "" }: Props) {
@@ -45,55 +40,6 @@ export default function NotificationPanel({ search = "" }: Props) {
   const getSenderAvatar = (notification: Notification) =>
     notification.sender?.avatar || "/default-avatar.png";
 
-  const hydrateSenderFollowState = useCallback(
-    async (notificationsToHydrate: Notification[]) => {
-      const senders = notificationsToHydrate.filter(
-        (notification): notification is Notification & { sender: NonNullable<Notification["sender"]> } =>
-          !!notification.sender?._id && !!notification.sender?.username
-      );
-
-      const uniqueSenders = Array.from(
-        new Map(
-          senders.map((notification) => [
-            notification.sender._id,
-            notification.sender,
-          ])
-        ).values()
-      );
-
-      const states = await Promise.all(
-        uniqueSenders.map(async (sender) => {
-          try {
-            const { data } = await axios.get<UserSummaryWithFollowState>(
-              `${BACKEND_URL}/api/users/${sender.username}`,
-              { withCredentials: true }
-            );
-
-            return [
-              sender._id,
-              {
-                isFollowing: data.isFollowedByCurrentUser ?? false,
-                isRequested: data.isRequestedByCurrentUser ?? false,
-              },
-            ] as const;
-          } catch (error) {
-            console.error("Failed to hydrate notification follow state", error);
-            return [
-              sender._id,
-              {
-                isFollowing: false,
-                isRequested: false,
-              },
-            ] as const;
-          }
-        })
-      );
-
-      setSenderFollowState(Object.fromEntries(states));
-    },
-    [BACKEND_URL]
-  );
-
   const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
@@ -102,7 +48,17 @@ export default function NotificationPanel({ search = "" }: Props) {
         { withCredentials: true }
       );
       setNotifications(data);
-      await hydrateSenderFollowState(data);
+      
+      const followStates: Record<string, { isFollowing: boolean; isRequested: boolean }> = {};
+      data.forEach(notification => {
+        if (notification.sender?._id) {
+          followStates[notification.sender._id] = {
+            isFollowing: notification.sender.isFollowedByCurrentUser ?? false,
+            isRequested: notification.sender.isRequestedByCurrentUser ?? false,
+          };
+        }
+      });
+      setSenderFollowState(followStates);
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         toast.error(
@@ -115,7 +71,7 @@ export default function NotificationPanel({ search = "" }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [BACKEND_URL, hydrateSenderFollowState]);
+  }, [BACKEND_URL]);
 
   const deleteSingle = async (id: string) => {
     if (deleteLoading[id]) return;
