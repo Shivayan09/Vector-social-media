@@ -73,8 +73,21 @@ export const getPosts = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
-        const posts = await Post.find().sort({ createdAt: -1 }).skip(skip).limit(limit).populate("author", "username name surname avatar").populate("likes", "username name avatar _id");
-        const total = await Post.countDocuments();
+
+        let filter = {};
+        if (req.user) {
+            const currentUserId = req.user._id || req.user.id;
+            const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
+            const blockerIds = blockers.map(u => u._id);
+            const blockedIds = req.user.blockedUsers || [];
+            const excludeUserIds = [...blockedIds, ...blockerIds];
+            if (excludeUserIds.length > 0) {
+                filter = { author: { $nin: excludeUserIds } };
+            }
+        }
+
+        const posts = await Post.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).populate("author", "username name surname avatar").populate("likes", "username name avatar _id");
+        const total = await Post.countDocuments(filter);
         res.status(200).json({
             posts,
             total,
@@ -281,6 +294,18 @@ export const getPostsByUser = async (req, res) => {
         const isSelf = req.user?.id === userId;
         const isFollower = targetUser.followers.some(id => id.toString() === req.user?.id);
 
+        if (req.user) {
+            const currentUserId = req.user.id;
+            const isBlocked = req.user.blockedUsers?.some(id => id.toString() === userId) ||
+                              targetUser.blockedUsers?.some(id => id.toString() === currentUserId);
+            if (isBlocked) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Action forbidden due to block status"
+                });
+            }
+        }
+
         if (targetUser.isPrivate && !isSelf && !isFollower) {
             return res.status(200).json({
                 success: true,
@@ -309,13 +334,23 @@ export const getSinglePost = async (req, res) => {
             return res.status(400).json({ message: "Invalid post ID format" });
         }
 
-        const post = await Post.findById(postId).populate("author", "username name avatar isPrivate followers").populate("likes", "username name avatar _id");
+        const post = await Post.findById(postId).populate("author", "username name avatar isPrivate followers blockedUsers").populate("likes", "username name avatar _id");
         if (!post) {
             return res.status(404).json({ message: "Post not found" });
         }
 
         // Privacy check for single post
         const author = post.author;
+
+        if (req.user) {
+            const currentUserId = req.user.id;
+            const isBlocked = req.user.blockedUsers?.some(id => id.toString() === author._id.toString()) ||
+                              author.blockedUsers?.some(id => id.toString() === currentUserId);
+            if (isBlocked) {
+                return res.status(403).json({ message: "Action forbidden due to block status" });
+            }
+        }
+
         const isSelf = req.user?.id === author._id.toString();
         const isFollower = author.followers?.some(id => id.toString() === req.user?.id);
 

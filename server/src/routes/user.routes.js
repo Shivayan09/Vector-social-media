@@ -3,7 +3,8 @@ import jwt from "jsonwebtoken";
 import authMiddleware from "../middlewares/auth.middleware.js";
 import upload from "../middlewares/upload.middleware.js";
 import User from "../models/user.model.js";
-import { getAllUsers, getFollowers, getFollowing, getUserProfile, searchUsers, toggleFollowUser, updateProfile, uploadAvatar, getSuggestedUsers, getFollowRequests, acceptFollowRequest, rejectFollowRequest, getSentFollowRequests } from "../controllers/user.controller.js";
+import { getAllUsers, getFollowers, getFollowing, getUserProfile, searchUsers, toggleFollowUser, updateProfile, uploadAvatar, getSuggestedUsers, getFollowRequests, acceptFollowRequest, rejectFollowRequest, getSentFollowRequests, blockUser, unblockUser } from "../controllers/user.controller.js";
+
 
 const userRouter = express.Router();
 
@@ -25,6 +26,8 @@ const optionalAuth = async (req, res, next) => {
 userRouter.post("/avatar", authMiddleware, upload.single("avatar"), uploadAvatar);
 userRouter.put("/update-profile", authMiddleware, updateProfile);
 userRouter.put("/:id/follow", authMiddleware, toggleFollowUser);
+userRouter.put("/:id/block", authMiddleware, blockUser);
+userRouter.put("/:id/unblock", authMiddleware, unblockUser);
 userRouter.get("/suggestions", authMiddleware, getSuggestedUsers);
 userRouter.get("/follow-requests", authMiddleware, getFollowRequests);
 userRouter.get("/follow-requests/sent", authMiddleware, getSentFollowRequests);
