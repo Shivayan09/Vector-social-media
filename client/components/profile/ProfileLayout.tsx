@@ -41,8 +41,11 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
           setFollowing(false);
         }
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to complete action");
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message
+        : "Failed to complete action";
+      toast.error(message || "Failed to complete action");
     }
   };
 
