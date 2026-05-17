@@ -51,6 +51,16 @@ export default function PostsDisplay({ userId, emptyText }: PostsDisplayProps) {
 
     return (
         <div className="flex flex-col gap-3">
+
+        <div className="flex items-center justify-between px-1">
+            <h2 className="text-white text-sm font-semibold">
+                Posts
+            </h2>
+
+            <span className="text-white text-sm opacity-70">
+                {posts.length}
+            </span>
+        </div>
             {posts.slice(0, visibleCount).map((post) => (
                 <PostCard key={post._id} post={post} />
             ))}
