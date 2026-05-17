@@ -9,9 +9,10 @@ import type { Post } from "@/lib/types";
 type PostsDisplayProps = {
     userId: string;
     emptyText?: string;
+    onPostsLoaded?: (count: number) => void; // add
 };
 
-export default function PostsDisplay({ userId, emptyText }: PostsDisplayProps) {
+export default function PostsDisplay({ userId, emptyText, onPostsLoaded }: PostsDisplayProps)  {
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [visibleCount, setVisibleCount] = useState(5);
@@ -22,6 +23,7 @@ export default function PostsDisplay({ userId, emptyText }: PostsDisplayProps) {
             try {
                 const { data } = await axios.get(`${BACKEND_URL}/api/posts/user/${userId}`, { withCredentials: true });
                 setPosts(data.posts);
+                onPostsLoaded?.(data.posts.length); // add this one line
             } catch {
                 setPosts([]);
             } finally {
@@ -51,16 +53,6 @@ export default function PostsDisplay({ userId, emptyText }: PostsDisplayProps) {
 
     return (
         <div className="flex flex-col gap-3">
-
-        <div className="flex items-center justify-between px-1">
-            <h2 className="text-white text-sm font-semibold">
-                Posts
-            </h2>
-
-            <span className="text-white text-sm opacity-70">
-                {posts.length}
-            </span>
-        </div>
             {posts.slice(0, visibleCount).map((post) => (
                 <PostCard key={post._id} post={post} />
             ))}
