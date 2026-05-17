@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import authMiddleware from "../middlewares/auth.middleware.js";
 import upload from "../middlewares/upload.middleware.js";
 import User from "../models/user.model.js";
-import { getAllUsers, getFollowers, getFollowing, getUserProfile, searchUsers, toggleFollowUser, updateProfile, uploadAvatar, getSuggestedUsers, getFollowRequests, acceptFollowRequest, rejectFollowRequest } from "../controllers/user.controller.js";
+import { getAllUsers, getFollowers, getFollowing, getUserProfile, searchUsers, toggleFollowUser, updateProfile, uploadAvatar, getSuggestedUsers, getFollowRequests, acceptFollowRequest, rejectFollowRequest, getSentFollowRequests } from "../controllers/user.controller.js";
 
 const userRouter = express.Router();
 
@@ -27,6 +27,7 @@ userRouter.put("/update-profile", authMiddleware, updateProfile);
 userRouter.put("/:id/follow", authMiddleware, toggleFollowUser);
 userRouter.get("/suggestions", authMiddleware, getSuggestedUsers);
 userRouter.get("/follow-requests", authMiddleware, getFollowRequests);
+userRouter.get("/follow-requests/sent", authMiddleware, getSentFollowRequests);
 userRouter.put("/:id/accept-request", authMiddleware, acceptFollowRequest);
 userRouter.put("/:id/reject-request", authMiddleware, rejectFollowRequest);
 userRouter.get("/all", getAllUsers);
