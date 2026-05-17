@@ -33,6 +33,7 @@ This is the Express and MongoDB backend for Vector. It powers authentication, pr
 - `src/routes/` - API route definitions
 - `src/socket/` - Socket.IO setup
 - `src/utils/` - helper utilities
+- `test` - testing code
 
 ## Setup
 
@@ -80,6 +81,10 @@ npm run dev
 - `/api/notifications` - notification list and cleanup actions
 - `/api/conversation` - conversation creation and lookup
 - `/api/messages` - list, send, and delete messages
+
+## Testing 
+
+- `/tests/` - auth, post, notification 
 
 ## Notes
 

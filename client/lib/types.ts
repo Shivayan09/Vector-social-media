@@ -35,6 +35,8 @@ export type UserSummary = {
   isRequestedByCurrentUser?: boolean;
   mutualFollowers?: MutualFollower[];
   mutualFollowersCount?: number;
+  isBlockedByCurrentUser?: boolean;
+  isBlockedByTarget?: boolean;
 };
 
 export type Post = {

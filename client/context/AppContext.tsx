@@ -31,6 +31,7 @@ export type User = {
   following?: string[];
   isPrivate?: boolean;
   followRequests?: string[];
+  blockedUsers?: string[];
 };
 
 type AppContextType = {
