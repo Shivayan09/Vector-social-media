@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Home, Search, Bell, User, Plus, Menu, X, Settings, LogOut, Send, Lifebuoy } from "lucide-react";
+import { Home, Search, Bell, User, Plus, Menu, X, Settings, LogOut, Send, LifeBuoy } from "lucide-react";
 import CreateModal from "../modals/CreatePostModal";
 import { toast } from "react-toastify";
 import axios from "axios";
@@ -166,8 +166,8 @@ className="h-12 w-12 rounded-full object-cover border shrink-0"
       <SidebarItem
   icon={<LifeBuoy className="h-5 md:h-7" />}
   label="Support"
-  href="/main/support"
-  active={pathname === "/main/support"}
+  href="/support"
+  active={pathname === "/support"}
 />
     </div>  
 
