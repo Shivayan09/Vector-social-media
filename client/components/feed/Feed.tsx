@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import axios from "axios";
 import PostList from "./PostList";
 import { useAppContext } from "@/context/AppContext";
 import CreatePostPopup from "./CreatePostPopup";
 import SkeletonLoader from "../loaders/SkeletonLoader";
+import { getTrendingPosts } from "@/lib/trending";
 
 export default function Feed() {
     const { posts, setPosts } = useAppContext();
@@ -60,9 +61,13 @@ export default function Feed() {
         if (page > 1) fetchPosts(page);
     }, [page, fetchPosts]);
 
+    const displayPosts = useMemo(() => {
+        return getTrendingPosts(posts);
+    }, [posts]);
+
     return (
         <div className="hide-scrollbar w-full px-5 md:px-10 pb-10">
-            <PostList posts={posts} />
+            <PostList posts={displayPosts} />
             {loading && (
                 <div className="mt-4">
                     <SkeletonLoader count={3} height="h-40" />

@@ -1,10 +1,22 @@
 import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
+import User from "../models/user.model.js";
 
 export const createConversation = async (req, res) => {
     try {
         const { receiverId } = req.body;
         const senderId = req.user._id;
+
+        const receiver = await User.findById(receiverId);
+        if (!receiver) {
+            return res.status(404).json({ message: "Recipient not found" });
+        }
+        const isBlocked = req.user.blockedUsers?.some(id => id.toString() === receiverId.toString()) ||
+                          receiver.blockedUsers?.some(id => id.toString() === senderId.toString());
+        if (isBlocked) {
+            return res.status(403).json({ message: "Action forbidden due to block status" });
+        }
+
         let convo = await Conversation.findOne({ participants: { $all: [senderId, receiverId] }, });
         if (!convo) {
             convo = await Conversation.create({ participants: [senderId, receiverId], });

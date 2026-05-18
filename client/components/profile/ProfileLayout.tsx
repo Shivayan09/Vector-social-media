@@ -7,6 +7,7 @@ import PostsDisplay from "./PostsDisplay";
 import FollowButton from "@/components/ui/FollowButton";
 import FollowersDisplay from "./FollowersDisplay";
 import FollowingDisplay from "./FollowingDisplay";
+import MutualFollowersBar from "./MutualFollowersBar";
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -24,10 +25,31 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
   const router = useRouter();
   const { userData } = useAppContext();
   const isSelfProfile = userData?.id === user._id;
+  const [postsCount, setPostsCount] = useState<number>(0);
   const [following, setFollowing] = useState<boolean>(isFollowing ?? false);
   const [requested] = useState<boolean>(isRequested ?? false);
+  const [blocked, setBlocked] = useState<boolean>(user.isBlockedByCurrentUser ?? false);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
+
+  const toggleBlock = async () => {
+    try {
+      const endpoint = blocked ? `/api/users/${user._id}/unblock` : `/api/users/${user._id}/block`;
+      const { data } = await axios.put(`${BACKEND_URL}${endpoint}`, {}, { withCredentials: true });
+      if (data.success) {
+        setBlocked(!blocked);
+        toast.success(data.message);
+        if (!blocked) {
+          setFollowing(false);
+        }
+      }
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message
+        : "Failed to complete action";
+      toast.error(message || "Failed to complete action");
+    }
+  };
 
   const startChat = async () => {
     try {
@@ -83,18 +105,31 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
                   </button>
                 </div>
               ) : (
-                <div className="flex gap-2 w-full sm:w-fit">
+                <div className="flex gap-2 w-full sm:w-fit flex-wrap">
+                  {blocked ? (
+                    <>
+                      <button onClick={toggleBlock} className="bg-red-500 hover:bg-red-600 h-9 px-4 text-white text-sm font-semibold rounded-md cursor-pointer transition">
+                        Unblock
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <FollowButton
+                        userId={user._id}
+                        isFollowing={following}
+                        isRequested={requested}
+                        onFollowChange={setFollowing}
+                      />
 
-                  <FollowButton
-                    userId={user._id}
-                    isFollowing={following}
-                    isRequested={requested}
-                    onFollowChange={setFollowing}
-                  />
+                      <button onClick={startChat} className="bg-blue-500 h-9 w-1/2 sm:w-30 text-white rounded-md cursor-pointer">
+                        Chat
+                      </button>
 
-                  <button onClick={startChat} className="bg-blue-500 h-9 w-1/2 sm:w-30 text-white rounded-md cursor-pointer">
-                    Chat
-                  </button>
+                      <button onClick={toggleBlock} className="bg-red-500 hover:bg-red-600 h-9 px-4 text-white text-sm font-semibold rounded-md cursor-pointer transition">
+                        Block
+                      </button>
+                    </>
+                  )}
 
                   <button onClick={copyProfileLink}
                     className="h-9 w-1/2 sm:w-30 text-sm rounded-md cursor-pointer bg-blue-500 text-white hover:bg-blue-600 transition flex items-center justify-center gap-1">
@@ -113,6 +148,14 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
           <p className="surface-text-muted text-sm">
             {user.description}
           </p>
+
+          {/* Social proof — only visible to logged-in users visiting someone else's profile */}
+          {!isSelfProfile && (
+            <MutualFollowersBar
+              mutualFollowers={user.mutualFollowers ?? []}
+              mutualFollowersCount={user.mutualFollowersCount ?? 0}
+            />
+          )}
 
           <div className="mt-2 flex justify-center gap-6 font-semibold text-foreground">
             <span>{user.followersCount ?? user.followers?.length ?? 0} Followers</span>
@@ -134,7 +177,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
                 : "text-foreground/75 hover:text-foreground"
             }`}
           >
-            {tab}
+            {tab === "posts" ? `${tab} (${postsCount})` : tab}
 
             {activeTab === tab && (
               <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-blue-500 rounded-full" />
@@ -144,7 +187,17 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
       </div>
 
       <div className="mt-4">
-        {!canSeeContent ? (
+        {user.isBlockedByTarget ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center border-t border-dashed border-border/50">
+            <Lock className="h-12 w-12 mb-3 opacity-30 text-foreground" />
+          </div>
+        ) : blocked ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center border-t border-dashed border-border/50">
+            <Lock className="h-12 w-12 mb-3 opacity-30 text-foreground" />
+            <h3 className="text-lg font-semibold text-foreground">You have blocked this user</h3>
+            <p className="text-sm surface-text-muted">Unblock them to see their posts and follow them.</p>
+          </div>
+        ) : !canSeeContent ? (
           <div className="flex flex-col items-center justify-center py-20 text-center border-t border-dashed border-border/50">
             <Lock className="h-12 w-12 mb-3 opacity-30 text-foreground" />
             <h3 className="text-lg font-semibold text-foreground">This account is private</h3>
@@ -155,6 +208,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
             {activeTab === "posts" && (
               <PostsDisplay
                 userId={user._id}
+                onPostsLoaded={setPostsCount} 
                 emptyText={
                   isSelfProfile
                     ? "You haven't posted anything yet."

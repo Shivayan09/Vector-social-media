@@ -9,9 +9,10 @@ import type { Post } from "@/lib/types";
 type PostsDisplayProps = {
     userId: string;
     emptyText?: string;
+    onPostsLoaded?: (count: number) => void; // add
 };
 
-export default function PostsDisplay({ userId, emptyText }: PostsDisplayProps) {
+export default function PostsDisplay({ userId, emptyText, onPostsLoaded }: PostsDisplayProps)  {
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [visibleCount, setVisibleCount] = useState(5);
@@ -22,6 +23,7 @@ export default function PostsDisplay({ userId, emptyText }: PostsDisplayProps) {
             try {
                 const { data } = await axios.get(`${BACKEND_URL}/api/posts/user/${userId}`, { withCredentials: true });
                 setPosts(data.posts);
+                onPostsLoaded?.(data.posts.length); // add this one line
             } catch {
                 setPosts([]);
             } finally {
@@ -29,7 +31,7 @@ export default function PostsDisplay({ userId, emptyText }: PostsDisplayProps) {
             }
         };
         fetchPosts();
-    }, [BACKEND_URL, userId]);
+    }, [BACKEND_URL, userId, onPostsLoaded]);
     if (loading) {
         return (
             <div className="mt-4">

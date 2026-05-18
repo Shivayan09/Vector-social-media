@@ -165,7 +165,7 @@ export default function LoginForm() {
             </div>
 
             <p className="mt-4 text-center text-xs leading-6 surface-text-muted">
-                By Contunuing, you agree to Vector&apos;s{" "}
+                By Continuing, you agree to Vector&apos;s{" "}
                 <Link href="/terms" className="text-primary underline underline-offset-4">
                     Terms & Guidelines
                 </Link>

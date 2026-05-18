@@ -3,11 +3,23 @@ import User from "../models/user.model.js";
 
 export const getNotifications = async (req, res) => {
     const currentUserId = req.user?._id || req.user?.id;
-    const notifications = await Notification.find({ recipient: currentUserId })
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
+    const blockerIds = blockers.map(u => u._id);
+    const blockedIds = req.user?.blockedUsers || [];
+    const excludeIds = [...blockedIds, ...blockerIds];
+    const notifications = await Notification.find({ 
+        recipient: currentUserId,
+        sender: { $nin: excludeIds } 
+    })
         .populate("sender", "name username avatar _id")
         .populate("post")
         .populate("conversation")
         .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
         .lean();
 
     const followingUserIds = new Set(
@@ -37,6 +49,7 @@ export const getNotifications = async (req, res) => {
 
     return res.json(notificationsWithFollowState);
 };
+
 
 export const markAsRead = async (req, res) => {
     try {
