@@ -391,7 +391,6 @@
 
   .settings-field-editable {
     background: color-mix(in srgb, var(--card) 90%, transparent);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 55%, transparent);
   }
 
   .settings-field-disabled {
