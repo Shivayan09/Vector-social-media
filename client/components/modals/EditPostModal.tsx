@@ -1,6 +1,7 @@
 "use client";
 
 import { X, Image as ImageIcon, Send, Trash2 } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { toast } from "react-toastify";
@@ -184,9 +185,12 @@ export default function EditPostModal({
           {imagePreview && (
             <div className="relative mt-4 group">
               <div className="w-full max-h-64 rounded-2xl overflow-hidden border border-white/10 shadow-lg">
-                <img
+                <Image
                   src={imagePreview}
                   alt="Preview"
+                  width={800}
+                  height={512}
+                  unoptimized={imagePreview.startsWith("blob:")}
                   className="w-full h-full object-cover"
                 />
               </div>

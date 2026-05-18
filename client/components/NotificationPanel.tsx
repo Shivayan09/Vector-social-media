@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
@@ -419,7 +420,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                   }
                 }}
                 className="flex gap-3 flex-1 cursor-pointer p-2 rounded-lg">
-                <img alt={getSenderName(n)} src={getSenderAvatar(n)} className="h-10 w-10 rounded-full object-cover" />
+                <Image alt={getSenderName(n)} src={getSenderAvatar(n)} width={40} height={40} className="h-10 w-10 rounded-full object-cover" />
 
                 <div>
                   <p className="text-foreground">

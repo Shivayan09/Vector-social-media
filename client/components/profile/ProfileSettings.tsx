@@ -1,6 +1,7 @@
 "use client";
 
 import { useAppContext } from "@/context/AppContext";
+import Image from "next/image";
 import axios from "axios";
 import { ChangeEvent, useEffect, useState, useRef } from "react";
 import { toast } from "react-toastify";
@@ -166,7 +167,7 @@ export default function ProfileSettings() {
 
       <div className="flex flex-col md:flex-row items-center gap-2 md:gap-6 mb-6">
         <div className="h-22 md:h-24 w-22 md:w-24 rounded-full overflow-hidden border">
-          <img alt="Profile preview" src={preview || avatar || "/avatar-placeholder.png"} className="h-full w-full object-cover" />
+          <Image alt="Profile preview" src={preview || avatar || "/avatar-placeholder.png"} width={96} height={96} unoptimized={!!preview} className="h-full w-full object-cover" />
         </div>
 
         <div className="flex items-center gap-3">

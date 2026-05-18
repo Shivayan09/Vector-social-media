@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "../ui/button";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useRef } from "react";
@@ -206,7 +207,7 @@ export default function RegistrationForm() {
           <div className="flex justify-center my-5">
             <div onClick={() => fileRef.current?.click()} className="avatar-upload h-28 w-28 outline-2 outline-neutral-200 hover:outline-4" >
               {preview ? (
-                <img alt="Profile preview" src={preview} className="h-full w-full object-cover rounded-full" />
+                <Image alt="Profile preview" src={preview} width={112} height={112} unoptimized className="h-full w-full object-cover rounded-full" />
               ) : (
                 <Plus className="h-10 w-10 opacity-50" />
               )}
