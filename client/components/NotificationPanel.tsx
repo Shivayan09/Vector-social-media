@@ -33,6 +33,8 @@ export default function NotificationPanel({ search = "" }: Props) {
   const [messageLoading, setMessageLoading] = useState<Record<string, boolean>>({});
   const [deleteLoading, setDeleteLoading] = useState<Record<string, boolean>>({});
   const [modalOpen, setModalOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const isFirstLoad = useRef(true);
   const getSenderName = (notification: Notification) =>
     notification.sender?.name || notification.sender?.username || "Someone";
@@ -41,32 +43,40 @@ export default function NotificationPanel({ search = "" }: Props) {
   const getSenderAvatar = (notification: Notification) =>
     notification.sender?.avatar || "/default-avatar.png";
 
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = useCallback(async (pageNum = 1) => {
     try {
-      if (isFirstLoad.current) {
+      if (isFirstLoad.current && pageNum === 1) {
         setLoading(true);
         isFirstLoad.current = false;
       }
       const { data } = await axios.get<Notification[]>(
-        `${BACKEND_URL}/api/notifications`,
+        `${BACKEND_URL}/api/notifications?page=${pageNum}&limit=10`,
         { withCredentials: true }
       );
       
+      if (data.length < 10) {
+        setHasMore(false);
+      } else {
+        setHasMore(true);
+      }
+
       setNotifications((prev) => {
-        if (prev.length === 0) return data;
+        if (prev.length === 0 && pageNum === 1) return data;
 
         const existingIds = new Set(prev.map((n) => n._id));
         const newNotifications = data.filter((n) => !existingIds.has(n._id));
 
-        // Keep existing notifications that are still in fetched data, updating them with any new details
-        const updatedPrev = prev
-          .filter((p) => data.some((d) => d._id === p._id))
-          .map((p) => {
+        // Keep existing notifications, updating them with any new details if present in fetched data
+        const updatedPrev = prev.map((p) => {
             const latest = data.find((d) => d._id === p._id);
             return latest ? latest : p;
           });
 
-        return [...newNotifications, ...updatedPrev];
+        if (pageNum === 1) {
+          return [...newNotifications, ...updatedPrev];
+        } else {
+          return [...updatedPrev, ...newNotifications];
+        }
       });
       
       setSenderFollowState((prev) => {
@@ -512,6 +522,20 @@ export default function NotificationPanel({ search = "" }: Props) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+      {hasMore && filteredNotifications.length > 0 && !loading && (
+        <div className="flex justify-center mt-4 mb-2">
+          <button 
+            onClick={() => {
+              const nextPage = page + 1;
+              setPage(nextPage);
+              void fetchNotifications(nextPage);
+            }} 
+            className="text-sm px-4 py-2 bg-secondary text-foreground rounded-md hover:bg-secondary/80 transition"
+          >
+            Load More
+          </button>
         </div>
       )}
       <ConfirmModal
