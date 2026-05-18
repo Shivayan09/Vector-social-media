@@ -25,6 +25,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
   const router = useRouter();
   const { userData } = useAppContext();
   const isSelfProfile = userData?.id === user._id;
+  const [postsCount, setPostsCount] = useState<number>(0);
   const [following, setFollowing] = useState<boolean>(isFollowing ?? false);
   const [requested] = useState<boolean>(isRequested ?? false);
   const [blocked, setBlocked] = useState<boolean>(user.isBlockedByCurrentUser ?? false);
@@ -176,7 +177,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
                 : "text-foreground/75 hover:text-foreground"
             }`}
           >
-            {tab}
+            {tab === "posts" ? `${tab} (${postsCount})` : tab}
 
             {activeTab === tab && (
               <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-blue-500 rounded-full" />
@@ -207,6 +208,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
             {activeTab === "posts" && (
               <PostsDisplay
                 userId={user._id}
+                onPostsLoaded={setPostsCount} 
                 emptyText={
                   isSelfProfile
                     ? "You haven't posted anything yet."
