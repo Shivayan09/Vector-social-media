@@ -1,9 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen,cleanup} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-
-import RegistrationForm from "./RegistrationForm";
+import { describe, it, expect, vi, beforeEach,afterEach } from "vitest";
+import RegistrationForm from "../components/forms/RegistrationForm";
 import { toast } from "react-toastify";
+import "@testing-library/jest-dom/vitest";
 
 vi.mock("axios");
 
@@ -27,6 +27,10 @@ vi.mock("react-toastify", () => ({
     error: vi.fn(),
   },
 }));
+
+afterEach(() => {
+  cleanup();
+});
 
 describe("RegistrationForm Validation", () => {
   beforeEach(() => {

@@ -1,8 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi } from "vitest";
-
-import LoginForm from "./LoginForm";
+import { describe, it, expect, vi,afterEach } from "vitest";
+import { cleanup } from "@testing-library/react";
+import "@testing-library/jest-dom/vitest";
+import LoginForm from "../components/forms/LoginForm";
 
 vi.mock("axios");
 
@@ -38,24 +39,27 @@ describe("LoginForm", () => {
   });
 
   it("toggles password visibility", async () => {
-    render(<LoginForm />);
+  render(<LoginForm />);
 
-    const passwordInput = screen.getByPlaceholderText(
-      /enter your password/i
-    );
+  const passwordInputs = screen.getAllByPlaceholderText(
+    /enter your password/i
+  );
 
-    expect(passwordInput).toHaveAttribute(
-      "type",
-      "password"
-    );
+  const passwordInput = passwordInputs[0];
 
-    const toggleIcon = passwordInput.parentElement?.querySelector("span");
+  expect(passwordInput).toHaveAttribute(
+    "type",
+    "password"
+  );
 
-    await userEvent.click(toggleIcon!);
+  const toggleIcon =
+    passwordInput.parentElement?.querySelector("span");
 
-    expect(passwordInput).toHaveAttribute(
-      "type",
-      "text"
-    );
-  });
+  await userEvent.click(toggleIcon!);
+
+  expect(passwordInput).toHaveAttribute(
+    "type",
+    "text"
+  );
+});
 });
