@@ -9,13 +9,15 @@ export const registerSchema = z.object({
     .trim()
     .min(1, { message: "Please enter your email!" })
     .email({ message: "Please enter a valid email!" }),
-  phoneNumber: z
-    .string({ required_error: "Please enter your phone number!" })
-    .trim()
-    .min(1, { message: "Please enter your phone number!" })
-    .refine((val) => validator.isMobilePhone(val, "any"), {
-      message: "Please enter a valid phone number!",
-    }),
+  phoneNumber: z.preprocess(
+    (value) => (typeof value === "string" ? value.replace(/\s+/g, "") : value),
+    z
+      .string({ required_error: "Please enter your phone number!" })
+      .min(1, { message: "Please enter your phone number!" })
+      .refine((val) => validator.isMobilePhone(val, "any"), {
+        message: "Please enter a valid phone number!",
+      })
+  ),
   password: z.string({ required_error: "Password must be at least 6 characters!" }).min(6, { message: "Password must be at least 6 characters!" }),
   username: z.string({ required_error: "Please enter a username!" }).trim().min(1, { message: "Please enter a username!" }),
   bio: z.string({ required_error: "Please enter a bio!" }).trim().min(1, { message: "Please enter a bio!" }),
