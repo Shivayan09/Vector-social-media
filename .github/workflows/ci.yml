@@ -39,6 +39,11 @@ jobs:
           cd server
           npm run lint --if-present
 
+      - name: Run server tests
+        run: |
+          cd server
+          npm test --if-present
+
       # ---------- CLIENT ----------
       - name: Install client dependencies
         run: |

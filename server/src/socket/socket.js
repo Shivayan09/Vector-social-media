@@ -1,7 +1,20 @@
 import { Server } from "socket.io";
+import jwt from "jsonwebtoken";
 
 export const onlineUsers = new Map();
 let io;
+
+const parseCookies = (cookieHeader) => {
+  if (!cookieHeader) return {};
+  const cookies = {};
+  cookieHeader.split(";").forEach((cookie) => {
+    const [name, ...rest] = cookie.split("=");
+    if (name) {
+      cookies[name.trim()] = rest.join("=").trim();
+    }
+  });
+  return cookies;
+};
 
 export const initSocket = (server) => {
   io = new Server(server, {
@@ -11,17 +24,36 @@ export const initSocket = (server) => {
     },
   });
 
+  io.use((socket, next) => {
+    try {
+      const cookieHeader = socket.handshake.headers.cookie;
+      if (!cookieHeader) {
+        return next(new Error("Authentication error: No cookies found"));
+      }
+      const cookies = parseCookies(cookieHeader);
+      const token = cookies.token;
+      if (!token) {
+        return next(new Error("Authentication error: Token missing"));
+      }
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      socket.userId = decoded.id;
+      next();
+    } catch {
+      return next(new Error("Authentication error: Invalid or expired token"));
+    }
+  });
+
   io.on("connection", (socket) => {
 
-    socket.on("register", (userId) => {
-      onlineUsers.set(userId, socket.id);
+    socket.on("register", () => {
+      if (socket.userId) {
+        onlineUsers.set(socket.userId, socket.id);
+      }
     });
 
     socket.on("disconnect", () => {
-      for (const [userId, socketId] of onlineUsers.entries()) {
-        if (socketId === socket.id) {
-          onlineUsers.delete(userId);
-        }
+      if (socket.userId && onlineUsers.get(socket.userId) === socket.id) {
+        onlineUsers.delete(socket.userId);
       }
     });
 

@@ -1,36 +1,22 @@
 # Vector
 
-Vector is a full-stack social media platform built with a Next.js frontend and an Express/MongoDB backend. It supports account creation, Google OAuth, profile setup, a post feed, likes, comments, following, notifications, and real-time direct messaging with Socket.IO.
+Vector is a full-stack social media platform built with a Next.js frontend and an Express + MongoDB backend. It supports authentication, profiles, posts, comments, notifications, and real-time direct messaging.
 
 # <img src="https://www.nsoc.in/_next/image?url=%2Flogo.png&w=64&q=75" width="45" align="center" /> Nexus Spring of Code
 
 > This project is listed in **Nexus Spring of Code 2026**
 
-## Overview
+## Highlights
 
-The repository is split into two main apps:
-
-- `client` - Next.js 16 app router frontend built with React 19, TypeScript, Tailwind CSS, `axios`, and `socket.io-client`
-- `server` - Express 5 backend using MongoDB with Mongoose, JWT cookie auth, Passport Google OAuth, Cloudinary image uploads, and Socket.IO
-
-## Core Features
-
-- Email/password registration and login
-- Google sign-in with Passport
-- Profile onboarding flow after signup
-- Avatar upload with Cloudinary
-- Editable user profiles with bio and description
-- Public user profile pages
-- Follow and unfollow users
-- Global post feed
-- Post creation with intent tags: `ask`, `build`, `share`, `discuss`, `reflect`
-- Post likes and comment threads
-- Single post pages
-- Explore page with user search and weekly top posts
-- Notification center for follows, likes, comments, and messages
-- Direct messaging with conversation threads
-- Real-time incoming message and message deletion events over Socket.IO
-- Protected app flow based on auth state and profile completion
+- Email/password authentication
+- Google sign-in
+- Profile onboarding and avatar upload
+- Public and private profiles
+- Follow system with follow requests
+- Post creation with intent tags
+- Likes, comments, and notifications
+- Real-time messaging with Socket.IO
+- Client and server test setup in progress
 
 ## Tech Stack
 
@@ -40,98 +26,96 @@ The repository is split into two main apps:
 - React 19
 - TypeScript
 - Tailwind CSS 4
-- `axios`
-- `react-toastify`
-- `lucide-react`
-- `next-themes`
-- `socket.io-client`
+- Axios
+- Socket.IO client
+- React Toastify
+- Vitest
 
 ### Backend
 
 - Node.js
 - Express 5
 - MongoDB + Mongoose
-- JWT auth via HTTP-only cookies
-- Passport Google OAuth 2.0
-- Cloudinary for avatar uploads
-- Multer for file handling
+- JWT cookie authentication
+- Passport Google OAuth
+- Cloudinary
 - Socket.IO
+- Jest + Supertest
 
-## Project Structure
+## Repository Structure
 
 ```text
 .
 |-- client/
-|   |-- app/                # Next.js routes
-|   |-- components/         # UI, feed, profile, forms, layout, modals
-|   |-- context/            # Global auth + post state
-|   |-- socket/             # Client socket connection
-|   `-- public/             # Static assets
+|   |-- app/                  # Next.js routes and layouts
+|   |-- components/           # UI, feed, profile, chat, forms, modals
+|   |-- context/              # Shared auth and post state
+|   |-- lib/                  # Shared types and utilities
+|   |-- socket/               # Client socket setup
+|   `-- tests/                # Client-side tests
 |-- server/
 |   |-- src/
-|   |   |-- config/         # MongoDB, Cloudinary, Passport
-|   |   |-- controllers/    # Route handlers
-|   |   |-- middlewares/    # Auth and upload middleware
-|   |   |-- models/         # Mongoose schemas
-|   |   |-- routes/         # API routes
-|   |   `-- socket/         # Socket.IO setup
-|   `-- server.js           # Backend entrypoint
+|   |   |-- config/           # DB, Passport, Cloudinary
+|   |   |-- controllers/      # Route handlers
+|   |   |-- middlewares/      # Auth and upload middleware
+|   |   |-- models/           # Mongoose models
+|   |   |-- routes/           # API routes
+|   |   `-- socket/           # Socket.IO server setup
+|   `-- tests/                # Server tests
 `-- README.md
 ```
 
-## Main User Flow
+## Core Features
 
-1. A user registers with email/password or signs in with Google.
-2. If the profile is incomplete, the app sends them through profile setup.
-3. Authenticated users land in the main app feed.
-4. Users can create posts, like posts, comment, follow others, browse profiles, explore trending content, and open chats.
-5. Notifications are created for follow, like, comment, and message actions.
-6. Messages are delivered in real time when the recipient is online.
+### Authentication
+
+- Register and log in with email/password
+- Google login support
+- Cookie-based session handling
+- Password reset flow
+
+### Social Graph
+
+- View user profiles
+- Follow and unfollow users
+- Private accounts with follow requests
+- Followers and following lists
+
+### Posts
+
+- Create text and image posts
+- Use intent tags: `ask`, `build`, `share`, `discuss`, `reflect`
+- Like posts
+- Comment on posts
+- View single-post pages and user post feeds
+
+### Notifications
+
+- Follow notifications
+- Like notifications
+- Comment notifications
+- Message notifications
+- Mark-as-read and delete flows
+
+### Messaging
+
+- One-to-one conversations
+- Real-time incoming messages
+- Real-time message deletion updates
 
 ## API Areas
 
-The backend exposes these main route groups:
+- `/api/auth` - auth, session, password reset, Google login
+- `/api/users` - profile, avatar, follow flows, search, suggestions
+- `/api/posts` - feed, single post, create, edit, like, delete, top posts
+- `/api/comments` - comment create, list, delete
+- `/api/notifications` - fetch, mark read, delete one, bulk delete, clear all
+- `/api/conversation` - start and fetch conversations
+- `/api/messages` - fetch, send, read, delete messages
+- `/api/contact` - contact form submission
+- `/api/reports` - report-related flows
 
-- `/api/auth` - register, login, logout, current user, profile setup, Google OAuth
-- `/api/users` - avatar upload, profile update, follow toggle, user search, followers/following, profile lookup
-- `/api/posts` - create, fetch feed, fetch single post, fetch user posts, like/unlike, delete, top posts of the week
-- `/api/comments` - list, create, delete comments
-- `/api/notifications` - list, mark as read, delete one, delete selected, clear all
-- `/api/conversation` - create and fetch conversations
-- `/api/messages` - list messages, send message, delete message
-
-## Environment Variables
-
-### Frontend (`client/.env.local`)
-
-```env
-NEXT_PUBLIC_BACKEND_URL = 'http://localhost:5000'
-NEXT_PUBLIC_GOOGLE_CLIENT_ID = 'create your own (same as the backend Google Client ID)'
-```
-
-### Backend (`server/.env`)
-
-```env
-MONGO_URI = 'create your own'
-
-JWT_SECRET = 'anytext'
-
-NODE_ENV = 'development'
-
-CLOUDINARY_CLOUD_NAME = 'create your own'
-
-CLOUDINARY_API_KEY = 'create your own'
-
-CLOUDINARY_API_SECRET = 'create your own'
-
-GOOGLE_CLIENT_ID = 'create your own'
-
-GOOGLE_CLIENT_SECRET = 'create your own'
-
-FRONTEND_URL = 'your frontend url'
-```
-
-## Local Development
+## Getting Started
 
 ### 1. Install dependencies
 
@@ -145,30 +129,105 @@ cd server
 npm install
 ```
 
-### 2. Start the backend
+### 2. Configure environment variables
+
+Frontend: `client/.env.local`
+
+```env
+NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
+```
+
+Backend: `server/.env`
+
+```env
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+NODE_ENV=development
+PORT=5000
+
+CLOUDINARY_CLOUD_NAME=your_cloudinary_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+FRONTEND_URL=http://localhost:3000
+EMAIL=your_email_address
+EMAIL_PASS=your_email_password_or_app_password
+```
+
+### 3. Start the apps
+
+Backend:
 
 ```bash
 cd server
 npm run dev
 ```
 
-### 3. Start the frontend
+Frontend:
 
 ```bash
 cd client
 npm run dev
 ```
 
-Frontend runs on `http://localhost:3000` and the backend runs on `http://localhost:5000` by default.
+By default:
+
+- frontend runs on `http://localhost:3000`
+- backend runs on `http://localhost:5000`
+
+## Scripts
+
+### Client
+
+- `npm run dev` - start the Next.js dev server
+- `npm run build` - create a production build
+- `npm run start` - run the production build
+- `npm run lint` - run ESLint
+- `npm run test` - run Vitest
+
+### Server
+
+- `npm run dev` - start the API with Nodemon
+- `npm run start` - start the API with Node
+- `npm run test` - run Jest tests
+- `npm run lint` - run ESLint
+
+## Testing
+
+The repository now includes both client and server test setup:
+
+- client tests use `Vitest`
+- server tests use `Jest` + `Supertest` + `mongodb-memory-server`
+
+Examples:
+
+```bash
+cd client
+npm run test
+```
+
+```bash
+cd server
+npm test
+```
 
 ## Notes
 
-- Authentication is cookie-based, so frontend requests use `withCredentials: true`.
-- Google OAuth redirects users back to the frontend after authentication.
-- Avatar uploads are sent to Cloudinary after being accepted by Multer.
-- The repo currently does not include automated tests.
-- Detailed setup instructions are available in `client/README.md` and `server/README.md`.
+- The app uses cookie-based auth, so frontend API requests send credentials.
+- Socket.IO registration is authenticated through the server-side handshake.
+- Some routes use optional auth so they can return public data for guests and personalized data for logged-in users.
+- The codebase is under active development and still has room for additional tests, cleanup, and UX refinements.
 
-## Status
+## Contributing
 
-This codebase represents a working social platform foundation with authentication, social graph features, content posting, notifications, and real-time chat. It is a strong base for continuing work on moderation, richer media support, password recovery, deployment hardening, and test coverage.
+Good first contributions include:
+
+- adding missing tests
+- fixing loading or empty states
+- tightening validation and error messages
+- improving documentation
+- cleaning duplicated logic across routes and components

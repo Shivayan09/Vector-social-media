@@ -330,6 +330,18 @@ export const getPostsByUser = async (req, res) => {
         const isSelf = req.user?.id === userId;
         const isFollower = targetUser.followers.some(id => id.toString() === req.user?.id);
 
+        if (req.user) {
+            const currentUserId = req.user.id;
+            const isBlocked = req.user.blockedUsers?.some(id => id.toString() === userId) ||
+                              targetUser.blockedUsers?.some(id => id.toString() === currentUserId);
+            if (isBlocked) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Action forbidden due to block status"
+                });
+            }
+        }
+
         if (targetUser.isPrivate && !isSelf && !isFollower) {
             return res.status(200).json({
                 success: true,
@@ -358,13 +370,23 @@ export const getSinglePost = async (req, res) => {
             return res.status(400).json({ message: "Invalid post ID format" });
         }
 
-        const post = await Post.findById(postId).populate("author", "username name avatar isPrivate followers").populate("likes", "username name avatar _id");
+        const post = await Post.findById(postId).populate("author", "username name avatar isPrivate followers blockedUsers").populate("likes", "username name avatar _id");
         if (!post) {
             return res.status(404).json({ message: "Post not found" });
         }
 
         // Privacy check for single post
         const author = post.author;
+
+        if (req.user) {
+            const currentUserId = req.user.id;
+            const isBlocked = req.user.blockedUsers?.some(id => id.toString() === author._id.toString()) ||
+                              author.blockedUsers?.some(id => id.toString() === currentUserId);
+            if (isBlocked) {
+                return res.status(403).json({ message: "Action forbidden due to block status" });
+            }
+        }
+
         const isSelf = req.user?.id === author._id.toString();
         const isFollower = author.followers?.some(id => id.toString() === req.user?.id);
 

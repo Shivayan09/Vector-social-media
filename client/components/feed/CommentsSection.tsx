@@ -195,9 +195,9 @@ export default function CommentsSection({ postId }: { postId: string }) {
                                     </div>
                                 </div>
 
-                                <p className="surface-text-muted text-[0.9rem] wrap-break-word">
+                                <div className="surface-text-muted text-[0.9rem] whitespace-pre-wrap break-words">
                                     <Linkify text={c?.content || ""} />
-                                </p>
+                                </div>
 
                                 <p className="text-[0.75rem] text-gray-500 mt-1">
                                     {timeAgo(c.createdAt)}

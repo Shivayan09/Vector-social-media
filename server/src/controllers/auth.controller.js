@@ -26,14 +26,26 @@ const sendResetEmail = async (email, token) => {
     await transporter.sendMail(mailOptions);
 };
 
+const getValidationMessage = (validationResult, fallbackMessage) => {
+    const firstIssue = validationResult?.error?.issues?.[0];
+    return firstIssue?.message || fallbackMessage;
+};
+
 export const register = async (req, res) => {
     try {
+        if (typeof req.body?.name !== "string" || !req.body.name.trim()) {
+            return res.json({
+                success: false,
+                message: "Please enter your name!",
+            });
+        }
+
         const validation = registerSchema.safeParse(req.body);
 
         if (!validation.success) {
             return res.json({
                 success: false,
-                message: validation.error.errors[0].message,
+                message: getValidationMessage(validation, "Invalid registration data"),
             });
         }
 
@@ -129,6 +141,7 @@ export const getMe = (req, res) => {
             following: user.following.map(id => id.toString()),
             isPrivate: user.isPrivate,
             followRequests: user.followRequests.map(id => id.toString()),
+            blockedUsers: (user.blockedUsers || []).map(id => id.toString()),
         },
     });
 };
@@ -139,7 +152,7 @@ export const login = async (req, res) => {
     if (!validation.success) {
         return res.json({
             success: false,
-            message: validation.error.errors[0].message,
+            message: getValidationMessage(validation, "Invalid login data"),
         });
     }
 
@@ -207,7 +220,7 @@ export const forgotPassword = async (req, res) => {
         if (!validation.success) {
             return res.json({
                 success: false,
-                message: validation.error.errors[0].message,
+                message: getValidationMessage(validation, "Invalid email"),
             });
         }
 
@@ -219,9 +232,10 @@ export const forgotPassword = async (req, res) => {
         }
 
         const resetToken = crypto.randomBytes(32).toString('hex');
+        const hashedResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
         const resetTokenExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes
 
-        user.resetToken = resetToken;
+        user.resetToken = hashedResetToken;
         user.resetTokenExpiry = resetTokenExpiry;
         await user.save({ validateBeforeSave: false });
 
@@ -243,14 +257,15 @@ export const resetPassword = async (req, res) => {
         if (!validation.success) {
             return res.json({
                 success: false,
-                message: validation.error.errors[0].message,
+                message: getValidationMessage(validation, "Invalid password reset request"),
             });
         }
 
         const { resetToken, newPassword } = validation.data;
+        const hashedResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
         const user = await User.findOne({
-            resetToken,
+            resetToken: hashedResetToken,
             resetTokenExpiry: { $gt: Date.now() }
         });
 
