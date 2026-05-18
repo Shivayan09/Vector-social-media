@@ -170,7 +170,7 @@ export default function ChatListPage() {
                 <h1 className="px-5 pt-3 text-xl text-center md:text-left font-bold text-foreground">
                     Your chats
                 </h1>
-                <div className="p-5 pb-0">
+                <div className="p-5 pt-4 pb-2">
                     <input
                         type="text"
                         placeholder="Search chats..."
@@ -194,7 +194,7 @@ export default function ChatListPage() {
                                     onClick={() =>
                                         router.push(`/main/chat/${convo._id}`)
                                     }
-                                    className="flex items-center gap-3 p-4 rounded-lg cursor-pointer bg-black/10 dark:bg-white/5 hover:bg-black/15 hover:shadow-lg text-white transition-all duration-200"
+                                    className="group flex items-center gap-4 p-5 rounded-[24px] cursor-pointer bg-white/90 dark:bg-zinc-900/90 border border-black/5 dark:border-white/10 hover:shadow-lg hover:-translate-y-[2px] transition-all duration-300 backdrop-blur-sm"
                                 >
                                     <Image
                                         alt={otherUser?.name || "Chat user"}
@@ -204,26 +204,26 @@ export default function ChatListPage() {
                                         }
                                         width={48}
                                         height={48}
-                                        className="h-12 w-12 rounded-full object-cover"
+                                        className="h-14 w-14 rounded-full object-cover border border-black/5 dark:border-white/10"
                                     />
 
                                     <div className="flex-1 min-w-0">
                                         <div className="flex justify-between items-baseline">
-                                            <p className="font-semibold text-gray-600 dark:text-white truncate">
+                                            <p className="font-semibold text-black dark:text-white truncate text-[17px]">
                                                 {otherUser?.name}
                                             </p>
                                             {convo.lastMessage && (
-                                                <span className="text-xs text-black/40 dark:text-white/40 ml-2">
+                                                <span className="text-[11px] text-black/50 dark:text-white/40 ml-2 whitespace-nowrap">
                                                     {new Date(convo.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </span>
                                             )}
                                         </div>
                                         <div className="flex justify-between items-center">
-                                            <p className="text-sm text-black/30 dark:text-white/40 truncate pr-2">
+                                            <p className="text-sm text-black/55 dark:text-white/50 truncate max-w-[240px] md:max-w-[500px] pr-2 leading-relaxed">
                                                 {convo.lastMessage?.content || `@${otherUser?.username}`}
                                             </p>
                                             {unreadCounts[convo._id] > 0 && (
-                                                <div className="min-w-5 px-1 bg-red-500 text-white rounded-full h-5 flex items-center justify-center text-[10px] font-bold">
+                                                <div className="min-w-6 h-6 px-2 bg-red-500 text-white rounded-full flex items-center justify-center text-[11px] font-bold shadow-sm">
                                                     {unreadCounts[convo._id]}
                                                 </div>
                                             )}
@@ -234,16 +234,16 @@ export default function ChatListPage() {
                                         onClick={(e) =>
                                             handleDeleteClick(e, convo)
                                         }
-                                        className="ml-2 text-red-500 opacity-70 hover:opacity-100 hover:scale-110 transition-transform"
+                                        className="ml-2 text-red-400 hover:text-red-500 opacity-60 hover:opacity-100 hover:scale-110 transition-all duration-200"
                                         size={20}
                                     />
 
-                                    <ArrowRight className="ml-3 opacity-70 text-foreground" />
+                                    <ArrowRight className="ml-1 opacity-40 group-hover:translate-x-1 transition-all duration-200 text-foreground" />
                                 </div>
                             );
                         })
                     ) : (
-                        <p className="text-gray-500 px-5">No conversations found.</p>
+                        <p className="text-black/50 dark:text-white/40 px-5 text-sm text-center py-10">No conversations found.</p>
                     )}
                     {allUserResults.length > 0 && (
                         <>
@@ -252,14 +252,14 @@ export default function ChatListPage() {
                                 <div
                                     key={user._id}
                                     onClick={() => handleNewUserClick(user)}
-                                    className="flex items-center gap-3 p-4 rounded-lg cursor-pointer bg-black/10 hover:bg-black/15 hover:shadow-lg text-white transition-all duration-200"
+                                    className="flex items-center gap-4 p-5 rounded-2xl cursor-pointer bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/10 hover:scale-[1.01] hover:shadow-md transition-all duration-300 ease-in-out"
                                 >
                                     <Image
                                         alt={user.name || "User"}
                                         src={user.avatar || "/default-avatar.png"}
                                         width={48}
                                         height={48}
-                                        className="h-12 w-12 rounded-full object-cover"
+                                        className="h-14 w-14 rounded-full object-cover border border-black/5 dark:border-white/10"
                                     />
                                     <div>
                                         <p className="font-semibold">{user.name}</p>

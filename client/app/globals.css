@@ -355,12 +355,12 @@
   }
 
   .chat-bubble-self {
-    @apply relative max-w-[70%] rounded-2xl rounded-br-md px-4 py-2 text-white;
-    background: var(--primary);
+    @apply relative max-w-[80%] md:max-w-[58%] rounded-[26px] rounded-br-md px-5 py-3 text-white shadow-sm;
+    background: color-mix(in srgb, var(--primary) 92%, white 8%);
   }
 
   .chat-bubble-other {
-    @apply relative max-w-[70%] rounded-2xl rounded-bl-md px-4 py-2 text-foreground;
+    @apply relative max-w-[80%] md:max-w-[58%] rounded-[26px] rounded-bl-md px-5 py-3 text-foreground shadow-sm;
     background: color-mix(in srgb, var(--card) 92%, transparent);
     border: 1px solid var(--surface-border);
   }

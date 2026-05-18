@@ -362,16 +362,16 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
             }
           }}
           disabled={isSending}
-          className="chat-composer-input"
+          className="chat-composer-input rounded-2xl border border-black/5 dark:border-white/10 shadow-sm px-4 py-3 focus:ring-2 focus:ring-blue-500/20 transition-all"
           placeholder="Type a message..."
         />
 
         <button
           onClick={sendMessage}
           disabled={isSending}
-          className={`text-white px-5 rounded-md transition-all ${isSending
+          className={`text-white px-6 py-3 rounded-2xl shadow-sm transition-all duration-300 font-medium ${isSending
             ? "bg-blue-400 cursor-not-allowed opacity-60"
-            : "bg-blue-500 cursor-pointer hover:bg-blue-600"
+            : "bg-blue-500 cursor-pointer hover:bg-blue-600 hover:scale-[1.03] hover:shadow-md"
             }`}
         >
           {isSending ? "Sending..." : "Send"}
