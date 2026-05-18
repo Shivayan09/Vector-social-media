@@ -112,8 +112,8 @@ export default function EditPostModal({
 
       <div
         className={cn(
-          "fixed z-60 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] md:w-[45vw] lg:w-[35vw]",
-          "glass-surface-strong rounded-3xl shadow-2xl p-0 overflow-hidden transition-all duration-300 ease-out border-t border-white/20",
+          "fixed z-60 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto",
+          "glass-surface-strong rounded-3xl shadow-2xl p-0 max-h-[90vh] flex flex-col transition-all duration-300 ease-out border-t border-white/20",
           visible
             ? "opacity-100 scale-100 translate-y-[-50%]"
             : "opacity-0 scale-95 translate-y-[-48%]",
@@ -130,7 +130,7 @@ export default function EditPostModal({
           </button>
         </div>
 
-        <div className="p-6">
+   <div className="p-6 overflow-y-auto flex-1">     
           {/* Intent Selector */}
           <div className="mb-6">
             <label className="text-sm font-semibold text-foreground/80 mb-3 block">
