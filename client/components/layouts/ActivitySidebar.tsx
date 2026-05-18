@@ -7,6 +7,7 @@ import { useAppContext } from "@/context/AppContext";
 import FollowButton from "../ui/FollowButton";
 import { useRouter } from "next/navigation";
 import InlineLoader from "../loaders/InlineLoader";
+import SearchUsersModal from "../modals/SearchUsersModal";
 import type { UserSummary } from "@/lib/types";
 
 type SuggestedUser = {
@@ -51,6 +52,7 @@ export default function ActivitySidebar() {
   const [open, setOpen] = useState(false);
   const [users, setUsers] = useState<SuggestedUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<User[]>([]);
   const [searching, setSearching] = useState(false);
@@ -163,7 +165,7 @@ export default function ActivitySidebar() {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         wrapperRef.current &&
-        !wrapperRef.current.contains(event.target as Node)
+          !wrapperRef.current.contains(event.target as Node)
       ) {
         setOpen(false);
       }
@@ -200,75 +202,72 @@ export default function ActivitySidebar() {
         <p className="ml-2 text-[1.1rem] font-semibold text-foreground">
           Search people you know
         </p>
-
-        <div className="search-pill mt-7 mb-5">
+        <div className="search-pill mt-7 mb-5 cursor-pointer" onClick={() => setIsSearchModalOpen(true)}>
           <Search className="h-5" />
-          <input type="text" placeholder="Search users" value={query} onChange={(e) => setQuery(e.target.value)} className="h-full w-full bg-transparent outline-0 placeholder:text-muted-foreground" />
-        </div>
-
-        <p className="flex items-center gap-2 text-[1.1rem] font-semibold text-foreground">
+          <input type="text" placeholder="Search users" readOnly className="h-full w-full bg-transparent outline-0 cursor-pointer" />
+        </div>        <p className="flex items-center gap-2 text-[1.1rem] font-semibold text-foreground">
           <UserPlus className="h-5 text-blue-500" />
           Suggestions
         </p>
-
+      <SearchUsersModal open={isSearchModalOpen} onClose={() => setIsSearchModalOpen(false)} />
         <div className="mt-5 flex flex-col gap-6 w-70 min-h-[60vh] max-h-[60vh] overflow-y-auto pr-1">
           {loading ? (
             <InlineLoader text="Loading users..." />
           ) : query.trim() ? (
-            searching ? (
-              <p className="surface-text-muted text-sm">Searching...</p>
-            ) : results.length === 0 ? (
-              <p className="surface-text-muted text-sm">No users found.</p>
-            ) : (
-              results.filter((user) => user._id !== userData?.id).map((user) => {
-                return (
-                  <div key={user._id} className="flex items-center gap-2">
-                    <div className="h-12 w-12 rounded-full overflow-hidden">
-                      <img src={user.avatar || "/default-avatar.png"} alt={user.name} className="h-full w-full object-cover" />
-                    </div>
-                    <div className="flex flex-col w-30">
-                      <p className="text-[0.9rem] truncate">{user.name}</p>
-                      <p className="opacity-50 text-[0.8rem] truncate">
-                        @{user.username}
-                      </p>
-                    </div>
-                    <FollowButton
-                      userId={user._id}
-                      isFollowing={user.isFollowedByCurrentUser ?? false}
-                      isRequested={user.isRequestedByCurrentUser ?? false}
-                    />
-                  </div>
-                );
-              })
-            )
-          ) : filteredUsers.length === 0 ? (
-            <p className="surface-text-muted text-sm">No users found.</p>
-          ) : (
-            filteredUsers.map((suggestedUser) => {
-              return (
-                <div key={suggestedUser._id} className="flex items-center gap-2">
-                  <div className="h-12 w-12 rounded-full overflow-hidden">
-                    <img src={suggestedUser.avatar || "/default-avatar.png"} alt={suggestedUser.name} className="h-full w-full object-cover" />
-                  </div>
+              searching ? (
+                <p className="surface-text-muted text-sm">Searching...</p>
+              ) : results.length === 0 ? (
+                  <p className="surface-text-muted text-sm">No users found.</p>
+                ) : (
+                    results.filter((user) => user._id !== userData?.id).map((user) => {
+                      return (
+                        <div key={user._id} className="flex items-center gap-2">
+                          <div className="h-12 w-12 rounded-full overflow-hidden">
+                            <img src={user.avatar || "/default-avatar.png"} alt={user.name} className="h-full w-full object-cover" />
+                          </div>
+                          <div className="flex flex-col w-30">
+                            <p className="text-[0.9rem] truncate">{user.name}</p>
+                            <p className="opacity-50 text-[0.8rem] truncate">
+                              @{user.username}
+                            </p>
+                          </div>
+                          <FollowButton
+                            userId={user._id}
+                            isFollowing={user.isFollowedByCurrentUser ?? false}
+                            isRequested={user.isRequestedByCurrentUser ?? false}
+                          />
+                        </div>
+                      );
+                    })
+                  )
+            ) : filteredUsers.length === 0 ? (
+                <p className="surface-text-muted text-sm">No users found.</p>
+              ) : (
+                  filteredUsers.map((suggestedUser) => {
+                    return (
+                      <div key={suggestedUser._id} className="flex items-center gap-2">
+                        <div className="h-12 w-12 rounded-full overflow-hidden">
+                          <img src={suggestedUser.avatar || "/default-avatar.png"} alt={suggestedUser.name} className="h-full w-full object-cover" />
+                        </div>
 
-                  <div className="flex flex-col w-30">
-                    <p className="text-[0.9rem] truncate cursor-pointer hover:text-blue-600" onClick={() => handleClick(suggestedUser.username)}>
-                      {suggestedUser.name}
-                    </p>
-                    <p className="opacity-50 text-[0.8rem] truncate">
-                      {suggestedUser.bio || "No bio available"}
-                    </p>
-                  </div>
+                        <div className="flex flex-col w-30">
+                          <p className="text-[0.9rem] truncate cursor-pointer hover:text-blue-600" onClick={() => handleClick(suggestedUser.username)}>
+                            {suggestedUser.name}
+                          </p>
+                          <p className="opacity-50 text-[0.8rem] truncate">
+                            {suggestedUser.bio || "No bio available"}
+                          </p>
+                        </div>
 
-                  <FollowButton
-                    userId={suggestedUser._id}
-                    isFollowing={suggestedUser.isFollowedByCurrentUser ?? false}
-                    isRequested={suggestedUser.isRequestedByCurrentUser ?? false}
-                  />
-                </div>
-              );
-            })
-          )}
+                        <FollowButton
+                          userId={suggestedUser._id}
+                          isFollowing={suggestedUser.isFollowedByCurrentUser ?? false}
+                          isRequested={suggestedUser.isRequestedByCurrentUser ?? false}
+                        />
+                      </div>
+                    );
+                  })
+                )}
 
         </div>
 
