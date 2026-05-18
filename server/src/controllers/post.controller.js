@@ -106,6 +106,11 @@ export const getPosts = async (req, res) => {
 export const deletePost = async (req, res) => {
     try {
         const postId = req.params.id;
+        
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).json({ success: false, message: "Invalid post ID format" });
+        }
+
         const userId = req.user.id;
         const post = await Post.findById(postId);
         if (!post) {
@@ -226,10 +231,17 @@ export const updatePost = async (req, res) => {
 };
 
 export const toggleLike = async (req, res) => {
-    const post = await Post.findById(req.params.id);
-    if (!post) {
-        return res.status(404).json({ success: false });
-    }
+    try {
+        const postId = req.params.id;
+        
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).json({ success: false, message: "Invalid post ID format" });
+        }
+
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({ success: false });
+        }
     const userId = req.user.id;
     const likesWithoutDuplicates = Array.from(
         new Map(post.likes.map((likeId) => [likeId.toString(), likeId])).values()
@@ -268,6 +280,9 @@ export const toggleLike = async (req, res) => {
         likesCount: post.likes.length,
         liked,
     });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
 };
 
 export const getPostsByUser = async (req, res) => {
@@ -418,8 +433,14 @@ export const getTopPostsOfMonth = async (req, res) => {
 
 export const incrementShare = async (req, res) => {
     try {
+        const postId = req.params.id;
+        
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).json({ success: false, message: "Invalid post ID format" });
+        }
+
         const post = await Post.findByIdAndUpdate(
-            req.params.id,
+            postId,
             { $inc: { sharesCount: 1 } },
             { new: true }
         );
