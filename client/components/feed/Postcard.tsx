@@ -64,7 +64,15 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
     const [likeAnimating, setLikeAnimating] = useState(false);
-    const [imageLoaded, setImageLoaded] = useState(false);
+    const [imageState, setImageState] = useState<{
+        src: string | null;
+        loaded: boolean;
+        failed: boolean;
+    }>({
+        src: post.image || null,
+        loaded: false,
+        failed: false,
+    });
 
     function timeAgo(dateString: string) {
         const now = new Date().getTime();
@@ -178,8 +186,36 @@ export default function PostCard({ post, setPost }: PostCardProps) {
         };
     }, [menuOpen]);
 
+    useEffect(() => {
+        if (!post.image) {
+            return;
+        }
+
+        const timeoutId = setTimeout(() => {
+            setImageState((prev) => {
+                const currentSrc = post.image || null;
+                if (prev.src === currentSrc && (prev.loaded || prev.failed)) {
+                    return prev;
+                }
+
+                return {
+                    src: currentSrc,
+                    loaded: true,
+                    failed: true,
+                };
+            });
+        }, 8000);
+
+        return () => clearTimeout(timeoutId);
+    }, [post.image]);
+
     // prevent crash if author missing
     if (!post?.author) return null;
+
+    const isCurrentImageLoaded =
+        imageState.src === (post.image || null) && imageState.loaded;
+    const isCurrentImageFailed =
+        imageState.src === (post.image || null) && imageState.failed;
 
     const handleShare = async (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -313,24 +349,46 @@ Report post </button>
             )}
 
             {post.image && (
-                <div className="w-full mb-4 rounded-xl overflow-hidden border border-white/10 max-h-125">
-                    {!imageLoaded && (
-                        <SkeletonLoader
-                            count={1}
-                            height="h-[500px]"
-                            className="w-full"
-                        />
+                <div className="relative w-full mb-4 rounded-xl overflow-hidden border border-white/10 max-h-125">
+                    {!isCurrentImageLoaded && !isCurrentImageFailed && (
+                        <div className="absolute inset-0 z-10">
+                            <SkeletonLoader
+                                count={1}
+                                height="h-[500px]"
+                                className="w-full"
+                            />
+                        </div>
                     )}
 
-                    <Image
-                        src={post.image}
-                        alt="Post attachment"
-                        width={1200}
-                        height={800}
-                        onLoad={() => setImageLoaded(true)}
-                        className={`w-full h-full object-cover ${imageLoaded ? "block" : "hidden"
-                            }`}           
-                    />
+                    {!isCurrentImageFailed ? (
+                        <Image
+                            key={post.image}
+                            src={post.image}
+                            alt="Post attachment"
+                            width={1200}
+                            height={800}
+                            onLoad={() =>
+                                setImageState({
+                                    src: post.image || null,
+                                    loaded: true,
+                                    failed: false,
+                                })
+                            }
+                            onError={() => {
+                                setImageState({
+                                    src: post.image || null,
+                                    loaded: true,
+                                    failed: true,
+                                });
+                            }}
+                            className={`w-full h-full object-cover transition-opacity duration-200 ${isCurrentImageLoaded ? "opacity-100" : "opacity-0"
+                                }`}
+                        />
+                    ) : (
+                        <div className="flex h-60 items-center justify-center bg-black/5 px-4 text-center text-sm text-muted-foreground dark:bg-white/5">
+                            Failed to load image
+                        </div>
+                    )}
                 </div>
             )}
             <div className="flex w-full gap-x-2 border-t border-border/80 pt-3 text-foreground sm:justify-between">
