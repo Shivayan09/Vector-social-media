@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, use } from "react";
+import Image from "next/image";
 import axios from "axios";
 import { socket } from "@/socket/socket";
 import { useAppContext } from "@/context/AppContext";
@@ -243,7 +244,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
           <ArrowLeft size={24} className="text-foreground" />
         </button>
 
-        <img alt={otherUser?.name || "User avatar"} src={otherUser?.avatar || "/default-avatar.png"} className="h-12 w-12 rounded-full object-cover border ml-3" />
+        <Image alt={otherUser?.name || "User avatar"} src={otherUser?.avatar || "/default-avatar.png"} width={48} height={48} className="h-12 w-12 rounded-full object-cover border ml-3" />
 
         <p
           onClick={() =>

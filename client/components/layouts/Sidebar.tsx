@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { Home, Search, Bell, User, Plus, Menu, X, Settings, LogOut, Send } from "lucide-react";
 import CreateModal from "../modals/CreatePostModal";
@@ -106,9 +107,11 @@ export default function Sidebar() {
   transform transition-all duration-300 ${open ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex w-full">
           <div className="flex justify-center ml-3">
-            <img
+            <Image
               alt={userData?.name || "User avatar"}
               src={userData?.avatar || "/default-avatar.png"}
+              width={48}
+              height={48}
               className="h-12 w-12 rounded-full object-cover border shrink-0"
             />
 

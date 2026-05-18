@@ -1,6 +1,7 @@
 "use client";
 
 import axios from "axios";
+import Image from "next/image";
 import {
   ExternalLink,
   Flame,
@@ -272,9 +273,11 @@ export default function Explore() {
                               }}
                             >
                               <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-muted">
-                                <img
+                                <Image
                                   src={user.avatar || "/default-avatar.png"}
                                   alt={user.name}
+                                  width={40}
+                                  height={40}
                                   className="h-full w-full object-cover"
                                 />
                               </div>
@@ -382,9 +385,11 @@ export default function Explore() {
                         </span>
                         <span className="shrink-0 pl-2">{topic.count} posts</span>
                       </p>
-                      <img
+                      <Image
                         src={intentImage[topic.intent]}
                         alt={topic.label}
+                        width={400}
+                        height={240}
                         className="h-full min-h-[10rem] w-full object-cover"
                       />
                     </div>
@@ -423,9 +428,11 @@ export default function Explore() {
                       className={`${exploreCard} flex w-full min-w-0 items-start gap-3 p-3 text-left md:hover:-translate-y-0.5`}
                     >
                       <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
-                        <img
+                        <Image
                           src={intentImage[topic.intent]}
                           alt={intentLabel[topic.intent]}
+                          width={44}
+                          height={44}
                           className="h-full w-full object-cover"
                         />
                       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Image from "next/image";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { UserSummary } from "@/lib/types";
@@ -173,9 +174,11 @@ export default function FollowActivityPanel() {
                     className="flex items-center justify-between p-3 rounded-xl border border-border/40 bg-secondary/10 transition-all duration-200"
                   >
                     <div className="flex items-center gap-3">
-                      <img
+                      <Image
                         src={user.avatar || "/default-avatar.png"}
                         alt={user.name}
+                        width={40}
+                        height={40}
                         className="h-10 w-10 rounded-full object-cover border border-border/50"
                       />
                       <div>
@@ -223,9 +226,11 @@ export default function FollowActivityPanel() {
                     className="flex items-center justify-between p-3 rounded-xl border border-border/40 bg-secondary/10 transition-all duration-200"
                   >
                     <div className="flex items-center gap-3">
-                      <img
+                      <Image
                         src={user.avatar || "/default-avatar.png"}
                         alt={user.name}
+                        width={40}
+                        height={40}
                         className="h-10 w-10 rounded-full object-cover border border-border/50"
                       />
                       <div>

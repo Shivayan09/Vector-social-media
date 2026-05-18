@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useAppContext } from "@/context/AppContext";
@@ -195,12 +196,14 @@ export default function ChatListPage() {
                                     }
                                     className="flex items-center gap-3 p-4 rounded-lg cursor-pointer bg-black/10 dark:bg-white/5 hover:bg-black/15 hover:shadow-lg text-white transition-all duration-200"
                                 >
-                                    <img
+                                    <Image
                                         alt={otherUser?.name || "Chat user"}
                                         src={
                                             otherUser?.avatar ||
                                             "/default-avatar.png"
                                         }
+                                        width={48}
+                                        height={48}
                                         className="h-12 w-12 rounded-full object-cover"
                                     />
 
@@ -251,9 +254,11 @@ export default function ChatListPage() {
                                     onClick={() => handleNewUserClick(user)}
                                     className="flex items-center gap-3 p-4 rounded-lg cursor-pointer bg-black/10 hover:bg-black/15 hover:shadow-lg text-white transition-all duration-200"
                                 >
-                                    <img
+                                    <Image
                                         alt={user.name || "User"}
                                         src={user.avatar || "/default-avatar.png"}
+                                        width={48}
+                                        height={48}
                                         className="h-12 w-12 rounded-full object-cover"
                                     />
                                     <div>

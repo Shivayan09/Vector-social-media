@@ -2,6 +2,7 @@
 
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
+import Image from "next/image";
 import { Bookmark, Heart, MessageCircle, HelpCircle, Hammer, Share2, MessagesSquare, MoreHorizontal, Trash2, Flag, Forward, Pencil } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -321,9 +322,11 @@ Report post </button>
                         />
                     )}
 
-                    <img
+                    <Image
                         src={post.image}
                         alt="Post attachment"
+                        width={1200}
+                        height={800}
                         onLoad={() => setImageLoaded(true)}
                         className={`w-full h-full object-cover ${imageLoaded ? "block" : "hidden"
                             }`}           
