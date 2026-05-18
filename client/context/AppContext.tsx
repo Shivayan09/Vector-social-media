@@ -64,7 +64,7 @@ export function AppContextProvider({
   const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [userData, setUserData] = useState<User | null>(null);
 
-  //  IMPORTANT: keep default false (otherwise the loader will always show)
+
   const [loading, setLoading] = useState(false);
 
   const [posts, setPosts] = useState<Post[]>([]);
@@ -79,7 +79,7 @@ export function AppContextProvider({
     }
 
     try {
-      setLoading(true); // start loading
+      setLoading(true); 
 
       const { data } = await axios.get<{ user: User }>(
         `${BACKEND_URL}/api/auth/me`,
@@ -92,7 +92,7 @@ export function AppContextProvider({
       setIsLoggedIn(false);
       setUserData(null);
     } finally {
-      setLoading(false); // stop loading
+      setLoading(false); 
     }
   }, [BACKEND_URL]);
 
