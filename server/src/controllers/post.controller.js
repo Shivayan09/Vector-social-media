@@ -73,7 +73,56 @@ export const getPosts = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
-        const posts = await Post.find().sort({ createdAt: -1 }).skip(skip).limit(limit).populate("author", "username name surname avatar").populate("likes", "username name avatar _id");
+
+        const currentUserId = req.user?.id || req.user?._id || null;
+        const boostWindowMs = 30 * 60 * 1000; // 30 minutes
+        const boostCutoff = new Date(Date.now() - boostWindowMs);
+
+        const posts = await Post.aggregate([
+            {
+                $addFields: {
+                    // Give a boost score of 1 if post was created by current user within last 30 mins
+                    isBoosted: {
+                        $cond: {
+                            if: {
+                                $and: [
+                                    { $gt: ["$createdAt", boostCutoff] },
+                                    currentUserId
+                                        ? { $eq: ["$author", new mongoose.Types.ObjectId(currentUserId)] }
+                                        : false
+                                ]
+                            },
+                            then: 1,
+                            else: 0
+                        }
+                    }
+                }
+            },
+            // Boosted posts first, then newest
+            { $sort: { isBoosted: -1, createdAt: -1 } },
+            { $skip: skip },
+            { $limit: limit },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "_id",
+                    as: "author",
+                    pipeline: [{ $project: { username: 1, name: 1, surname: 1, avatar: 1 } }]
+                }
+            },
+            { $unwind: "$author" },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "likes",
+                    foreignField: "_id",
+                    as: "likes",
+                    pipeline: [{ $project: { username: 1, name: 1, avatar: 1 } }]
+                }
+            }
+        ]);
+
         const total = await Post.countDocuments();
         res.status(200).json({
             posts,

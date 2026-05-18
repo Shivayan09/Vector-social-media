@@ -36,7 +36,7 @@ const postRouter = express.Router();
 postRouter.post("/", authMiddleware, upload.single("image"), createPost);
 postRouter.get("/top-week", getTopPostsOfWeek);
 postRouter.get("/top-month", getTopPostsOfMonth);
-postRouter.get("/", getPosts);
+postRouter.get("/", optionalAuth, getPosts);
 postRouter.get("/:postId", optionalAuth, getSinglePost);
 postRouter.put("/:id/like", authMiddleware, toggleLike);
 postRouter.put("/:id/share", authMiddleware, incrementShare);
