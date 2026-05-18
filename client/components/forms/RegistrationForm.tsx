@@ -230,7 +230,7 @@ export default function RegistrationForm() {
             Set a description
           </p>
 
-          <textarea placeholder="Enter your bio (200 words max)" className="form-textarea h-24 w-full" onChange={(e) => setDescription(e.target.value)} />
+          <textarea placeholder="Enter your description (200 words max)" className="form-textarea h-24 w-full" onChange={(e) => setDescription(e.target.value)} />
 
           <div className="flex items-center gap-2 mt-4 cursor-pointer" onClick={() => setIsPrivate(!isPrivate)}>
             <input
