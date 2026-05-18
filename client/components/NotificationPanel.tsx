@@ -382,7 +382,7 @@ export default function NotificationPanel({ search = "" }: Props) {
         </p>
       ) : filteredNotifications.length === 0 ? (
         <p className="surface-text-muted text-sm">
-          No notifications match your search.
+            No notifications
         </p>
       ) : (
         <div className="flex flex-col gap-2">
