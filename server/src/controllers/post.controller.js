@@ -383,14 +383,58 @@ export const getTopPostsOfWeek = async (req, res) => {
     try {
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        const requestedLimit = Number.parseInt(req.query.limit, 10);
+        const limit = Number.isFinite(requestedLimit) && requestedLimit > 0
+            ? requestedLimit
+            : 10;
+        let filter = { createdAt: { $gte: oneWeekAgo } };
+
+        if (req.user) {
+            const currentUserId = req.user._id || req.user.id;
+            const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
+            const blockerIds = blockers.map((user) => user._id);
+            const blockedIds = req.user.blockedUsers || [];
+            const excludeUserIds = [...blockedIds, ...blockerIds];
+
+            if (excludeUserIds.length > 0) {
+                filter = {
+                    ...filter,
+                    author: { $nin: excludeUserIds },
+                };
+            }
+        }
+
         const posts = await Post.aggregate([
-            { $match: { createdAt: { $gte: oneWeekAgo } } },
-            { $addFields: { likesCount: { $size: "$likes" } } },
-            { $sort: { likesCount: -1, createdAt: -1 } },
-            { $limit: 10 },
+            { $match: filter },
+            {
+                $addFields: {
+                    likesCount: { $size: "$likes" },
+                    commentsCount: { $ifNull: ["$commentsCount", 0] },
+                    sharesCount: { $ifNull: ["$sharesCount", 0] },
+                },
+            },
+            {
+                $addFields: {
+                    engagementScore: {
+                        $add: [
+                            "$likesCount",
+                            { $multiply: ["$commentsCount", 2] },
+                            { $multiply: ["$sharesCount", 3] },
+                        ],
+                    },
+                },
+            },
+            { $sort: { engagementScore: -1, createdAt: -1 } },
+            { $limit: limit },
             { $lookup: { from: "users", localField: "author", foreignField: "_id", as: "author" } },
             { $unwind: "$author" },
-            { $project: { "author.password": 0, "author.email": 0 } }
+            {
+                $project: {
+                    engagementScore: 0,
+                    "author.password": 0,
+                    "author.email": 0,
+                },
+            }
         ]);
         res.status(200).json({
             success: true,

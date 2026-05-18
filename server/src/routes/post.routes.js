@@ -34,9 +34,9 @@ const optionalAuth = async (req, res, next) => {
 const postRouter = express.Router();
 
 postRouter.post("/", authMiddleware, upload.single("image"), createPost);
-postRouter.get("/top-week", getTopPostsOfWeek);
+postRouter.get("/", optionalAuth, getPosts);
+postRouter.get("/top-week", optionalAuth, getTopPostsOfWeek);
 postRouter.get("/top-month", getTopPostsOfMonth);
-postRouter.get("/", getPosts);
 postRouter.get("/:postId", optionalAuth, getSinglePost);
 postRouter.post("/like/:id", authMiddleware, toggleLike);
 postRouter.put("/:id/like", authMiddleware, toggleLike);

@@ -6,7 +6,23 @@ import PostList from "./PostList";
 import { useAppContext } from "@/context/AppContext";
 import CreatePostPopup from "./CreatePostPopup";
 import SkeletonLoader from "../loaders/SkeletonLoader";
-import { getTrendingPosts } from "@/lib/trending";
+import type { Post } from "@/lib/types";
+
+function mergeUniquePosts(primaryPosts: Post[], secondaryPosts: Post[]): Post[] {
+    const seenIds = new Set<string>();
+    const mergedPosts: Post[] = [];
+
+    for (const post of [...primaryPosts, ...secondaryPosts]) {
+        if (!post?._id || seenIds.has(post._id)) {
+            continue;
+        }
+
+        seenIds.add(post._id);
+        mergedPosts.push(post);
+    }
+
+    return mergedPosts;
+}
 
 export default function Feed() {
     const { posts, setPosts } = useAppContext();
@@ -21,14 +37,33 @@ export default function Feed() {
         loadingRef.current = true;
         setLoading(true);
         try {
-            const res = await axios.get(
+            const feedRequest = axios.get(
                 `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/posts?page=${pageNum}&limit=10`,
                 { withCredentials: true }
             );
+
+            if (pageNum === 1) {
+                const [feedRes, topWeekRes] = await Promise.all([
+                    feedRequest,
+                    axios.get(
+                        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/posts/top-week?limit=3`,
+                        { withCredentials: true }
+                    ),
+                ]);
+
+                const rankedTopPosts = topWeekRes.data.posts || [];
+                const feedPosts = feedRes.data.posts || [];
+
+                setPosts(mergeUniquePosts(rankedTopPosts, feedPosts));
+                hasMoreRef.current = feedRes.data.hasMore;
+                return;
+            }
+
+            const res = await feedRequest;
             if (pageNum === 1) {
                 setPosts(res.data.posts || []);
             } else {
-                setPosts(prev => [...prev, ...(res.data.posts || [])]);
+                setPosts(prev => mergeUniquePosts(prev, res.data.posts || []));
             }
             hasMoreRef.current = res.data.hasMore;
         } catch (error) {
@@ -61,9 +96,7 @@ export default function Feed() {
         if (page > 1) fetchPosts(page);
     }, [page, fetchPosts]);
 
-    const displayPosts = useMemo(() => {
-        return getTrendingPosts(posts);
-    }, [posts]);
+    const displayPosts = useMemo(() => posts, [posts]);
 
     return (
         <div className="hide-scrollbar w-full px-5 md:px-10 pb-10">
