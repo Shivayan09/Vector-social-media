@@ -417,9 +417,9 @@ export const getTopPostsOfWeek = async (req, res) => {
                 $addFields: {
                     engagementScore: {
                         $add: [
-                            "$likesCount",
-                            { $multiply: ["$commentsCount", 2] },
-                            { $multiply: ["$sharesCount", 3] },
+                            { $multiply: ["$likesCount", 4] },
+                            { $multiply: ["$commentsCount", 3] },
+                            { $multiply: ["$sharesCount", 2] },
                         ],
                     },
                 },
