@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import passport from "./config/passport.js";
 import authRouter from "./routes/auth.routes.js";
@@ -13,6 +14,8 @@ import reportRouter from "./routes/report.routes.js";
 import contactRouter from "./routes/contact.routes.js";
 
 const app = express();
+
+app.use(helmet());
 
 app.use(cors({
   origin: ["http://localhost:3000", "http://vector-lac.vercel.app", "https://vector-lac.vercel.app", process.env.FRONTEND_URL],
