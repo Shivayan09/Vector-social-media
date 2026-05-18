@@ -230,4 +230,4 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
       </div>
     </div>
   );
-}
+  }
