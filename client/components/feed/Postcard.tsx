@@ -180,45 +180,52 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     // prevent crash if author missing
     if (!post?.author) return null;
 
-    const handleShare = async (e: React.MouseEvent) => {
-        e.stopPropagation();
-        const postUrl = `${window.location.origin}/main/post/${post._id}`;
-        try {
-            if (navigator.share) {
-                await navigator.share({
-                    title: "Check out this post",
-                    text: post.content.slice(0, 100),
-                    url: postUrl,
-                });
-            } else {
-                await navigator.clipboard.writeText(postUrl);
-                toast.success("Post link copied to clipboard");
-            }
+   const handleShare = async (e: React.MouseEvent): Promise<void> => {
+    e.stopPropagation();
 
-            // Increment share count in DB
-            await axios.put(`${BACKEND_URL}/api/posts/${post._id}/share`, {}, { withCredentials: true });
+    const postUrl = `${window.location.origin}/main/post/${post._id}`;
 
-            // Update local state
+    try {
+        if (navigator.share) {
+            await navigator.share({
+                title: "Check out this post",
+                text: post.content.slice(0, 100),
+                url: postUrl,
+            });
+
+            await axios.put(
+                `${BACKEND_URL}/api/posts/${post._id}/share`,
+                {},
+                { withCredentials: true }
+            );
+
             if (setPost) {
-                setPost((prev) => prev ? ({
-                    ...prev,
-                    sharesCount: (prev.sharesCount || 0) + 1,
-                }) : prev);
+                setPost((prev) =>
+                    prev? {...prev,sharesCount: (prev.sharesCount || 0) + 1,}
+                        : prev
+                );
             } else {
-                setPosts(prev =>
-                    prev.map(p =>
+                setPosts((prev) =>
+                    prev.map((p) =>
                         p._id === post._id
-                            ? { ...p, sharesCount: (p.sharesCount || 0) + 1 }
+                            ? {...p,sharesCount: (p.sharesCount || 0) + 1,}
                             : p
                     )
                 );
             }
 
-        } catch {
-            // share dismissed or failed
+        } else {
+            await navigator.clipboard.writeText(postUrl);
+
+            toast.success("Post link copied to clipboard");
+
         }
-        setMenuOpen(false);
-    };
+
+    } catch (error) {
+        console.log("Share cancelled or failed", error);
+    }
+    setMenuOpen(false);
+};
 
     return (
         <div className="content-card glass-hover relative overflow-clip cursor-pointer"
