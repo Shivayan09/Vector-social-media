@@ -9,7 +9,7 @@ import { useState } from "react";
 export default function Activity() {
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"notifications" | "follow_activity">("notifications");
-
+ const pendingFollowCount = 3;
   return (
     <div className="flex h-screen">
       <div className="w-full py-5 px-7 flex flex-col">
@@ -17,12 +17,26 @@ export default function Activity() {
           <p className="page-title">
             {view === "notifications" ? "Activity Panel" : "Follow Activity"}
           </p>
-          <button
-            onClick={() => setView(view === "notifications" ? "follow_activity" : "notifications")}
-            className="self-center sm:self-auto px-4 py-2 text-sm font-semibold rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer"
-          >
-            {view === "notifications" ? "Follow Activity" : "Back to Notifications"}
-          </button>
+         <button
+  onClick={() =>
+    setView(
+      view === "notifications"
+        ? "follow_activity"
+        : "notifications"
+    )
+  }
+  className="relative self-center sm:self-auto px-4 py-2 text-sm font-semibold rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer"
+>
+  {view === "notifications"
+    ? "Follow Activity"
+    : "Notifications"}
+
+  {view === "notifications" && pendingFollowCount > 0 && (
+    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+      {pendingFollowCount}
+    </span>
+  )}
+</button>
         </div>
 
         <div className="flex-grow flex flex-col mt-5 overflow-hidden">
