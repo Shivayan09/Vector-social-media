@@ -258,7 +258,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     };
 
     return (
-        <div className="content-card glass-hover relative overflow-clip cursor-pointer" data-testid="post-card" data-post-id={post._id}
+        <div className="content-card glass-hover relative overflow-clip cursor-pointer"
             onClick={openPost}>
             <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center flex-wrap sm:justify-between w-[90%]">
