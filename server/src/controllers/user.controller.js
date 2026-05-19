@@ -103,6 +103,9 @@ export const updateProfile = async (req, res) => {
             user.description = description;
         }
         if (isPrivate !== undefined) {
+            if (isPrivate === false && user.isPrivate === true) {
+                user.followRequests = [];
+            }
             user.isPrivate = isPrivate;
         }
         await user.save();
