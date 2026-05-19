@@ -7,6 +7,20 @@ import { getIO, onlineUsers } from "../socket/socket.js";
 export const getMessages = async (req, res) => {
   try {
 
+    // Verify the requesting user is a participant in this conversation
+    // before returning any messages. Without this check any authenticated
+    // user can read the full message history of any conversation by
+    // supplying a known conversationId — the same pattern already used
+    // by getUnreadCount and markConversationAsRead in this file.
+    const conversation = await Conversation.findOne({
+      _id: req.params.conversationId,
+      participants: req.user._id,
+    });
+
+    if (!conversation) {
+      return res.status(403).json({ message: "Not a participant in this conversation" });
+    }
+
     const messages = await Message.find({
       conversation: req.params.conversationId,
     })
