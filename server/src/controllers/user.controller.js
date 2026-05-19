@@ -420,6 +420,20 @@ export const getUserProfile = async (req, res) => {
             }
         }
 
+        // Private profiles must not be visible to unauthenticated visitors.
+        // When req.user is absent the if (req.user) block above is skipped
+        // entirely, so isPrivate is never checked and the full profile
+        // (bio, description, follower counts) is returned to any anonymous
+        // HTTP request — directly contradicting the account privacy setting.
+        if (!req.user && user.isPrivate) {
+            return res.json({
+                _id: user._id,
+                username: user.username,
+                avatar: user.avatar,
+                isPrivate: true,
+            });
+        }
+
         // Strip internal arrays — never expose raw follower/request IDs to the client
         delete response.followers;
         delete response.followRequests;
