@@ -13,9 +13,11 @@ vi.mock("axios");
 
 vi.mock("next/image", () => ({
   __esModule: true,
-  default: ({ unoptimized, ...props }: React.ComponentPropsWithoutRef<"img"> & { unoptimized?: boolean }) => {
+  default: (props: React.ComponentPropsWithoutRef<"img"> & { unoptimized?: boolean }) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { unoptimized, ...rest } = props;
     // eslint-disable-next-line jsx-a11y/alt-text
-    return <img {...props} />;
+    return <img {...rest} />;
   },
 }));
 
@@ -43,11 +45,13 @@ const mockPost: Post = {
 };
 
 describe("EditPostModal Component", () => {
-  const mockOnClose = vi.fn();
-  const mockOnPostUpdated = vi.fn();
+  let mockOnClose: () => void;
+  let mockOnPostUpdated: (post: Post) => void;
   const mockBlobUrl = "blob:http://localhost/test-blob-url";
 
   beforeEach(() => {
+    mockOnClose = vi.fn();
+    mockOnPostUpdated = vi.fn();
     vi.clearAllMocks();
     process.env.NEXT_PUBLIC_BACKEND_URL = "http://localhost:5000";
 
