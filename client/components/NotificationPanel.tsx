@@ -34,6 +34,7 @@ export default function NotificationPanel({ search = "" }: Props) {
   const [messageLoading, setMessageLoading] = useState<Record<string, boolean>>({});
   const [deleteLoading, setDeleteLoading] = useState<Record<string, boolean>>({});
   const [modalOpen, setModalOpen] = useState(false);
+  const [singleDeleteId, setSingleDeleteId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const isFirstLoad = useRef(true);
@@ -511,7 +512,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                       onClick={(e) => {
                         e.stopPropagation();
                         if (deleteLoading[n._id]) return;
-                        void deleteSingle(n._id);
+                        setSingleDeleteId(n._id);
                       }}
                       disabled={deleteLoading[n._id]}
                       className="p-1 text-foreground transition hover:text-red-400 disabled:pointer-events-none disabled:opacity-50"
@@ -549,6 +550,19 @@ export default function NotificationPanel({ search = "" }: Props) {
         title="Clear all notifications?"
         description="This will permanently delete all your notifications."
         confirmText="Clear All"
+      />
+      <ConfirmModal
+        open={!!singleDeleteId}
+        onClose={() => setSingleDeleteId(null)}
+        onConfirm={() => {
+          if (singleDeleteId) {
+            void deleteSingle(singleDeleteId);
+          }
+          setSingleDeleteId(null);
+        }}
+        title="Delete notification?"
+        description="Are you sure you want to delete this notification?"
+        confirmText="Delete"
       />
     </div>
   );
