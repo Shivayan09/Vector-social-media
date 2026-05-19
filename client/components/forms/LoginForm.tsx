@@ -86,16 +86,18 @@ export default function LoginForm() {
             </div>
 
             {/* GOOGLE BUTTON */}
-            <div className="flex justify-center">
-                <GoogleLogin
-                    onSuccess={handleGoogle}
-                    onError={() => toast.error("Google login failed")}
-                    theme="outline"
-                    size="medium"
-                    width="100%"
-                />
+            <div className="flex justify-center rounded-full p-[2px]">
+               <div className="rounded-full overflow-hidden shadow-[0_0_25px_rgba(59,130,246,0.45)]">
+                 <GoogleLogin
+                   onSuccess={handleGoogle}
+                   onError={() => toast.error('Google login failed')}
+                   theme="filled_black"
+                   size="large"
+                   shape="pill"
+                   width="320"
+                 />
+                </div>
             </div>
-
             <div className="relative my-5 flex items-center justify-center">
                 <div className="form-divider"></div>
                 <span className="form-divider-text backdrop-blur-3xl">
