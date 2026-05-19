@@ -242,8 +242,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
   };
 
   return (
-    <div className="flex flex-col h-screen">
-
+    <div className="flex h-screen flex-col overflow-hidden">
       <div className="chat-header px-14 md:px-5">
         <button
           onClick={() => router.push("/main/chat")}
@@ -255,13 +254,19 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
 
         <Image alt={otherUser?.name || "User avatar"} src={otherUser?.avatar || "/default-avatar.png"} width={48} height={48} className="h-12 w-12 rounded-full object-cover border ml-3" />
 
-        <p
+        <div
           onClick={() =>
             router.push(`/main/user/${otherUser?.username}`)
           }
-          className="ml-3 cursor-pointer text-[1.1rem] font-semibold text-foreground">
-          {otherUser?.name || "User"}
-        </p>
+          className="ml-3 min-w-0 cursor-pointer"
+        >
+          <p className="truncate text-[1.05rem] font-semibold text-foreground">
+            {otherUser?.name || "User"}
+          </p>
+          <p className="truncate text-sm surface-text-muted">
+            @{otherUser?.username || "vector"}
+          </p>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
@@ -288,9 +293,10 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
             </div>
           </div>
         ) : messages.length === 0 ? (
-          <p className="surface-text-muted mt-4 text-center">
-            No messages
-          </p>
+          <div className="chat-empty-state">
+            <p className="text-base font-medium text-foreground">No messages yet</p>
+            <p className="mt-1 text-sm">Start the conversation with something thoughtful.</p>
+          </div>
         ) : (
           messages.map((m, index) => {
 
@@ -353,7 +359,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
                     )}
 
                     <p
-                      className={`whitespace-pre-wrap wrap-break-word ${isMe && !m.isDeleted ? "pr-6" : ""
+                      className={`whitespace-pre-wrap break-words leading-relaxed ${isMe && !m.isDeleted ? "pr-6" : ""
                         }`}
                     >
                       {m.isDeleted ? (
@@ -399,10 +405,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
         <button
           onClick={sendMessage}
           disabled={isSending}
-          className={`text-white px-5 rounded-md transition-all ${isSending
-            ? "bg-blue-400 cursor-not-allowed opacity-60"
-            : "bg-blue-500 cursor-pointer hover:bg-blue-600"
-            }`}
+          className="chat-primary-button"
         >
           {isSending ? "Sending..." : "Send"}
         </button>
