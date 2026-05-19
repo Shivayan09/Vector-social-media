@@ -52,7 +52,7 @@ type AppContextType = {
   refreshAuth: () => Promise<void>;
 };
 
-const AppContext = createContext<AppContextType | undefined>(
+export const AppContext = createContext<AppContextType | undefined>(
   undefined
 );
 
