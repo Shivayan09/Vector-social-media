@@ -79,30 +79,86 @@ export const updateProfile = async (req, res) => {
                     message: "Username cannot be empty"
                 });
             }
+            if (trimmedUsername.length < 3 || trimmedUsername.length > 30) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Username must be between 3 and 30 characters"
+                });
+            }
+            if (!/^[a-zA-Z0-9_-]+$/.test(trimmedUsername)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Username can only contain letters, numbers, underscores, and hyphens"
+                });
+            }
+            const existingUser = await User.findOne({ username: trimmedUsername, _id: { $ne: userId } });
+            if (existingUser) {
+                return res.status(409).json({
+                    success: false,
+                    message: "Username is already taken"
+                });
+            }
             user.username = trimmedUsername;
         }
         if (name !== undefined) {
+            if (name.trim().length < 2 || name.length > 100) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Name must be between 2 and 100 characters"
+                });
+            }
             user.name = name;
         }
         if (surname !== undefined) {
+            if (surname.length > 100) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Surname must not exceed 100 characters"
+                });
+            }
             user.surname = surname;
         }
         if (phoneNumber !== undefined) {
-            user.phoneNumber = phoneNumber;
+            const trimmedPhone = phoneNumber.trim();
+            if (trimmedPhone.length > 20) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Phone number must not exceed 20 characters"
+                });
+            }
+            if (trimmedPhone !== "" && !/^[+\d][\d\s\-()]*$/.test(trimmedPhone)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid phone number format"
+                });
+            }
+            user.phoneNumber = trimmedPhone;
         }
         if (bio !== undefined) {
             if (bio.length > 30) {
                 return res.status(400).json({
                     success: false,
-                    message: "Bio length exceeds word limit!"
+                    message: "Bio must not exceed 30 characters"
                 });
             }
             user.bio = bio;
         }
         if (description !== undefined) {
+            if (description.length > 200) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Description must not exceed 200 characters"
+                });
+            }
             user.description = description;
         }
         if (isPrivate !== undefined) {
+            if (typeof isPrivate !== "boolean") {
+                return res.status(400).json({
+                    success: false,
+                    message: "isPrivate must be a boolean"
+                });
+            }
             user.isPrivate = isPrivate;
         }
         await user.save();
