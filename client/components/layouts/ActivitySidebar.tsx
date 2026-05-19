@@ -118,8 +118,7 @@ export default function ActivitySidebar() {
         const hydratedUsers = await hydrateUsersWithFollowState<SuggestedUser>(
           res.data.users || []
         );
-        setUsers(hydratedUsers.filter((user) => user._id !== userData?.id)
-);
+        setUsers(hydratedUsers);
       } catch (err) {
         console.error("Failed to fetch users:", err);
       } finally {
