@@ -194,7 +194,7 @@ export default function ChatListPage() {
                                     onClick={() =>
                                         router.push(`/main/chat/${convo._id}`)
                                     }
-                                    className="flex items-center gap-3 p-4 rounded-lg cursor-pointer bg-black/10 dark:bg-white/5 hover:bg-black/15 hover:shadow-lg text-white transition-all duration-200"
+                                    className="group flex items-center gap-4 p-4 rounded-2xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#111827] hover:bg-gray-50 dark:hover:bg-[#1a2235] hover:shadow-md transition-all duration-200 cursor-pointer"
                                 >
                                     <Image
                                         alt={otherUser?.name || "Chat user"}
@@ -209,7 +209,7 @@ export default function ChatListPage() {
 
                                     <div className="flex-1 min-w-0">
                                         <div className="flex justify-between items-baseline">
-                                            <p className="font-semibold text-gray-600 dark:text-white truncate">
+                                            <p className="font-semibold text-gray-900 dark:text-white truncate">
                                                 {otherUser?.name}
                                             </p>
                                             {convo.lastMessage && (
@@ -219,11 +219,11 @@ export default function ChatListPage() {
                                             )}
                                         </div>
                                         <div className="flex justify-between items-center">
-                                            <p className="text-sm text-black/30 dark:text-white/40 truncate pr-2">
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate pr-2">
                                                 {convo.lastMessage?.content || `@${otherUser?.username}`}
                                             </p>
                                             {unreadCounts[convo._id] > 0 && (
-                                                <div className="min-w-5 px-1 bg-red-500 text-white rounded-full h-5 flex items-center justify-center text-[10px] font-bold">
+                                                <div className="min-w-5 h-5 px-1.5 bg-blue-500 text-white rounded-full flex items-center justify-center text-[10px] font-semibold shadow-sm">
                                                     {unreadCounts[convo._id]}
                                                 </div>
                                             )}
@@ -234,11 +234,11 @@ export default function ChatListPage() {
                                         onClick={(e) =>
                                             handleDeleteClick(e, convo)
                                         }
-                                        className="ml-2 text-red-500 opacity-70 hover:opacity-100 hover:scale-110 transition-transform"
+                                        className="ml-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110"
                                         size={20}
                                     />
 
-                                    <ArrowRight className="ml-3 opacity-70 text-foreground" />
+                                    <ArrowRight className="ml-1 text-gray-400 group-hover:translate-x-1 transition-transform duration-200" />
                                 </div>
                             );
                         })
