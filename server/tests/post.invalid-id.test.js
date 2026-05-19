@@ -1,6 +1,5 @@
 import request from "supertest";
 import app from "../src/app.js";
-import User from "../src/models/user.model.js";
 
 describe("Invalid Post ID handling", () => {
   let cookie;

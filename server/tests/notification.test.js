@@ -42,14 +42,14 @@ describe("Notification Endpoints", () => {
       description: "Other description",
     });
 
-    const olderNotification = await Notification.create({
+    await Notification.create({
       recipient: user._id,
       sender: otherUser._id,
       type: "follow",
       isRead: false,
     });
 
-    const newerNotification = await Notification.create({
+    await Notification.create({
       recipient: user._id,
       sender: otherUser._id,
       type: "message",
@@ -68,8 +68,8 @@ describe("Notification Endpoints", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toHaveLength(2);
-    expect(response.body[0]._id).toBe(newerNotification._id.toString());
-    expect(response.body[1]._id).toBe(olderNotification._id.toString());
+    expect(response.body[0].type).toBe("message");
+    expect(response.body[1].type).toBe("follow");
   });
 
   it("marks a notification as read", async () => {
