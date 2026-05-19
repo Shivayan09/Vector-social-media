@@ -6,7 +6,7 @@ import { getIO, onlineUsers } from "../socket/socket.js";
 
 export const uploadAvatar = async (req, res) => {
     try {
-       if (!req.file) {
+        if (!req.file) {
             return res.status(400).json({
                 success: false,
                 message: "No file uploaded",
@@ -210,7 +210,7 @@ export const toggleFollowUser = async (req, res) => {
             });
         }
         const isBlocked = currentUser.blockedUsers?.some(id => id.toString() === targetUserId) ||
-                          targetUser.blockedUsers?.some(id => id.toString() === currentUserId);
+            targetUser.blockedUsers?.some(id => id.toString() === currentUserId);
         if (isBlocked) {
             return res.status(403).json({
                 message: "Cannot perform action due to block status"
@@ -337,14 +337,14 @@ export const acceptFollowRequest = async (req, res) => {
         const currentUserId = req.user.id;
         const requesterId = req.params.id;
         const user = await User.findById(currentUserId);
-        
+
         if (!user.followRequests.some(id => id.toString() === requesterId)) {
             return res.status(400).json({ message: "No follow request from this user" });
         }
 
         const result = await User.updateOne(
             { _id: currentUserId, followRequests: requesterId, followers: { $ne: requesterId } },
-            { 
+            {
                 $pull: { followRequests: requesterId },
                 $addToSet: { followers: requesterId },
                 $inc: { followersCount: 1 }
@@ -389,7 +389,7 @@ export const rejectFollowRequest = async (req, res) => {
             return res.status(400).json({ message: "No follow request from this user" });
         }
 
-        await User.findByIdAndUpdate(currentUserId, { 
+        await User.findByIdAndUpdate(currentUserId, {
             $pull: { followRequests: requesterId }
         });
 
@@ -607,81 +607,82 @@ export const getSuggestedUsers = async (req, res) => {
 };
 
 export const searchUsers = async (req, res) => {
-try {
-const { query } = req.query;
+    try {
+        const { query } = req.query;
 
 
-    if (!query) {
-        return res.json({
-            users: [],
-            posts: []
+        if (!query) {
+            return res.json({
+                users: [],
+                posts: []
+            });
+        }
+
+        const currentUserId = req.user._id || req.user.id;
+        const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
+        const blockerIds = blockers.map(u => u._id);
+        const blockedIds = req.user.blockedUsers || [];
+        const excludeIds = [...blockedIds, ...blockerIds, currentUserId];
+        const postExcludeIds = [...blockedIds, ...blockerIds];
+
+        const users = await User.find({
+            $and: [
+                {
+                    $or: [
+                        { name: { $regex: query, $options: "i" } },
+                        { username: { $regex: query, $options: "i" } }
+                    ]
+                },
+                { _id: { $nin: excludeIds } }
+            ]
+        })
+            .select("name username avatar")
+            .limit(10)
+            .lean();
+
+        const followingUserIds = new Set(
+            (req.user.following || []).map((id) => id.toString())
+        );
+        const searchedUserIds = users.map((user) => user._id);
+        const requestedUsers = await User.find({
+            _id: { $in: searchedUserIds },
+            followRequests: currentUserId,
+        }).select("_id").lean();
+
+        const requestedUserIds = new Set(
+            requestedUsers.map((user) => user._id.toString())
+        );
+
+        const usersWithFollowState = users.map((user) => ({
+            ...user,
+            isFollowedByCurrentUser: followingUserIds.has(user._id.toString()),
+            isRequestedByCurrentUser: requestedUserIds.has(user._id.toString()),
+        }));
+
+        const posts = await Post.find({
+            $and: [
+                {
+                    $or: [
+                        { content: { $regex: query, $options: "i" } },
+                        { intent: { $regex: query, $options: "i" } }
+                    ]
+                },
+                { author: { $nin: postExcludeIds } }
+            ]
+        })
+            .populate("author", "username")
+            .limit(10);
+
+        res.json({
+            users: usersWithFollowState,
+            posts
+        });
+
+    } catch {
+        res.status(500).json({
+            message: "Search failed"
         });
     }
-
-    const currentUserId = req.user._id || req.user.id;
-    const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
-    const blockerIds = blockers.map(u => u._id);
-    const blockedIds = req.user.blockedUsers || [];
-    const excludeIds = [...blockedIds, ...blockerIds, currentUserId];
-
-    const users = await User.find({
-        $and: [
-            {
-                $or: [
-                    { name: { $regex: query, $options: "i" } },
-                    { username: { $regex: query, $options: "i" } }
-                ]
-            },
-            { _id: { $nin: excludeIds } }
-        ]
-    })
-    .select("name username avatar")
-    .limit(10)
-    .lean();
-
-    const followingUserIds = new Set(
-        (req.user.following || []).map((id) => id.toString())
-    );
-    const searchedUserIds = users.map((user) => user._id);
-    const requestedUsers = await User.find({
-        _id: { $in: searchedUserIds },
-        followRequests: currentUserId,
-    }).select("_id").lean();
-
-    const requestedUserIds = new Set(
-        requestedUsers.map((user) => user._id.toString())
-    );
-
-    const usersWithFollowState = users.map((user) => ({
-        ...user,
-        isFollowedByCurrentUser: followingUserIds.has(user._id.toString()),
-        isRequestedByCurrentUser: requestedUserIds.has(user._id.toString()),
-    }));
-
-    const posts = await Post.find({
-        $and: [
-            {
-                $or: [
-                    { content: { $regex: query, $options: "i" } },
-                    { intent: { $regex: query, $options: "i" } }
-                ]
-            },
-            { author: { $nin: excludeIds } }
-        ]
-    })
-    .populate("author", "username")
-    .limit(10);
-
-    res.json({
-        users: usersWithFollowState,
-        posts
-    });
-
-} catch {
-    res.status(500).json({
-        message: "Search failed"
-    });
-}
 
 };
 
