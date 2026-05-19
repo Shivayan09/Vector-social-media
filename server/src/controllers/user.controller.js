@@ -103,6 +103,13 @@ export const updateProfile = async (req, res) => {
             user.description = description;
         }
         if (isPrivate !== undefined) {
+            // When switching from private to public, clear pending follow requests.
+            // Requests sent while the account was private are no longer meaningful
+            // once the account is public, and leaving them in place causes ghost
+            // notifications and an ever-growing stale queue.
+            if (isPrivate === false && user.isPrivate === true) {
+                user.followRequests = [];
+            }
             user.isPrivate = isPrivate;
         }
         await user.save();
