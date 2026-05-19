@@ -180,45 +180,29 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     // prevent crash if author missing
     if (!post?.author) return null;
 
-    const handleShare = async (e: React.MouseEvent) => {
-        e.stopPropagation();
-        const postUrl = `${window.location.origin}/main/post/${post._id}`;
-        try {
-            if (navigator.share) {
-                await navigator.share({
-                    title: "Check out this post",
-                    text: post.content.slice(0, 100),
-                    url: postUrl,
-                });
-            } else {
-                await navigator.clipboard.writeText(postUrl);
-                toast.success("Post link copied to clipboard");
-            }
+   const handleShare = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-            // Increment share count in DB
-            await axios.put(`${BACKEND_URL}/api/posts/${post._id}/share`, {}, { withCredentials: true });
+    const postUrl = `${window.location.origin}/main/post/${post._id}`;
 
-            // Update local state
-            if (setPost) {
-                setPost((prev) => prev ? ({
-                    ...prev,
-                    sharesCount: (prev.sharesCount || 0) + 1,
-                }) : prev);
-            } else {
-                setPosts(prev =>
-                    prev.map(p =>
-                        p._id === post._id
-                            ? { ...p, sharesCount: (p.sharesCount || 0) + 1 }
-                            : p
-                    )
-                );
-            }
-
-        } catch {
-            // share dismissed or failed
+    try {
+        if (navigator.share) {
+            await navigator.share({
+                title: "Check out this post",
+                text: post.content.slice(0, 100),
+                url: postUrl,
+            });
+        } else {
+            await navigator.clipboard.writeText(postUrl);
+            toast.success("Post link copied");
         }
-        setMenuOpen(false);
-    };
+    } catch (error) {
+        console.log(error);
+    }
+
+    setMenuOpen(false);
+};
 
     return (
         <div className="content-card glass-hover relative overflow-clip cursor-pointer"
@@ -337,9 +321,9 @@ Report post </button>
                         {post.commentsCount || 0} {post.commentsCount === 1 ? 'Comment' : 'Comments'}
                     </p>
 
-                    <p onClick={handleShare} className="flex flex-col text-center sm:flex-row gap-1 items-center cursor-pointer hover:text-blue-500 md:w-[20%] justify-center">
+                    <button type="button" onClick={handleShare} className="flex flex-col text-center sm:flex-row gap-1 items-center cursor-pointer hover:text-blue-500 md:w-[20%] justify-center">
                         <Forward className="h-4.5 md:h-5" />{post.sharesCount || 0} {post.sharesCount === 1 ? 'Share' : 'Shares'}
-                    </p>
+                    </button>
 
                     <div className="flex flex-col text-center sm:flex-row gap-1 items-center md:w-[20%] justify-center">
                         <button onClick={(e) => { e.stopPropagation(); handleLike() }} className="p-0 hover:text-blue-500">
