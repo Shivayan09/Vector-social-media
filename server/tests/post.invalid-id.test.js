@@ -36,6 +36,36 @@ describe('Invalid Post ID handling', () => {
     expect(res.body.message).toMatch(/Invalid post ID format/i);
   });
 
+  it('GET /api/posts/:postId with malformed id should return 400', async () => {
+    const res = await request(app)
+      .get('/api/posts/invalid-id')
+      .set('Cookie', cookie);
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/Invalid post ID format/i);
+  });
+
+  it('PUT /api/posts/:id with malformed id should return 400', async () => {
+    const res = await request(app)
+      .put('/api/posts/invalid-id')
+      .set('Cookie', cookie)
+      .send({ intent: 'share', content: 'Updated content' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toMatch(/Invalid post ID format/i);
+  });
+
+  it('GET /api/posts/user/:userId with malformed id should return 400', async () => {
+    const res = await request(app)
+      .get('/api/posts/user/invalid-id')
+      .set('Cookie', cookie);
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toMatch(/Invalid user ID format/i);
+  });
+
   it('POST /api/posts/like/:id with malformed id should return 400', async () => {
     const res = await request(app)
       .post('/api/posts/like/invalid-id')
