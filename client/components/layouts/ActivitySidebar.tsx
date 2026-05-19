@@ -118,7 +118,8 @@ export default function ActivitySidebar() {
         const hydratedUsers = await hydrateUsersWithFollowState<SuggestedUser>(
           res.data.users || []
         );
-        setUsers(hydratedUsers);
+        setUsers(hydratedUsers.filter((user) => user._id !== userData?.id)
+);
       } catch (err) {
         console.error("Failed to fetch users:", err);
       } finally {
@@ -173,8 +174,6 @@ export default function ActivitySidebar() {
       document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredUsers = users;
-
   const handleClick = (username?: string) => {
     if (!username) {
       return;
@@ -182,6 +181,15 @@ export default function ActivitySidebar() {
     router.push(`/main/user/${username}`);
   };
 
+  // 1. Search Results: Only hide the current user (so people can still search for pending users)
+  const filteredSearchResults = results.filter(
+    (user) => user._id !== userData?.id
+  );
+
+  // 2. Suggestions: Hide the current user AND users with pending requests
+  const filteredUsers = users.filter(
+    (user) => user._id !== userData?.id && !user.isRequestedByCurrentUser 
+  );
   return (
     <>
       <button onClick={() => setOpen(true)} className="fixed top-4 right-4 z-50 rounded-full bg-blue-500 p-2 text-white shadow-lg lg:hidden">
@@ -217,10 +225,10 @@ export default function ActivitySidebar() {
           ) : query.trim() ? (
             searching ? (
               <p className="surface-text-muted text-sm">Searching...</p>
-            ) : results.length === 0 ? (
+            ): filteredSearchResults.length === 0 ? (
               <p className="surface-text-muted text-sm">No users found.</p>
             ) : (
-              results.filter((user) => user._id !== userData?.id).map((user) => {
+              filteredSearchResults.map((user) => {
                 return (
                   <div key={user._id} className="flex items-center gap-2">
                     <div className="h-12 w-12 rounded-full overflow-hidden">
