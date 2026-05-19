@@ -1,6 +1,4 @@
 import Review from "../models/review.model.js";
-import User from "../models/user.model.js";
-import mongoose from "mongoose";
 
 export const createReview = async (req, res) => {
   try {
@@ -14,12 +12,10 @@ export const createReview = async (req, res) => {
     }
     const parsedStars = Number(stars);
     if (!parsedStars || parsedStars < 1 || parsedStars > 5) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Stars must be a number between 1 and 5",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Stars must be a number between 1 and 5",
+      });
     }
 
     const review = await Review.create({
@@ -46,16 +42,14 @@ export const getReviews = async (req, res) => {
       .limit(limit)
       .populate("author", "username name avatar");
     const total = await Review.countDocuments();
-    res
-      .status(200)
-      .json({
-        success: true,
-        reviews,
-        total,
-        page,
-        limit,
-        hasMore: skip + limit < total,
-      });
+    res.status(200).json({
+      success: true,
+      reviews,
+      total,
+      page,
+      limit,
+      hasMore: skip + limit < total,
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -67,13 +61,11 @@ export const getAverage = async (req, res) => {
       { $group: { _id: null, avg: { $avg: "$stars" }, count: { $sum: 1 } } },
     ]);
     const payload = result[0] || { avg: 0, count: 0 };
-    res
-      .status(200)
-      .json({
-        success: true,
-        average: payload.avg || 0,
-        count: payload.count || 0,
-      });
+    res.status(200).json({
+      success: true,
+      average: payload.avg || 0,
+      count: payload.count || 0,
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
