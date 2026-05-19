@@ -9,7 +9,7 @@ import { useState } from "react";
 export default function Activity() {
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"notifications" | "follow_activity">("notifications");
- const pendingFollowCount = 3;
+    const [pendingFollowCount, setPendingFollowCount] = useState(0);
   return (
     <div className="flex h-screen">
       <div className="w-full py-5 px-7 flex flex-col">
@@ -59,7 +59,9 @@ export default function Activity() {
             </>
           ) : (
             <div className="flex-1 overflow-y-auto hide-scrollbar">
-              <FollowActivityPanel />
+              <FollowActivityPanel
+  setPendingFollowCount={setPendingFollowCount}
+/>
             </div>
           )}
         </div>

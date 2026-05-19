@@ -7,7 +7,11 @@ import { UserSummary } from "@/lib/types";
 import { UserMinus, Check, X, ShieldAlert } from "lucide-react";
 import { useAppContext } from "@/context/AppContext";
 
-export default function FollowActivityPanel() {
+export default function FollowActivityPanel({
+  setPendingFollowCount,
+}: {
+  setPendingFollowCount: (count: number) => void;
+}) {
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
   const { userData, setUserData } = useAppContext();
   
@@ -25,6 +29,7 @@ export default function FollowActivityPanel() {
         withCredentials: true,
       });
       setReceived(data);
+      setPendingFollowCount(data.length);
     } catch {
       toast.error("Failed to load received follow requests");
     } finally {
