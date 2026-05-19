@@ -455,12 +455,35 @@ export const getTopPostsOfMonth = async (req, res) => {
         
         const posts = await Post.aggregate([
             { $match: { createdAt: { $gte: oneMonthAgo } } },
-            { $addFields: { likesCount: { $size: "$likes" } } },
-            { $sort: { likesCount: -1, createdAt: -1 } },
-            { $limit: 10 },
+            {
+                $addFields: {
+                    likesCount: { $size: "$likes" },
+                    commentsCount: { $ifNull: ["$commentsCount", 0] },
+                    sharesCount: { $ifNull: ["$sharesCount", 0] },
+                },
+            },
+            {
+                $addFields: {
+                    engagementScore: {
+                        $add: [
+                            { $multiply: ["$likesCount", 4] },
+                            { $multiply: ["$commentsCount", 3] },
+                            { $multiply: ["$sharesCount", 2] },
+                        ],
+                    },
+                },
+            },
+            { $sort: { engagementScore: -1, createdAt: -1 } },
+            { $limit: 3 },
             { $lookup: { from: "users", localField: "author", foreignField: "_id", as: "author" } },
             { $unwind: "$author" },
-            { $project: { "author.password": 0, "author.email": 0 } }
+            {
+                $project: {
+                    engagementScore: 0,
+                    "author.password": 0,
+                    "author.email": 0,
+                },
+            },
         ]);
         
         res.status(200).json({
