@@ -34,7 +34,7 @@ const getValidationMessage = (validationResult, fallbackMessage) => {
 export const register = async (req, res) => {
     try {
         if (typeof req.body?.name !== "string" || !req.body.name.trim()) {
-            return res.json({
+            return res.status(400).json({
                 success: false,
                 message: "Please enter your name!",
             });
@@ -43,7 +43,7 @@ export const register = async (req, res) => {
         const validation = registerSchema.safeParse(req.body);
 
         if (!validation.success) {
-            return res.json({
+            return res.status(400).json({
                 success: false,
                 message: getValidationMessage(validation, "Invalid registration data"),
             });
@@ -65,7 +65,7 @@ export const register = async (req, res) => {
         // check existing email
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-            return res.json({
+            return res.status(409).json({
                 success: false,
                 message: "User already exists!",
             });
@@ -74,7 +74,7 @@ export const register = async (req, res) => {
         // check username
         const existingUsername = await User.findOne({ username });
         if (existingUsername) {
-            return res.json({
+            return res.status(409).json({
                 success: false,
                 message: "Username already taken!",
             });
@@ -150,7 +150,7 @@ export const login = async (req, res) => {
     const validation = loginSchema.safeParse(req.body);
 
     if (!validation.success) {
-        return res.json({
+        return res.status(400).json({
             success: false,
             message: getValidationMessage(validation, "Invalid login data"),
         });
@@ -162,7 +162,7 @@ export const login = async (req, res) => {
         const user = await User.findOne({ username }).select("+password");
         const matched = user && await bcrypt.compare(password, user.password);
         if (!user || !matched) {
-            return res.json({
+            return res.status(401).json({
                 success: false,
                 message: "Invalid username or password."
             })
@@ -212,7 +212,7 @@ export const forgotPassword = async (req, res) => {
         const validation = forgotPasswordSchema.safeParse(req.body);
 
         if (!validation.success) {
-            return res.json({
+            return res.status(400).json({
                 success: false,
                 message: getValidationMessage(validation, "Invalid email"),
             });
@@ -249,7 +249,7 @@ export const resetPassword = async (req, res) => {
         const validation = resetPasswordSchema.safeParse(req.body);
 
         if (!validation.success) {
-            return res.json({
+            return res.status(400).json({
                 success: false,
                 message: getValidationMessage(validation, "Invalid password reset request"),
             });
