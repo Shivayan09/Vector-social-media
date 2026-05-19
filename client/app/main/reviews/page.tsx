@@ -22,22 +22,22 @@ export default function ReviewsPage() {
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchReviews = async () => {
-    if (!BACKEND_URL) return;
-    try {
-      const { data } = await axios.get(`${BACKEND_URL}/api/reviews`, {
-        withCredentials: true,
-      });
-      setReviews(data.reviews || []);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load reviews");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchReviews = async () => {
+      if (!BACKEND_URL) return;
+      try {
+        const { data } = await axios.get(`${BACKEND_URL}/api/reviews`, {
+          withCredentials: true,
+        });
+        setReviews(data.reviews || []);
+      } catch (err: unknown) {
+        console.error(err);
+        toast.error("Failed to load reviews");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchReviews();
   }, [BACKEND_URL]);
 
@@ -57,9 +57,12 @@ export default function ReviewsPage() {
         setStars(5);
         toast.success("Thanks for your review!");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error(err?.response?.data?.message || "Failed to submit review");
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.message
+        : undefined;
+      toast.error(message || "Failed to submit review");
     } finally {
       setSubmitting(false);
     }

@@ -30,7 +30,6 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
 
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
     const MAX_CHARS = 500;
-    const charsLeft = MAX_CHARS - content.length;
 
     const handleClose = () => {
         setVisible(false);
