@@ -476,6 +476,17 @@ export const getUserProfile = async (req, res) => {
             }
         }
 
+        // Anonymous request on a private account — return only minimum public fields
+        if (!req.user && user.isPrivate) {
+            return res.status(200).json({
+                _id: user._id,
+                username: user.username,
+                name: user.name,
+                avatar: user.avatar,
+                isPrivate: true,
+            });
+        }
+
         // Strip internal arrays — never expose raw follower/request IDs to the client
         delete response.followers;
         delete response.followRequests;
