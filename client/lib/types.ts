@@ -81,7 +81,7 @@ export type Message = {
 
 export type Notification = {
   _id: string;
-  type: "follow" | "like" | "comment" | "message" | "follow_request" | "follow_request_accepted";
+  type: "follow" | "like" | "comment" | "message" | "follow_request" | "follow_request_accepted" | "post_removed_reported";
   sender: UserSummary | null;
   post?: {
     _id: string;
