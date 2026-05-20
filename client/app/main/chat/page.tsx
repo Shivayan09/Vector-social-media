@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import SearchBar from "@/components/ui/SearchBar";
 import Image from "next/image";
 import axios from "axios";
 import { useRouter } from "next/navigation";
@@ -177,12 +178,11 @@ export default function ChatListPage() {
                     </div>
 
                     <div className="mb-6">
-                    <input
-                        type="text"
-                        placeholder="Search chats..."
+                    <SearchBar
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="chat-search-input"
+                        placeholder="Search chats..."
+                        inputClassName="chat-search-input"
                     />
                     </div>
 

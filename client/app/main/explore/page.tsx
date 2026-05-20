@@ -7,12 +7,12 @@ import {
   Flame,
   Heart,
   LayoutGrid,
-  Search,
   TrendingUp,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
+import SearchBar from "@/components/ui/SearchBar";
 import InlineLoader from "@/components/loaders/InlineLoader";
 import type { Intent } from "@/lib/types";
 
@@ -216,19 +216,13 @@ export default function Explore() {
               Search
             </h2>
             <div className="relative min-w-0" ref={wrapperRef}>
-              <div className="search-pill flex min-h-11 items-center gap-2 px-3 py-1">
-                <Search
-                  className="h-5 shrink-0 text-muted-foreground"
-                  aria-hidden
-                />
-                <input
-                  type="text"
-                  placeholder="Search users and posts"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  className="min-h-10 min-w-0 flex-1 bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground"
-                />
-              </div>
+              <SearchBar
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search users and posts"
+                wrapperClassName="search-pill flex min-h-11 items-center gap-2 px-3 py-1"
+                inputClassName="min-h-10 min-w-0 flex-1 bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground"
+              />
 
               {open && (
                 <div className="absolute z-50 mt-2 max-h-75 w-full min-w-0 max-w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">

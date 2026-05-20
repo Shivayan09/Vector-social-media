@@ -3,7 +3,8 @@
 import ActivitySidebar from "@/components/layouts/ActivitySidebar";
 import NotificationsPanel from "@/components/NotificationPanel";
 import FollowActivityPanel from "@/components/FollowActivityPanel";
-import { Search } from "lucide-react";
+// Search icon provided via SearchBar
+import SearchBar from "@/components/ui/SearchBar";
 import { useEffect, useState } from "react";
 import axios from "axios";
 
@@ -64,16 +65,13 @@ useEffect(() => {
         <div className="flex-grow flex flex-col mt-5 overflow-hidden">
          {view === "notifications" ? (
   <>
-    <div className="search-pill">
-      <Search className="h-5 text-muted-foreground" />
-      <input
-        type="text"
-        placeholder="Search notifications"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="h-full w-full bg-transparent outline-0 placeholder:text-muted-foreground text-foreground"
-      />
-    </div>
+    <SearchBar
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      placeholder="Search notifications"
+      wrapperClassName="search-pill"
+      inputClassName="h-full w-full bg-transparent outline-0 placeholder:text-muted-foreground text-foreground"
+    />
 
     <div className="flex-1 mt-5 overflow-y-auto hide-scrollbar">
       <NotificationsPanel search={search} />

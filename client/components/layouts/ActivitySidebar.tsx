@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, UserPlus, X } from "lucide-react";
+import { UserPlus, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
@@ -8,6 +8,7 @@ import { useAppContext } from "@/context/AppContext";
 import FollowButton from "../ui/FollowButton";
 import { useRouter } from "next/navigation";
 import InlineLoader from "../loaders/InlineLoader";
+import SearchBar from "../ui/SearchBar";
 
 type SuggestedUser = {
   _id: string;
@@ -153,10 +154,13 @@ export default function ActivitySidebar() {
           Search people you know
         </p>
 
-        <div className="search-pill mt-7 mb-5">
-          <Search className="h-5" />
-          <input type="text" placeholder="Search users" value={query} onChange={(e) => setQuery(e.target.value)} className="h-full w-full bg-transparent outline-0 placeholder:text-muted-foreground" />
-        </div>
+        <SearchBar
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search users"
+          wrapperClassName="search-pill mt-7 mb-5"
+          inputClassName="h-full w-full bg-transparent outline-0 placeholder:text-muted-foreground"
+        />
 
         <p className="flex items-center gap-2 text-[1.1rem] font-semibold text-foreground">
           <UserPlus className="h-5 text-blue-500" />

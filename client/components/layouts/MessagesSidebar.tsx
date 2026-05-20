@@ -1,12 +1,13 @@
 "use client";
 
-import { Search, Send, UserPlus, X } from "lucide-react";
+import { Send, UserPlus, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import InlineLoader from "../loaders/InlineLoader";
+import SearchBar from "../ui/SearchBar";
 
 type SuggestedUser = {
     _id: string;
@@ -125,16 +126,13 @@ export default function MessagesSidebar() {
                     <UserPlus className="h-5 text-blue-500" />
                     Suggestions
                 </p>
-                <div className="mt-4 flex items-center gap-2 bg-white/10 px-3 py-2 rounded-md">
-                    <Search className="h-4 w-4 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="Search users..."
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        className="bg-transparent outline-none text-sm text-white placeholder-gray-400 w-full"
-                    />
-                </div>
+                <SearchBar
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search users..."
+                    wrapperClassName="mt-4 flex items-center gap-2 bg-white/10 px-3 py-2 rounded-md"
+                    inputClassName="bg-transparent outline-none text-sm text-white placeholder-gray-400 w-full"
+                />
 
                 <div className="mt-5 flex flex-col gap-2 w-fit min-h-[75vh] max-h-[60vh] overflow-y-auto hide-scrollbar pr-1">
                     {loading ? (
