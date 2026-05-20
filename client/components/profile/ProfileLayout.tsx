@@ -2,6 +2,7 @@
 
 import { Edit, Link, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useState } from "react";
 import PostsDisplay from "./PostsDisplay";
 import FollowButton from "@/components/ui/FollowButton";
@@ -79,7 +80,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
 
         <div className="flex items-start gap-6 mt-5 md:mt-0">
 
-          <img alt={user.name || "Profile avatar"} src={user.avatar || "/default-avatar.png"} className="h-28 w-28 rounded-full object-cover border shrink-0"/>
+          <Image alt={user.name || "Profile avatar"} src={user.avatar || "/default-avatar.png"} width={112} height={112} className="h-28 w-28 rounded-full object-cover border shrink-0"/>
 
           <div className="flex flex-col gap-2 w-full">
 

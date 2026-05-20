@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { createPortal } from "react-dom";
@@ -96,9 +97,11 @@ export default function FollowRequestsModal({ open, onClose }: Props) {
             {requests.map((reqUser) => (
               <div key={reqUser._id} className="flex items-center justify-between p-2 rounded-md hover:bg-secondary/50">
                 <div className="flex items-center gap-3">
-                  <img
+                  <Image
                     src={reqUser.avatar || "/default-avatar.png"}
                     alt={reqUser.name}
+                    width={40}
+                    height={40}
                     className="h-10 w-10 rounded-full object-cover"
                   />
                   <div>

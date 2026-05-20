@@ -31,7 +31,13 @@ export const createConversation = async (req, res) => {
 
 export const getConversation = async (req, res) => {
     try {
-        const convo = await Conversation.findById(req.params.conversationId).populate("participants", "username name avatar");
+        const convo = await Conversation.findOne({
+            _id: req.params.conversationId,
+            participants: req.user._id,
+        }).populate("participants", "username name avatar");
+        if (!convo) {
+            return res.status(403).json({ message: "Conversation not found or unauthorized" });
+        }
         res.json(convo);
     } catch (error) {
         res.status(500).json({

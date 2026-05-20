@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import type { MutualFollower } from "@/lib/types";
 
 type Props = {
@@ -23,10 +24,12 @@ export default function MutualFollowersBar({ mutualFollowers, mutualFollowersCou
             {/* Stacked avatar thumbnails — all populated mutuals */}
             <div className="flex -space-x-2 shrink-0">
                 {mutualFollowers.map((u) => (
-                    <img
+                    <Image
                         key={u._id}
                         src={u.avatar || "/default-avatar.png"}
                         alt={u.name}
+                        width={24}
+                        height={24}
                         title={`@${u.username}`}
                         onClick={() => router.push(`/main/user/${u.username}`)}
                         className="h-6 w-6 rounded-full border-2 border-background object-cover cursor-pointer hover:scale-110 transition-transform"

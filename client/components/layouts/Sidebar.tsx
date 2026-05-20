@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { Home, Search, Bell, User, Plus, Menu, X, Settings, LogOut, Send } from "lucide-react";
 import CreateModal from "../modals/CreatePostModal";
@@ -106,9 +107,11 @@ export default function Sidebar() {
   transform transition-all duration-300 ${open ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex w-full">
           <div className="flex justify-center ml-3">
-            <img
+            <Image
               alt={userData?.name || "User avatar"}
               src={userData?.avatar || "/default-avatar.png"}
+              width={48}
+              height={48}
               className="h-12 w-12 rounded-full object-cover border shrink-0"
             />
 
@@ -173,7 +176,7 @@ export default function Sidebar() {
 
         <div className="mt-auto flex items-center justify-between w-full pr-2 pt-4 border-t border-border/50">
           <p
-            className="flex mr-auto pl-2 md:pl-5 gap-2 transition-all duration-300 hover:bg-black/10 w-auto h-10 rounded-lg items-center cursor-pointer text-slate-700 hover:text-slate-900 dark:text-white dark:hover:text-white/70"
+            className="flex items-center justify-center gap-2 h-10 px-4 rounded-lg cursor-pointer transition-all duration-300 hover:bg-black/10 text-slate-700 hover:text-slate-900 dark:text-white dark:hover:text-white/70"
             onClick={() => setLogoutOpen(true)}
           >
             <LogOut className="opacity-60" />

@@ -1,13 +1,20 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Image from "next/image";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { UserSummary } from "@/lib/types";
 import { UserMinus, Check, X, ShieldAlert } from "lucide-react";
 import { useAppContext } from "@/context/AppContext";
 
-export default function FollowActivityPanel() {
+export default function FollowActivityPanel({
+  pendingFollowCount,
+  setPendingFollowCount,
+}: {
+  pendingFollowCount: number;
+  setPendingFollowCount: (count: number) => void;
+}) {
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
   const { userData, setUserData } = useAppContext();
   
@@ -25,6 +32,7 @@ export default function FollowActivityPanel() {
         withCredentials: true,
       });
       setReceived(data);
+      setPendingFollowCount(data.length);
     } catch {
       toast.error("Failed to load received follow requests");
     } finally {
@@ -57,6 +65,7 @@ export default function FollowActivityPanel() {
     try {
       await axios.put(`${BACKEND_URL}/api/users/${id}/accept-request`, {}, { withCredentials: true });
       setReceived((prev) => prev.filter((r) => r._id !== id));
+      setPendingFollowCount(Math.max(0, pendingFollowCount - 1));
       toast.success("Follow request accepted");
       if (userData) {
         setUserData({
@@ -77,6 +86,7 @@ export default function FollowActivityPanel() {
     try {
       await axios.put(`${BACKEND_URL}/api/users/${id}/reject-request`, {}, { withCredentials: true });
       setReceived((prev) => prev.filter((r) => r._id !== id));
+      setPendingFollowCount(Math.max(0, pendingFollowCount - 1));
       toast.success("Follow request rejected");
       if (userData) {
         setUserData({
@@ -173,9 +183,11 @@ export default function FollowActivityPanel() {
                     className="flex items-center justify-between p-3 rounded-xl border border-border/40 bg-secondary/10 transition-all duration-200"
                   >
                     <div className="flex items-center gap-3">
-                      <img
+                      <Image
                         src={user.avatar || "/default-avatar.png"}
                         alt={user.name}
+                        width={40}
+                        height={40}
                         className="h-10 w-10 rounded-full object-cover border border-border/50"
                       />
                       <div>
@@ -223,9 +235,11 @@ export default function FollowActivityPanel() {
                     className="flex items-center justify-between p-3 rounded-xl border border-border/40 bg-secondary/10 transition-all duration-200"
                   >
                     <div className="flex items-center gap-3">
-                      <img
+                      <Image
                         src={user.avatar || "/default-avatar.png"}
                         alt={user.name}
+                        width={40}
+                        height={40}
                         className="h-10 w-10 rounded-full object-cover border border-border/50"
                       />
                       <div>

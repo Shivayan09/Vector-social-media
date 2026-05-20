@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import axios from "axios";
 import { Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -74,7 +75,7 @@ export default function ProfileForm() {
                 <div className="flex items-center gap-10 my-5">
                     <div onClick={() => fileRef.current?.click()} className="avatar-upload group mx-auto h-25 w-25 outline-2 outline-neutral-200 hover:outline-4 md:h-35 md:w-35">
                         {preview ? (
-                            <img src={preview} alt="pfp preview" className="h-full w-full object-cover rounded-full" />
+                            <Image src={preview} alt="pfp preview" width={140} height={140} unoptimized className="h-full w-full object-cover rounded-full" />
                         ) : (
                             <Plus strokeWidth={0.7} className="h-12 w-12 opacity-50 transition-all duration-200 group-hover:scale-110" />
                         )}

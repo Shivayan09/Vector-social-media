@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
@@ -33,6 +34,7 @@ export default function NotificationPanel({ search = "" }: Props) {
   const [messageLoading, setMessageLoading] = useState<Record<string, boolean>>({});
   const [deleteLoading, setDeleteLoading] = useState<Record<string, boolean>>({});
   const [modalOpen, setModalOpen] = useState(false);
+  const [singleDeleteId, setSingleDeleteId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const isFirstLoad = useRef(true);
@@ -381,7 +383,7 @@ export default function NotificationPanel({ search = "" }: Props) {
         </p>
       ) : filteredNotifications.length === 0 ? (
         <p className="surface-text-muted text-sm">
-          No notifications match your search.
+            No notifications
         </p>
       ) : (
         <div className="flex flex-col gap-2">
@@ -419,7 +421,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                   }
                 }}
                 className="flex gap-3 flex-1 cursor-pointer p-2 rounded-lg">
-                <img alt={getSenderName(n)} src={getSenderAvatar(n)} className="h-10 w-10 rounded-full object-cover" />
+                <Image alt={getSenderName(n)} src={getSenderAvatar(n)} width={40} height={40} className="h-10 w-10 rounded-full object-cover" />
 
                 <div>
                   <p className="text-foreground">
@@ -510,7 +512,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                       onClick={(e) => {
                         e.stopPropagation();
                         if (deleteLoading[n._id]) return;
-                        void deleteSingle(n._id);
+                        setSingleDeleteId(n._id);
                       }}
                       disabled={deleteLoading[n._id]}
                       className="p-1 text-foreground transition hover:text-red-400 disabled:pointer-events-none disabled:opacity-50"
@@ -548,6 +550,19 @@ export default function NotificationPanel({ search = "" }: Props) {
         title="Clear all notifications?"
         description="This will permanently delete all your notifications."
         confirmText="Clear All"
+      />
+      <ConfirmModal
+        open={!!singleDeleteId}
+        onClose={() => setSingleDeleteId(null)}
+        onConfirm={() => {
+          if (singleDeleteId) {
+            void deleteSingle(singleDeleteId);
+          }
+          setSingleDeleteId(null);
+        }}
+        title="Delete notification?"
+        description="Are you sure you want to delete this notification?"
+        confirmText="Delete"
       />
     </div>
   );

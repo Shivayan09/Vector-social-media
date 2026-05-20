@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { useTheme } from "next-themes";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import { GoogleLogin } from "@react-oauth/google";
 import type { GoogleCredentialResponseLite } from "@/lib/types";
+import { useMounted } from "@/lib/useMounted";
 
 export default function LoginForm() {
     const router = useRouter();
@@ -17,6 +19,8 @@ export default function LoginForm() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
+    const { resolvedTheme } = useTheme();
+    const mounted = useMounted();
 
     const { isLoggedIn, refreshAuth } = useAppContext();
 
@@ -86,16 +90,20 @@ export default function LoginForm() {
             </div>
 
             {/* GOOGLE BUTTON */}
-            <div className="flex justify-center">
+           <div className="w-full overflow-hidden rounded-full transition-all duration-300">
+              {mounted ? (
                 <GoogleLogin
-                    onSuccess={handleGoogle}
-                    onError={() => toast.error("Google login failed")}
-                    theme="outline"
-                    size="medium"
-                    width="100%"
+                  onSuccess={handleGoogle}
+                  onError={() => toast.error("Google login failed")}
+                  theme={resolvedTheme === "dark" ? "filled_black" : "outline"}
+                  size="large"
+                  shape="pill"
+                  width="100%"
                 />
+              ) : (
+                <div className="h-11 w-full rounded-full border border-border bg-card" />
+              )}
             </div>
-
             <div className="relative my-5 flex items-center justify-center">
                 <div className="form-divider"></div>
                 <span className="form-divider-text backdrop-blur-3xl">
