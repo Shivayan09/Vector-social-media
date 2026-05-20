@@ -132,7 +132,7 @@ export default function ActivitySidebar() {
 
   // 2. Suggestions: Hide the current user AND users with pending requests
   const filteredUsers = users.filter(
-    (user) => user._id !== userData?.id && !user.isRequestedByCurrentUser 
+    (user) => user._id !== userData?.id && !user.isRequestedByCurrentUser
   );
   return (
     <>
@@ -169,10 +169,12 @@ export default function ActivitySidebar() {
           ) : query.trim() ? (
             searching ? (
               <p className="surface-text-muted text-sm">Searching...</p>
-            ): filteredSearchResults.length === 0 ? (
+            ) : filteredSearchResults.length === 0 ? (
               <p className="surface-text-muted text-sm">No users found.</p>
             ) : (
               filteredSearchResults.map((user) => {
+                const followsYou =
+                  !!userData?.followers?.includes(user._id);
                 return (
                   <div key={user._id} className="flex items-center gap-2">
                     <div className="h-12 w-12 rounded-full overflow-hidden">
@@ -188,6 +190,9 @@ export default function ActivitySidebar() {
                       userId={user._id}
                       isFollowing={user.isFollowedByCurrentUser ?? false}
                       isRequested={user.isRequestedByCurrentUser ?? false}
+                      isFollowBack={
+                        !(user.isFollowedByCurrentUser ?? false) && followsYou
+                      }
                     />
                   </div>
                 );
@@ -197,6 +202,8 @@ export default function ActivitySidebar() {
             <p className="surface-text-muted text-sm">No users found.</p>
           ) : (
             filteredUsers.map((suggestedUser) => {
+              const followsYou =
+                !!userData?.followers?.includes(suggestedUser._id);
               return (
                 <div key={suggestedUser._id} className="flex items-center gap-2">
                   <div className="h-12 w-12 rounded-full overflow-hidden">
@@ -216,6 +223,9 @@ export default function ActivitySidebar() {
                     userId={suggestedUser._id}
                     isFollowing={suggestedUser.isFollowedByCurrentUser ?? false}
                     isRequested={suggestedUser.isRequestedByCurrentUser ?? false}
+                    isFollowBack={
+                      !(suggestedUser.isFollowedByCurrentUser ?? false) && followsYou
+                    }
                   />
                 </div>
               );
