@@ -122,28 +122,41 @@ export const register = async (req, res) => {
 };
 
 export const getMe = (req, res) => {
-    const user = req.user;
-    return res.status(200).json({
-        success: true,
-        user: {
-            id: user._id,
-            _id: user._id,
-            name: user.name,
-            surname: user.surname,
-            email: user.email,
-            username: user.username,
-            bio: user.bio,
-            description: user.description,
-            avatar: user.avatar,
-            isProfileComplete: user.isProfileComplete,
-            signupStep: user.signupStep,
-            followers: user.followers.map(id => id.toString()),
-            following: user.following.map(id => id.toString()),
-            isPrivate: user.isPrivate,
-            followRequests: user.followRequests.map(id => id.toString()),
-            blockedUsers: (user.blockedUsers || []).map(id => id.toString()),
-        },
-    });
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Not authenticated",
+            });
+        }
+        const user = req.user;
+        return res.status(200).json({
+            success: true,
+            user: {
+                id: user._id,
+                _id: user._id,
+                name: user.name,
+                surname: user.surname,
+                email: user.email,
+                username: user.username,
+                bio: user.bio,
+                description: user.description,
+                avatar: user.avatar,
+                isProfileComplete: user.isProfileComplete,
+                signupStep: user.signupStep,
+                followers: (user.followers || []).map(id => id.toString()),
+                following: (user.following || []).map(id => id.toString()),
+                isPrivate: user.isPrivate,
+                followRequests: (user.followRequests || []).map(id => id.toString()),
+                blockedUsers: (user.blockedUsers || []).map(id => id.toString()),
+            },
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
 };
 
 export const login = async (req, res) => {
