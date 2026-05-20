@@ -34,6 +34,7 @@ export default function NotificationPanel({ search = "" }: Props) {
   const [messageLoading, setMessageLoading] = useState<Record<string, boolean>>({});
   const [deleteLoading, setDeleteLoading] = useState<Record<string, boolean>>({});
   const [modalOpen, setModalOpen] = useState(false);
+  const [singleDeleteId, setSingleDeleteId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const isFirstLoad = useRef(true);
@@ -318,6 +319,7 @@ export default function NotificationPanel({ search = "" }: Props) {
     message: "message messaged",
     follow_request: "follow request requested",
     follow_request_accepted: "accepted your follow request",
+    post_removed_reported: "post removed reported",
   };
 
   const filteredNotifications = notifications.filter((n) => {
@@ -406,6 +408,7 @@ export default function NotificationPanel({ search = "" }: Props) {
               <div
                 onClick={() => {
                   if (!selectMode) {
+                    if (n.type === "post_removed_reported") return;
                     if (n.post?._id) {
                       router.push(`/main/post/${n.post._id}`);
                     } else if (n.type === "message") {
@@ -420,22 +423,29 @@ export default function NotificationPanel({ search = "" }: Props) {
                   }
                 }}
                 className="flex gap-3 flex-1 cursor-pointer p-2 rounded-lg">
-                <Image alt={getSenderName(n)} src={getSenderAvatar(n)} width={40} height={40} className="h-10 w-10 rounded-full object-cover" />
+                {n.type === "post_removed_reported" ? (
+                  <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
+                    <span className="text-red-500 text-lg">⚠</span>
+                  </div>
+                ) : (
+                  <Image alt={getSenderName(n)} src={getSenderAvatar(n)} width={40} height={40} className="h-10 w-10 rounded-full object-cover" />
+                )}
 
                 <div>
                   <p className="text-foreground">
-                    <span className="font-semibold">
-                      {getSenderName(n)}
-                    </span>{" "}
+                    {n.type === "post_removed_reported" ? (
+                      <span className="text-red-500 font-semibold">Post removed</span>
+                    ) : (
+                      <span className="font-semibold">{getSenderName(n)}</span>
+                    )}{" "}
                     {n.type === "follow" && "followed you"}
                     {n.type === "follow_request" && "wants to follow you"}
                     {n.type === "follow_request_accepted" && "accepted your follow request"}
                     {n.type === "like" && "liked your post"}
-                    {n.type === "comment" &&
-                      "commented on your post"}
+                    {n.type === "comment" && "commented on your post"}
                     {n.type === "message" && "messaged you"}
+                    {n.type === "post_removed_reported" && "Your post was removed after receiving too many reports"}
                   </p>
-
                   <p className="surface-text-muted mt-1 text-xs">
                     {new Date(n.createdAt).toLocaleString()}
                   </p>
@@ -511,7 +521,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                       onClick={(e) => {
                         e.stopPropagation();
                         if (deleteLoading[n._id]) return;
-                        void deleteSingle(n._id);
+                        setSingleDeleteId(n._id);
                       }}
                       disabled={deleteLoading[n._id]}
                       className="p-1 text-foreground transition hover:text-red-400 disabled:pointer-events-none disabled:opacity-50"
@@ -549,6 +559,19 @@ export default function NotificationPanel({ search = "" }: Props) {
         title="Clear all notifications?"
         description="This will permanently delete all your notifications."
         confirmText="Clear All"
+      />
+      <ConfirmModal
+        open={!!singleDeleteId}
+        onClose={() => setSingleDeleteId(null)}
+        onConfirm={() => {
+          if (singleDeleteId) {
+            void deleteSingle(singleDeleteId);
+          }
+          setSingleDeleteId(null);
+        }}
+        title="Delete notification?"
+        description="Are you sure you want to delete this notification?"
+        confirmText="Delete"
       />
     </div>
   );

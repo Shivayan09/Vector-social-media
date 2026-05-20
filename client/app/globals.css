@@ -338,7 +338,7 @@
   }
 
   .chat-search-input {
-    @apply w-full rounded-xl px-3 py-2 text-foreground outline-none placeholder:text-muted-foreground;
+    @apply w-full rounded-2xl px-4 py-3 text-foreground outline-none placeholder:text-muted-foreground;
     background: color-mix(in srgb, var(--card) 88%, transparent);
     border: 1px solid var(--surface-border);
   }
@@ -346,7 +346,7 @@
   .chat-list-item {
     background: color-mix(in srgb, var(--surface) 92%, transparent);
     border: 1px solid var(--surface-border);
-    @apply flex items-center gap-3 rounded-xl p-4 text-foreground transition-all duration-200;
+    @apply flex items-center gap-4 rounded-[1.4rem] p-4 text-foreground transition-all duration-200;
   }
 
   .chat-list-item:hover {
@@ -354,19 +354,37 @@
     box-shadow: var(--surface-shadow);
   }
 
+  .chat-list-shell {
+    @apply px-4 pb-8 pt-4 md:px-6;
+  }
+
+  .chat-list-title {
+    @apply text-2xl font-semibold tracking-tight text-foreground;
+  }
+
+  .chat-list-subtitle {
+    color: var(--soft-text);
+    @apply mt-1 text-sm;
+  }
+
+  .chat-list-meta {
+    color: var(--soft-text);
+    @apply text-xs font-medium;
+  }
+
   .chat-bubble-self {
-    @apply relative max-w-[70%] rounded-2xl rounded-br-md px-4 py-2 text-white;
+    @apply relative max-w-[82%] rounded-[1.35rem] rounded-br-md px-4 py-3 text-white md:max-w-[72%];
     background: var(--primary);
   }
 
   .chat-bubble-other {
-    @apply relative max-w-[70%] rounded-2xl rounded-bl-md px-4 py-2 text-foreground;
+    @apply relative max-w-[82%] rounded-[1.35rem] rounded-bl-md px-4 py-3 text-foreground md:max-w-[72%];
     background: color-mix(in srgb, var(--card) 92%, transparent);
     border: 1px solid var(--surface-border);
   }
 
   .chat-date-pill {
-    @apply rounded-full px-3 py-1 text-xs;
+    @apply rounded-full px-3 py-1 text-[11px] font-medium;
     background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
     border: 1px solid var(--surface-border);
     color: var(--soft-text);
@@ -375,13 +393,45 @@
   .chat-composer {
     background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
     border-top: 1px solid var(--surface-border);
-    @apply flex gap-2 px-7 pb-6 pt-4 backdrop-blur-3xl;
+    @apply flex gap-3 px-4 pb-4 pt-4 backdrop-blur-3xl md:px-6 md:pb-5;
   }
 
   .chat-composer-input {
-    @apply flex-1 rounded-xl px-3 py-2 text-foreground outline-none placeholder:text-muted-foreground disabled:opacity-50;
+    @apply flex-1 rounded-2xl px-4 py-3 text-foreground outline-none placeholder:text-muted-foreground disabled:opacity-50;
     background: color-mix(in srgb, var(--card) 88%, transparent);
     border: 1px solid var(--surface-border);
+  }
+
+  .chat-primary-button {
+    background: var(--primary);
+    @apply rounded-2xl px-5 py-3 font-medium text-white transition-all duration-200;
+  }
+
+  .chat-primary-button:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .chat-primary-button:disabled {
+    @apply cursor-not-allowed opacity-60;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .chat-empty-state {
+    color: var(--soft-text);
+    @apply px-4 py-10 text-center;
+  }
+
+  .chat-other-user-card {
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    border: 1px solid var(--surface-border);
+    @apply flex items-center gap-3 rounded-[1.2rem] p-4 transition-all duration-200;
+  }
+
+  .chat-other-user-card:hover {
+    transform: none;
+    border-color: var(--surface-border);
   }
 
   .settings-field {
@@ -396,7 +446,7 @@
 
   .settings-field-disabled {
     background: color-mix(in srgb, var(--surface) 92%, transparent);
-    color: color-mix(in srgb, var(--foreground) 70%, transparent);
+    color: color-mix(in srgb, var(--foreground) 82%, transparent);
     @apply cursor-not-allowed backdrop-blur-3xl;
   }
 

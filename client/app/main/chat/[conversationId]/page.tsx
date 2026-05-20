@@ -8,6 +8,7 @@ import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import { Trash2, ArrowLeft, MoreHorizontal } from "lucide-react";
 import ConfirmModal from "@/components/modals/DeleteWarning";
+import SkeletonLoader from "@/components/loaders/SkeletonLoader";
 import type { Conversation, Message, UserSummary } from "@/lib/types";
 
 type Params = {
@@ -26,6 +27,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
   const [receiverId, setReceiverId] = useState<string | null>(null);
   const [otherUser, setOtherUser] = useState<UserSummary | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(true);
 
   const [warningOpen, setWarningOpen] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
@@ -124,38 +126,45 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
 
     const fetchChat = async () => {
 
-      const convoRes = await axios.get<Conversation>(
-        `${BACKEND_URL}/api/conversation/${conversationId}`,
-        { withCredentials: true }
-      );
-
-      const participants = convoRes.data.participants;
-
-      const other = participants.find(
-        (p: UserSummary) => p._id !== userData?.id
-      );
-
-      if (other) {
-        setReceiverId(other._id);
-        setOtherUser(other);
-      }
-
-      const msgRes = await axios.get<Message[]>(
-        `${BACKEND_URL}/api/messages/${conversationId}`,
-        { withCredentials: true }
-      );
-
-      setMessages(msgRes.data);
-
-      // Mark all messages as read
+      setIsLoadingMessages(true);
       try {
-        await axios.patch(
-          `${BACKEND_URL}/api/messages/${conversationId}/read-all`,
-          {},
+        const convoRes = await axios.get<Conversation>(
+          `${BACKEND_URL}/api/conversation/${conversationId}`,
           { withCredentials: true }
         );
-      } catch {
-        // Silently handle error to not interrupt chat load
+
+        const participants = convoRes.data.participants;
+
+        const other = participants.find(
+          (p: UserSummary) => p._id !== userData?.id
+        );
+
+        if (other) {
+          setReceiverId(other._id);
+          setOtherUser(other);
+        }
+
+        const msgRes = await axios.get<Message[]>(
+          `${BACKEND_URL}/api/messages/${conversationId}`,
+          { withCredentials: true }
+        );
+
+        setMessages(msgRes.data);
+
+        // Mark all messages as read
+        try {
+          await axios.patch(
+            `${BACKEND_URL}/api/messages/${conversationId}/read-all`,
+            {},
+            { withCredentials: true }
+          );
+        } catch {
+          // Silently handle error to not interrupt chat load
+        }
+      } catch (error) {
+        console.error("Failed to fetch chat:", error);
+      } finally {
+        setIsLoadingMessages(false);
       }
     };
 
@@ -233,8 +242,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
   };
 
   return (
-    <div className="flex flex-col h-screen">
-
+    <div className="flex h-screen flex-col overflow-hidden">
       <div className="chat-header px-14 md:px-5">
         <button
           onClick={() => router.push("/main/chat")}
@@ -246,21 +254,49 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
 
         <Image alt={otherUser?.name || "User avatar"} src={otherUser?.avatar || "/default-avatar.png"} width={48} height={48} className="h-12 w-12 rounded-full object-cover border ml-3" />
 
-        <p
+        <div
           onClick={() =>
             router.push(`/main/user/${otherUser?.username}`)
           }
-          className="ml-3 cursor-pointer text-[1.1rem] font-semibold text-foreground">
-          {otherUser?.name || "User"}
-        </p>
+          className="ml-3 min-w-0 cursor-pointer"
+        >
+          <p className="truncate text-[1.05rem] font-semibold text-foreground">
+            {otherUser?.name || "User"}
+          </p>
+          <p className="truncate text-sm surface-text-muted">
+            @{otherUser?.username || "vector"}
+          </p>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
 
-        {messages.length === 0 ? (
-          <p className="surface-text-muted mt-4 text-center">
-            No messages
-          </p>
+        {isLoadingMessages ? (
+          <div className="flex flex-col gap-4 w-full mt-2 px-2">
+            <div className="flex justify-start">
+              <SkeletonLoader count={1} height="h-10" className="w-3/4 max-w-[220px] [&>div]:!rounded-2xl [&>div]:!rounded-bl-md" />
+            </div>
+            <div className="flex justify-start">
+              <SkeletonLoader count={1} height="h-16" className="w-4/5 max-w-[280px] [&>div]:!rounded-2xl [&>div]:!rounded-bl-md" />
+            </div>
+            <div className="flex justify-end">
+              <SkeletonLoader count={1} height="h-10" className="w-2/3 max-w-[240px] [&>div]:!rounded-2xl [&>div]:!rounded-br-md" />
+            </div>
+            <div className="flex justify-start">
+              <SkeletonLoader count={1} height="h-10" className="w-1/2 max-w-[160px] [&>div]:!rounded-2xl [&>div]:!rounded-bl-md" />
+            </div>
+            <div className="flex justify-end">
+              <SkeletonLoader count={1} height="h-12" className="w-3/4 max-w-[260px] [&>div]:!rounded-2xl [&>div]:!rounded-br-md" />
+            </div>
+            <div className="flex justify-end">
+              <SkeletonLoader count={1} height="h-10" className="w-1/3 max-w-[140px] [&>div]:!rounded-2xl [&>div]:!rounded-br-md" />
+            </div>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="chat-empty-state">
+            <p className="text-base font-medium text-foreground">No messages yet</p>
+            <p className="mt-1 text-sm">Start the conversation with something thoughtful.</p>
+          </div>
         ) : (
           messages.map((m, index) => {
 
@@ -323,7 +359,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
                     )}
 
                     <p
-                      className={`whitespace-pre-wrap wrap-break-word ${isMe && !m.isDeleted ? "pr-6" : ""
+                      className={`whitespace-pre-wrap break-words leading-relaxed ${isMe && !m.isDeleted ? "pr-6" : ""
                         }`}
                     >
                       {m.isDeleted ? (
@@ -369,10 +405,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
         <button
           onClick={sendMessage}
           disabled={isSending}
-          className={`text-white px-5 rounded-md transition-all ${isSending
-            ? "bg-blue-400 cursor-not-allowed opacity-60"
-            : "bg-blue-500 cursor-pointer hover:bg-blue-600"
-            }`}
+          className="chat-primary-button"
         >
           {isSending ? "Sending..." : "Send"}
         </button>

@@ -144,7 +144,7 @@ export default function Explore() {
         if (axios.isAxiosError(error)) {
           toast.error(
             error.response?.data?.message ||
-              "Failed to load explore data"
+            "Failed to load explore data"
           );
         } else {
           toast.error("Failed to load explore data");

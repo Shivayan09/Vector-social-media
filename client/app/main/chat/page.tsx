@@ -164,13 +164,19 @@ export default function ChatListPage() {
     };
 
     return (
-        <div className="flex w-full h-screen">
-            <div className="flex-1 h-screen overflow-y-auto hide-scrollbar">
+        <div className="chat-page-shell flex h-screen w-full overflow-hidden">
+            <div className="flex-1 overflow-y-auto hide-scrollbar">
+                <div className="chat-list-shell">
+                    <div className="mb-5">
+                        <h1 className="chat-list-title text-center md:text-left">
+                            Your chats
+                        </h1>
+                        <p className="chat-list-subtitle text-center md:text-left">
+                            Quiet, focused conversations that feel like part of Vector.
+                        </p>
+                    </div>
 
-                <h1 className="px-5 pt-3 text-xl text-center md:text-left font-bold text-foreground">
-                    Your chats
-                </h1>
-                <div className="p-5 pb-0">
+                    <div className="mb-6">
                     <input
                         type="text"
                         placeholder="Search chats..."
@@ -178,8 +184,9 @@ export default function ChatListPage() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="chat-search-input"
                     />
-                </div>
-                <div className="flex flex-col p-5 gap-2">
+                    </div>
+
+                <div className="flex flex-col gap-3">
                     {loading ? (
                         <SkeletonLoader count={5} height="h-16" />
                     ) : filteredConversations.length > 0 ? (
@@ -194,7 +201,7 @@ export default function ChatListPage() {
                                     onClick={() =>
                                         router.push(`/main/chat/${convo._id}`)
                                     }
-                                    className="flex items-center gap-3 p-4 rounded-lg cursor-pointer bg-black/10 dark:bg-white/5 hover:bg-black/15 hover:shadow-lg text-white transition-all duration-200"
+                                    className="chat-list-item group cursor-pointer"
                                 >
                                     <Image
                                         alt={otherUser?.name || "Chat user"}
@@ -204,26 +211,26 @@ export default function ChatListPage() {
                                         }
                                         width={48}
                                         height={48}
-                                        className="h-12 w-12 rounded-full object-cover"
+                                        className="h-12 w-12 rounded-full object-cover ring-2 ring-background/70"
                                     />
 
                                     <div className="flex-1 min-w-0">
                                         <div className="flex justify-between items-baseline">
-                                            <p className="font-semibold text-gray-600 dark:text-white truncate">
+                                            <p className="truncate font-semibold text-foreground">
                                                 {otherUser?.name}
                                             </p>
                                             {convo.lastMessage && (
-                                                <span className="text-xs text-black/40 dark:text-white/40 ml-2">
+                                                <span className="chat-list-meta ml-2">
                                                     {new Date(convo.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </span>
                                             )}
                                         </div>
                                         <div className="flex justify-between items-center">
-                                            <p className="text-sm text-black/30 dark:text-white/40 truncate pr-2">
+                                            <p className="surface-text-muted truncate pr-2 text-sm">
                                                 {convo.lastMessage?.content || `@${otherUser?.username}`}
                                             </p>
                                             {unreadCounts[convo._id] > 0 && (
-                                                <div className="min-w-5 px-1 bg-red-500 text-white rounded-full h-5 flex items-center justify-center text-[10px] font-bold">
+                                                <div className="flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground shadow-sm">
                                                     {unreadCounts[convo._id]}
                                                 </div>
                                             )}
@@ -234,42 +241,43 @@ export default function ChatListPage() {
                                         onClick={(e) =>
                                             handleDeleteClick(e, convo)
                                         }
-                                        className="ml-2 text-red-500 opacity-70 hover:opacity-100 hover:scale-110 transition-transform"
+                                        className="ml-2 text-foreground/35 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:scale-110 hover:text-red-500"
                                         size={20}
                                     />
 
-                                    <ArrowRight className="ml-3 opacity-70 text-foreground" />
+                                    <ArrowRight className="ml-1 text-foreground/35 transition-transform duration-200 group-hover:translate-x-1" />
                                 </div>
                             );
                         })
                     ) : (
-                        <p className="text-gray-500 px-5">No conversations found.</p>
+                        <p className="chat-empty-state">No conversations found.</p>
                     )}
                     {allUserResults.length > 0 && (
                         <>
-                            <p className="text-xs text-gray-400 px-1 pt-2">Other users</p>
+                            <p className="chat-list-meta px-1 pt-3">Other users</p>
                             {allUserResults.map((user) => (
                                 <div
                                     key={user._id}
                                     onClick={() => handleNewUserClick(user)}
-                                    className="flex items-center gap-3 p-4 rounded-lg cursor-pointer bg-black/10 hover:bg-black/15 hover:shadow-lg text-white transition-all duration-200"
+                                    className="chat-other-user-card cursor-pointer"
                                 >
                                     <Image
                                         alt={user.name || "User"}
                                         src={user.avatar || "/default-avatar.png"}
                                         width={48}
                                         height={48}
-                                        className="h-12 w-12 rounded-full object-cover"
+                                        className="h-12 w-12 rounded-full object-cover ring-2 ring-background/70"
                                     />
-                                    <div>
-                                        <p className="font-semibold">{user.name}</p>
-                                        <p className="text-sm text-gray-400">@{user.username}</p>
+                                    <div className="min-w-0">
+                                        <p className="truncate font-semibold text-foreground">{user.name}</p>
+                                        <p className="truncate text-sm surface-text-muted">@{user.username}</p>
                                     </div>
-                                    <ArrowRight className="ml-auto opacity-70 text-foreground" />
+                                    <ArrowRight className="ml-auto opacity-60 text-foreground" />
                                 </div>
                             ))}
                         </>
                     )}
+                </div>
                 </div>
             </div>
 
