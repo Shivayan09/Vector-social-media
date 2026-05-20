@@ -17,9 +17,13 @@ const parseCookies = (cookieHeader) => {
 };
 
 export const initSocket = (server) => {
+  const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+    : ["http://localhost:3000"];
+
   io = new Server(server, {
     cors: {
-      origin: ["http://localhost:3000", "http://vector-lac.vercel.app", "https://vector-lac.vercel.app", process.env.FRONTEND_URL],
+      origin: allowedOrigins,
       credentials: true,
     },
   });
