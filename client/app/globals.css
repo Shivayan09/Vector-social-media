@@ -446,7 +446,7 @@
 
   .settings-field-disabled {
     background: color-mix(in srgb, var(--surface) 92%, transparent);
-    color: color-mix(in srgb, var(--foreground) 70%, transparent);
+    color: color-mix(in srgb, var(--foreground) 82%, transparent);
     @apply cursor-not-allowed backdrop-blur-3xl;
   }
 
