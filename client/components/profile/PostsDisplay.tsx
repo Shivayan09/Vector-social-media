@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import axios from "axios";
 import PostCard from "../feed/Postcard";
 import SkeletonLoader from "../loaders/SkeletonLoader";
@@ -8,11 +9,13 @@ import type { Post } from "@/lib/types";
 
 type PostsDisplayProps = {
   userId: string;
+  onPostsLoaded?: Dispatch<SetStateAction<number>>;
   emptyText?: string;
 };
 
 export default function PostsDisplay({
   userId,
+  onPostsLoaded,
   emptyText,
 }: PostsDisplayProps) {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -34,15 +37,17 @@ export default function PostsDisplay({
         );
 
         setPosts(data.posts || []);
+        onPostsLoaded?.(data.posts?.length || 0);
       } catch {
         setPosts([]);
+        onPostsLoaded?.(0);
       } finally {
         setLoading(false);
       }
     };
 
     fetchPosts();
-  }, [BACKEND_URL, userId]);
+  }, [BACKEND_URL, onPostsLoaded, userId]);
 
   // Loading state
   if (loading) {

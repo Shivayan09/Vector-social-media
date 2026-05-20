@@ -2,7 +2,6 @@
 
 import { Edit, Link, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { useState } from "react";
 import PostsDisplay from "./PostsDisplay";
 import FollowButton from "@/components/ui/FollowButton";
@@ -25,12 +24,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
 
   const router = useRouter();
   const { userData } = useAppContext();
-  const followsYou =
-  !!userData?.followers?.includes(user._id);
-  console.log("PROFILE USER", user);
-  console.log("CURRENT USER", userData);
-  console.log("FOLLOWING ARRAY", user.following);
-  console.log("FOLLOWS YOU", followsYou);
+  const followsYou = !!userData?.followers?.includes(user._id);
   const isSelfProfile = userData?.id === user._id;
   const [postsCount, setPostsCount] = useState<number>(0);
   const [following, setFollowing] = useState<boolean>(isFollowing ?? false);
@@ -99,7 +93,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
               </div>
 
               {isSelfProfile ? (
-                <div className="flex flex-wrap justify-center gap-2 sm:justify-start md:justify-end">
+                <div className="flex flex-wrap justify-center gap-2 sm:justify-start md:flex-nowrap md:justify-end">
                   <button onClick={() => router.push("/main/settings")}
                     className="flex h-11 w-36 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-foreground/10 text-sm text-foreground transition hover:bg-foreground/15 md:text-[1rem]">
                     <Edit className="h-4" />
@@ -112,7 +106,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
                   </button>
                 </div>
               ) : (
-                <div className="flex w-full flex-wrap justify-center gap-2 sm:justify-start md:w-fit md:justify-end">
+                <div className="flex w-full flex-wrap justify-center gap-2 sm:justify-start md:w-auto md:flex-nowrap md:justify-end">
                   {blocked ? (
                     <button onClick={toggleBlock} className="h-9 cursor-pointer rounded-md bg-red-500 px-4 text-sm font-semibold text-white transition hover:bg-red-600">
                       Unblock
