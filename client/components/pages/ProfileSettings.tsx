@@ -247,18 +247,14 @@ function EditableInput({
     <div>
       <div className="flex justify-between mb-1">
         <label className="font-medium">{label}</label>
-        {!editable && (
-          <button onClick={onEdit} className="text-blue-600 text-sm cursor-pointer">
-            Edit
-          </button>
-        )}
+        
       </div>
       <input
         name={name}
         value={value}
         disabled={!editable}
-        onChange={onChange}
-        className={`w-full px-3 py-2 rounded-lg border ${editable ? "border-blue-500" : "bg-gray-100 cursor-not-allowed"
+        onChange={onEdit}
+        className={`w-full px-3 py-2 rounded-lg border ${editable ? "border-blue-500 bg-white dark:bg-zinc-800" : "bg-gray-100 dark:bg-zinc-700 cursor-pointer"
           }`}
       />
     </div>
@@ -277,19 +273,15 @@ function EditableTextarea({
     <div className="md:col-span-2">
       <div className="flex justify-between mb-1">
         <label className="font-medium">{label}</label>
-        {!editable && (
-          <button onClick={onEdit} className="text-blue-600 text-sm cursor-pointer">
-            Edit
-          </button>
-        )}
+        
       </div>
       <textarea
         name={name}
         value={value}
         disabled={!editable}
-        onChange={onChange}
+        onChange={onEdit}
         rows={3}
-        className={`w-full px-3 py-2 rounded-lg border ${editable ? "border-blue-500 bg-white dark:bg-gray-800" : "bg-gray-100 cursor-not-allowed"
+        className={`w-full px-3 py-2 rounded-lg border ${editable ? "border-blue-500 bg-white dark:bg-zinc-800" : "bg-gray-100 dark:bg-zinc-700 cursor-pointer"
           }`}
       />
     </div>
