@@ -1,6 +1,7 @@
 "use client";
 
 import { X, Image as ImageIcon, Send, Trash2 } from "lucide-react";
+import Image from "next/image";
 import { useRef, useState } from "react";
 import { Button } from "../ui/button";
 import { toast } from "react-toastify";
@@ -29,7 +30,6 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
 
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
     const MAX_CHARS = 500;
-    const charsLeft = MAX_CHARS - content.length;
 
     const handleClose = () => {
         setVisible(false);
@@ -267,7 +267,7 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                     {imagePreview && (
                         <div className="relative mt-4 group">
                             <div className="w-full max-h-48 rounded-2xl overflow-hidden border border-white/10 shadow-lg">
-                                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                                <Image src={imagePreview} alt="Preview" width={800} height={400} unoptimized className="w-full h-full object-cover" />
                             </div>
                             <button 
                                 onClick={() => { setImageFile(null); setImagePreview(null); }} 

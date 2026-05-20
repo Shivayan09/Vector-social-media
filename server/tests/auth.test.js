@@ -78,7 +78,7 @@ describe('Auth Endpoints', () => {
         });
       
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toBe("Incorrect password!");
+      expect(response.body.message).toBe("Invalid username or password.");
     });
   });
 });

@@ -2,6 +2,7 @@
 
 import { Edit, Link, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useState } from "react";
 import PostsDisplay from "./PostsDisplay";
 import FollowButton from "@/components/ui/FollowButton";
@@ -24,7 +25,14 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
 
   const router = useRouter();
   const { userData } = useAppContext();
+  const followsYou =
+  !!userData?.followers?.includes(user._id);
+  console.log("PROFILE USER", user);
+  console.log("CURRENT USER", userData);
+  console.log("FOLLOWING ARRAY", user.following);
+  console.log("FOLLOWS YOU", followsYou);
   const isSelfProfile = userData?.id === user._id;
+  const [postsCount, setPostsCount] = useState<number>(0);
   const [following, setFollowing] = useState<boolean>(isFollowing ?? false);
   const [requested] = useState<boolean>(isRequested ?? false);
   const [blocked, setBlocked] = useState<boolean>(user.isBlockedByCurrentUser ?? false);
@@ -114,6 +122,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
                       <FollowButton
                         userId={user._id}
                         isFollowing={following}
+                        isFollowBack={!following && followsYou}
                         isRequested={requested}
                         onFollowChange={setFollowing}
                       />
@@ -174,7 +183,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
                 : "text-slate-700 hover:text-foreground dark:text-slate-300"
             }`}
           >
-            {tab}
+            {tab === "posts" ? `${tab} (${postsCount})` : tab}
 
             {activeTab === tab && (
               <span className="absolute left-1/2 -bottom-px h-0.5 w-24 -translate-x-1/2 rounded-full bg-blue-500" />
@@ -206,6 +215,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
             {activeTab === "posts" && (
               <PostsDisplay
                 userId={user._id}
+                onPostsLoaded={setPostsCount}
                 emptyText={
                   isSelfProfile
                     ? "You haven't posted anything yet."

@@ -106,6 +106,11 @@ export const getPosts = async (req, res) => {
 export const deletePost = async (req, res) => {
     try {
         const postId = req.params.id;
+        
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).json({ success: false, message: "Invalid post ID format" });
+        }
+
         const userId = req.user.id;
         const post = await Post.findById(postId);
         if (!post) {
@@ -226,10 +231,17 @@ export const updatePost = async (req, res) => {
 };
 
 export const toggleLike = async (req, res) => {
-    const post = await Post.findById(req.params.id);
-    if (!post) {
-        return res.status(404).json({ success: false });
-    }
+    try {
+        const postId = req.params.id;
+        
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).json({ success: false, message: "Invalid post ID format" });
+        }
+
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({ success: false });
+        }
     const userId = req.user.id;
     const likesWithoutDuplicates = Array.from(
         new Map(post.likes.map((likeId) => [likeId.toString(), likeId])).values()
@@ -268,6 +280,9 @@ export const toggleLike = async (req, res) => {
         likesCount: post.likes.length,
         liked,
     });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
 };
 
 export const getPostsByUser = async (req, res) => {
@@ -368,14 +383,58 @@ export const getTopPostsOfWeek = async (req, res) => {
     try {
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        const requestedLimit = Number.parseInt(req.query.limit, 10);
+        const limit = Number.isFinite(requestedLimit) && requestedLimit > 0
+            ? requestedLimit
+            : 10;
+        let filter = { createdAt: { $gte: oneWeekAgo } };
+
+        if (req.user) {
+            const currentUserId = req.user._id || req.user.id;
+            const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
+            const blockerIds = blockers.map((user) => user._id);
+            const blockedIds = req.user.blockedUsers || [];
+            const excludeUserIds = [...blockedIds, ...blockerIds];
+
+            if (excludeUserIds.length > 0) {
+                filter = {
+                    ...filter,
+                    author: { $nin: excludeUserIds },
+                };
+            }
+        }
+
         const posts = await Post.aggregate([
-            { $match: { createdAt: { $gte: oneWeekAgo } } },
-            { $addFields: { likesCount: { $size: "$likes" } } },
-            { $sort: { likesCount: -1, createdAt: -1 } },
-            { $limit: 10 },
+            { $match: filter },
+            {
+                $addFields: {
+                    likesCount: { $size: "$likes" },
+                    commentsCount: { $ifNull: ["$commentsCount", 0] },
+                    sharesCount: { $ifNull: ["$sharesCount", 0] },
+                },
+            },
+            {
+                $addFields: {
+                    engagementScore: {
+                        $add: [
+                            { $multiply: ["$likesCount", 4] },
+                            { $multiply: ["$commentsCount", 3] },
+                            { $multiply: ["$sharesCount", 2] },
+                        ],
+                    },
+                },
+            },
+            { $sort: { engagementScore: -1, createdAt: -1 } },
+            { $limit: limit },
             { $lookup: { from: "users", localField: "author", foreignField: "_id", as: "author" } },
             { $unwind: "$author" },
-            { $project: { "author.password": 0, "author.email": 0 } }
+            {
+                $project: {
+                    engagementScore: 0,
+                    "author.password": 0,
+                    "author.email": 0,
+                },
+            }
         ]);
         res.status(200).json({
             success: true,
@@ -396,12 +455,35 @@ export const getTopPostsOfMonth = async (req, res) => {
         
         const posts = await Post.aggregate([
             { $match: { createdAt: { $gte: oneMonthAgo } } },
-            { $addFields: { likesCount: { $size: "$likes" } } },
-            { $sort: { likesCount: -1, createdAt: -1 } },
-            { $limit: 10 },
+            {
+                $addFields: {
+                    likesCount: { $size: "$likes" },
+                    commentsCount: { $ifNull: ["$commentsCount", 0] },
+                    sharesCount: { $ifNull: ["$sharesCount", 0] },
+                },
+            },
+            {
+                $addFields: {
+                    engagementScore: {
+                        $add: [
+                            { $multiply: ["$likesCount", 4] },
+                            { $multiply: ["$commentsCount", 3] },
+                            { $multiply: ["$sharesCount", 2] },
+                        ],
+                    },
+                },
+            },
+            { $sort: { engagementScore: -1, createdAt: -1 } },
+            { $limit: 3 },
             { $lookup: { from: "users", localField: "author", foreignField: "_id", as: "author" } },
             { $unwind: "$author" },
-            { $project: { "author.password": 0, "author.email": 0 } }
+            {
+                $project: {
+                    engagementScore: 0,
+                    "author.password": 0,
+                    "author.email": 0,
+                },
+            },
         ]);
         
         res.status(200).json({
@@ -418,8 +500,14 @@ export const getTopPostsOfMonth = async (req, res) => {
 
 export const incrementShare = async (req, res) => {
     try {
+        const postId = req.params.id;
+        
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).json({ success: false, message: "Invalid post ID format" });
+        }
+
         const post = await Post.findByIdAndUpdate(
-            req.params.id,
+            postId,
             { $inc: { sharesCount: 1 } },
             { new: true }
         );

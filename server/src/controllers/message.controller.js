@@ -35,6 +35,13 @@ export const sendMessage = async (req, res) => {
       return res.status(404).json({ message: "Conversation not found" });
     }
 
+    const isSenderParticipant = conversation.participants.some(
+      (id) => id.toString() === req.user._id.toString()
+    );
+    if (!isSenderParticipant) {
+      return res.status(403).json({ message: "Not a participant in this conversation" });
+    }
+
     const receiverId = conversation.participants.find(
       (id) => id.toString() !== req.user._id.toString()
     );

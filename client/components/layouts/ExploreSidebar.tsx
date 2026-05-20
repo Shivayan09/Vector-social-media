@@ -2,6 +2,7 @@
 
 import { Button } from "../ui/button";
 import { Compass, Heart, Lightbulb, TrendingUp, Trophy, UserPlus, X } from "lucide-react";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
@@ -84,7 +85,7 @@ export default function ExploreSidebar() {
                     <p className="flex items-center gap-2 font-semibold"> <TrendingUp className="h-5 text-blue-500"/> Trending topics</p>
                     {loading ? (
                         <div className="flex items-center gap-2">
-                            <div className="h-12 w-12 bg-black/5 rounded-md mr-4 overflow-clip"><img src="/cse.jpg" alt="" className="h-full w-full object-cover"/></div>
+                            <div className="h-12 w-12 bg-black/5 rounded-md mr-4 overflow-clip"><Image src="/cse.jpg" alt="" width={48} height={48} className="h-full w-full object-cover"/></div>
                             <div className="w-40 text-[0.95rem]">Artificial Intelligence and Machine Learning</div>
                             <p className="flex items-center gap-0.5 text-[0.8rem] ml-1"> <Heart className="text-blue-400 h-full mt-auto" fill="currentColor"/> 120</p>
                         </div>
@@ -92,9 +93,11 @@ export default function ExploreSidebar() {
                         trendingPosts.map(post => (
                             <div key={post._id} className="box mt-5 flex">
                                 <div className="h-12 w-12 bg-black/5 rounded-md mr-4 overflow-clip">
-                                    <img 
+                                    <Image 
                                         src={post.author?.avatar || "/default-avatar.png"} 
-                                        alt={post.author?.username} 
+                                        alt={post.author?.username || "Post author"} 
+                                        width={48}
+                                        height={48}
                                         className="h-full w-full object-cover"
                                     />
                                 </div>
