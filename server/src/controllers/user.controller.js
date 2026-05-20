@@ -159,6 +159,9 @@ export const updateProfile = async (req, res) => {
                     message: "isPrivate must be a boolean"
                 });
             }
+            if (isPrivate === false && user.isPrivate === true) {
+                user.followRequests = [];
+            }
             user.isPrivate = isPrivate;
         }
         await user.save();
