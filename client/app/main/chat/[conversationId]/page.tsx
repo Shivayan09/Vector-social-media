@@ -6,7 +6,7 @@ import axios from "axios";
 import { socket } from "@/socket/socket";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
-import { Trash2, ArrowLeft, MoreHorizontal } from "lucide-react";
+import { Trash2, ArrowLeft, MoreHorizontal, ChevronDown } from "lucide-react";
 import ConfirmModal from "@/components/modals/DeleteWarning";
 import SkeletonLoader from "@/components/loaders/SkeletonLoader";
 import type { Conversation, Message, UserSummary } from "@/lib/types";
@@ -34,6 +34,9 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  const chatContainerRef = useRef<HTMLDivElement | null>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
   const router = useRouter();
@@ -176,8 +179,56 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
 
   // AUTO SCROLL
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = chatContainerRef.current;
+
+    if (!container) return;
+
+    const threshold = 100;
+
+    const isNearBottom =
+      container.scrollHeight -
+        container.scrollTop -
+        container.clientHeight <
+      threshold;
+
+    if (isNearBottom) {
+      bottomRef.current?.scrollIntoView({
+        behavior: "smooth",
+      });
+    }
   }, [messages]);
+
+  useEffect(() => {
+    const container = chatContainerRef.current;
+
+    if (!container) return;
+
+    const handleScroll = () => {
+      const threshold = 100;
+
+      const isNearBottom =
+        container.scrollHeight -
+          container.scrollTop -
+          container.clientHeight <
+        threshold;
+
+      setShowScrollButton(!isNearBottom);
+    };
+
+    container.addEventListener("scroll", handleScroll);
+
+    handleScroll();
+
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  const scrollToBottom = () => {
+    bottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  };
 
   // SEND MESSAGE
   const sendMessage = async () => {
@@ -269,7 +320,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
+      <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
 
         {isLoadingMessages ? (
           <div className="flex flex-col gap-4 w-full mt-2 px-2">
@@ -411,6 +462,15 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
         </button>
 
       </div>
+
+      {showScrollButton && (
+        <button
+          onClick={scrollToBottom}
+          className="fixed bottom-24 right-6 z-50 rounded-full bg-black p-3 text-white shadow-lg transition hover:scale-105"
+        >
+          <ChevronDown size={20} />
+        </button>
+      )}
 
       <ConfirmModal
         open={warningOpen}
