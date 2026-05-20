@@ -9,6 +9,9 @@ import {
   LayoutGrid,
   Search,
   TrendingUp,
+  UserPlus,
+  UserCheck,
+  Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -21,6 +24,16 @@ type User = {
   name: string;
   username?: string;
   avatar?: string;
+};
+
+type SuggestedUser = {
+  _id: string;
+  name: string;
+  username?: string;
+  avatar?: string;
+  bio?: string;
+  isFollowedByCurrentUser: boolean;
+  isRequestedByCurrentUser: boolean;
 };
 
 type SearchPost = {
@@ -75,6 +88,9 @@ export default function Explore() {
   const [postResults, setPostResults] = useState<SearchPost[]>([]);
   const [searching, setSearching] = useState(false);
   const [open, setOpen] = useState(false);
+  const [suggestedUsers, setSuggestedUsers] = useState<SuggestedUser[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(true);
+  const [followingState, setFollowingState] = useState<Record<string, "follow" | "requested" | "following">>({});
   const router = useRouter();
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -142,6 +158,53 @@ export default function Explore() {
       fetchTopPosts();
     }
   }, [BACKEND_URL]);
+
+  useEffect(() => {
+    const fetchSuggestedUsers = async () => {
+      try {
+        const { data } = await axios.get(
+          `${BACKEND_URL}/api/users/suggestions`,
+          { withCredentials: true }
+        );
+        const users: SuggestedUser[] = data.users || [];
+        setSuggestedUsers(users);
+        const initialState: Record<string, "follow" | "requested" | "following"> = {};
+        users.forEach((u) => {
+          if (u.isFollowedByCurrentUser) initialState[u._id] = "following";
+          else if (u.isRequestedByCurrentUser) initialState[u._id] = "requested";
+          else initialState[u._id] = "follow";
+        });
+        setFollowingState(initialState);
+      } catch {
+        // suggestions are non-critical, fail silently
+      } finally {
+        setSuggestionsLoading(false);
+      }
+    };
+
+    if (BACKEND_URL) {
+      fetchSuggestedUsers();
+    }
+  }, [BACKEND_URL]);
+
+  const handleToggleFollow = async (userId: string) => {
+    try {
+      await axios.post(
+        `${BACKEND_URL}/api/users/toggle-follow/${userId}`,
+        {},
+        { withCredentials: true }
+      );
+      setFollowingState((prev) => {
+        const current = prev[userId];
+        if (current === "follow") return { ...prev, [userId]: "requested" };
+        if (current === "requested") return { ...prev, [userId]: "follow" };
+        if (current === "following") return { ...prev, [userId]: "follow" };
+        return prev;
+      });
+    } catch {
+      toast.error("Failed to update follow status");
+    }
+  };
 
   useEffect(() => {
     const delay = setTimeout(async () => {
@@ -325,6 +388,96 @@ export default function Explore() {
                   </div>
                 )}
               </div>
+            </section>
+
+            <section
+              className="panel-card space-y-4"
+              aria-labelledby="explore-suggestions-heading"
+            >
+              <h2
+                id="explore-suggestions-heading"
+                className="flex items-center gap-2 font-semibold text-foreground"
+              >
+                <Users className="h-5 shrink-0 text-blue-400" aria-hidden />
+                People you might know
+              </h2>
+
+              {suggestionsLoading ? (
+                <p className="text-sm text-muted-foreground">Loading suggestions...</p>
+              ) : suggestedUsers.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No suggestions right now</p>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {suggestedUsers.map((user) => {
+                    const state = followingState[user._id] ?? "follow";
+                    return (
+                      <div
+                        key={user._id}
+                        className={`${exploreCard} flex items-center gap-3 p-3`}
+                      >
+                        <div
+                          className="h-10 w-10 shrink-0 cursor-pointer overflow-hidden rounded-full bg-muted"
+                          onClick={() => user.username && router.push(`/main/user/${user.username}`)}
+                        >
+                          <Image
+                            src={user.avatar || "/default-avatar.png"}
+                            alt={user.name}
+                            width={40}
+                            height={40}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+
+                        <div
+                          className="min-w-0 flex-1 cursor-pointer"
+                          onClick={() => user.username && router.push(`/main/user/${user.username}`)}
+                        >
+                          <p className="truncate text-sm font-medium text-foreground">
+                            {user.name}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            @{user.username || "unknown"}
+                          </p>
+                          {user.bio && (
+                            <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                              {user.bio}
+                            </p>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleToggleFollow(user._id)}
+                          className={`flex shrink-0 items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-200 ${
+                            state === "following"
+                              ? "border-border bg-accent text-foreground hover:bg-accent/70"
+                              : state === "requested"
+                              ? "border-border bg-accent text-muted-foreground hover:bg-accent/70"
+                              : "border-blue-500 bg-blue-500 text-white hover:bg-blue-600"
+                          }`}
+                        >
+                          {state === "following" ? (
+                            <>
+                              <UserCheck className="h-3 w-3" aria-hidden />
+                              Following
+                            </>
+                          ) : state === "requested" ? (
+                            <>
+                              <UserCheck className="h-3 w-3" aria-hidden />
+                              Requested
+                            </>
+                          ) : (
+                            <>
+                              <UserPlus className="h-3 w-3" aria-hidden />
+                              Follow
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </section>
 
             <section
