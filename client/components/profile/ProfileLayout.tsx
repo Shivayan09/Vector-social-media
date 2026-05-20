@@ -25,6 +25,12 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
 
   const router = useRouter();
   const { userData } = useAppContext();
+  const followsYou =
+  !!userData?.followers?.includes(user._id);
+  console.log("PROFILE USER", user);
+  console.log("CURRENT USER", userData);
+  console.log("FOLLOWING ARRAY", user.following);
+  console.log("FOLLOWS YOU", followsYou);
   const isSelfProfile = userData?.id === user._id;
   const [postsCount, setPostsCount] = useState<number>(0);
   const [following, setFollowing] = useState<boolean>(isFollowing ?? false);
@@ -80,7 +86,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
 
         <div className="flex items-start gap-6 mt-5 md:mt-0">
 
-          <Image alt={user.name || "Profile avatar"} src={user.avatar || "/default-avatar.png"} width={112} height={112} className="h-28 w-28 rounded-full object-cover border shrink-0"/>
+          <Image alt={user.name || "Profile avatar"} src={user.avatar || "/default-avatar.png"} width={112} height={112} className="h-28 w-28 rounded-full object-cover border shrink-0" />
 
           <div className="flex flex-col gap-2 w-full">
 
@@ -118,6 +124,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
                       <FollowButton
                         userId={user._id}
                         isFollowing={following}
+                        isFollowBack={!following && followsYou}
                         isRequested={requested}
                         onFollowChange={setFollowing}
                       />
@@ -172,11 +179,10 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
             onClick={() =>
               setActiveTab(tab as "posts" | "followers" | "following")
             }
-            className={`relative pb-2 font-semibold capitalize transition cursor-pointer whitespace-nowrap ${
-              activeTab === tab
-                ? "text-blue-500 dark:text-blue-300"
-                : "text-foreground/75 hover:text-foreground"
-            }`}
+            className={`relative pb-2 font-semibold capitalize transition cursor-pointer whitespace-nowrap ${activeTab === tab
+              ? "text-blue-500 dark:text-blue-300"
+              : "text-foreground/75 hover:text-foreground"
+              }`}
           >
             {tab === "posts" ? `${tab} (${postsCount})` : tab}
 
@@ -209,7 +215,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
             {activeTab === "posts" && (
               <PostsDisplay
                 userId={user._id}
-                onPostsLoaded={setPostsCount} 
+                onPostsLoaded={setPostsCount}
                 emptyText={
                   isSelfProfile
                     ? "You haven't posted anything yet."
