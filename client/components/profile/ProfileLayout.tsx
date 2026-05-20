@@ -76,10 +76,10 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
 
   return (
     <div className="page-scroll px-4 py-5 sm:px-7 lg:px-8">
-      <div className="content-card mx-auto mb-10 mt-5 max-w-[84rem] p-6 md:mt-0 md:p-7">
+      <div className=" mx-auto mb-10 mt-5 max-w-336 md:mt-0 py-2">
         <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start sm:gap-8">
           <div className="relative shrink-0">
-            <img alt={user.name || "Profile avatar"} src={user.avatar || "/default-avatar.png"} className="h-32 w-32 rounded-full border object-cover md:h-36 md:w-36"/>
+            <img alt={user.name || "Profile avatar"} src={user.avatar || "/default-avatar.png"} className="h-30 w-30 rounded-full border object-cover md:h-34 md:w-34"/>
             <span className="absolute bottom-5 right-2 h-5 w-5 rounded-full border-2 border-background bg-green-500" />
           </div>
 
