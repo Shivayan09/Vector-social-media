@@ -132,12 +132,6 @@ export default function NotificationPanel({ search = "" }: Props) {
 
   const deleteSelected = async () => {
     if (selected.length === 0) return;
-    if (MOCK_MODE) {
-      setNotifications((prev) => prev.filter((n) => !selected.includes(n._id)));
-      setSelected([]);
-      setSelectMode(false);
-      return;
-    }
     try {
       await axios.post(
         `${BACKEND_URL}/api/notifications/bulk-delete`,
@@ -165,12 +159,6 @@ export default function NotificationPanel({ search = "" }: Props) {
   };
 
   const deleteAll = async () => {
-    if (MOCK_MODE) {
-      setNotifications([]);
-      setSelected([]);
-      setSelectMode(false);
-      return;
-    }
     try {
       await axios.delete(
         `${BACKEND_URL}/api/notifications/all`,
@@ -192,11 +180,6 @@ export default function NotificationPanel({ search = "" }: Props) {
   };
 
   const markAllAsRead = useCallback(async () => {
-    // In mock mode, just update local state — skip real API calls
-    if (MOCK_MODE) {
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-      return;
-    }
     try {
       const unread = notifications.filter((n) => !n.isRead);
 
@@ -293,19 +276,6 @@ export default function NotificationPanel({ search = "" }: Props) {
       setMessageLoading((prev) => ({ ...prev, [notificationId]: false }));
     }
   };
-
-  // Inject mock data in dev mode
-  useEffect(() => {
-    if (MOCK_MODE) {
-      setNotifications(MOCK_NOTIFICATIONS);
-      setLoading(false);
-      // Simulate: u7 (Aditya Kumar) is already followed back → shows Message button
-      setSenderFollowState({
-        u7: { isFollowing: true, isRequested: false },
-      });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     if (!userData) return;
