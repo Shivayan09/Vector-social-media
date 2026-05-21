@@ -1,5 +1,7 @@
 import cloudinary from "../config/cloudinary.js";
 import User from "../models/user.model.js";
+import Conversation from "../models/conversation.model.js";
+import Message from "../models/message.model.js";
 import Notification from "../models/notification.model.js";
 import Post from "../models/post.model.js";
 import { getIO, onlineUsers } from "../socket/socket.js";
@@ -766,6 +768,22 @@ export const blockUser = async (req, res) => {
                 { recipient: targetUserId, sender: currentUserId }
             ]
         });
+
+        // Delete conversations and messages between the two users
+        const conversations = await Conversation.find({
+            participants: { $all: [currentUserId, targetUserId] }
+        });
+        const conversationIds = conversations.map(c => c._id);
+        if (conversationIds.length > 0) {
+            await Message.deleteMany({ conversation: { $in: conversationIds } });
+            await Conversation.deleteMany({ _id: { $in: conversationIds } });
+        }
+
+        // Remove the blocked user's likes from the blocker's posts
+        await Post.updateMany(
+            { author: currentUserId },
+            { $pull: { likes: targetUserId } }
+        );
 
         return res.json({
             success: true,
