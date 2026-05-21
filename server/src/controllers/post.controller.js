@@ -241,47 +241,53 @@ export const toggleLike = async (req, res) => {
             return res.status(400).json({ success: false, message: "Invalid post ID format" });
         }
 
-        const post = await Post.findById(postId).select("author likes");
+        const post = await Post.findById(postId).select("author");
         if (!post) {
             return res.status(404).json({ success: false });
         }
 
-        const alreadyLiked = post.likes.some((id) => id.toString() === userId);
+        // Atomically determine whether the user was added or removed
+        const addResult = await Post.updateOne(
+            { _id: postId, likes: { $ne: userId } },
+            { $addToSet: { likes: userId } }
+        );
 
-        const update = alreadyLiked
-            ? { $pull: { likes: userId } }
-            : { $addToSet: { likes: userId } };
+        const liked = addResult.modifiedCount > 0;
 
-        const updatedPost = await Post.findByIdAndUpdate(postId, update, { new: true });
-        if (!updatedPost) {
-            return res.status(404).json({ success: false });
+        if (!liked) {
+            await Post.updateOne(
+                { _id: postId, likes: userId },
+                { $pull: { likes: userId } }
+            );
         }
 
-        const liked = !alreadyLiked;
+        const updatedPost = await Post.findById(postId).select("likes");
 
         if (liked && post.author.toString() !== userId) {
-            const existingNotification = await Notification.findOne({
-                recipient: post.author,
-                sender: userId,
-                type: "like",
-                post: postId,
-            });
-
-            if (!existingNotification) {
-                const notification = await Notification.create({
+            const notification = await Notification.findOneAndUpdate(
+                {
                     recipient: post.author,
                     sender: userId,
                     type: "like",
                     post: postId,
-                });
+                },
+                {
+                    $setOnInsert: {
+                        recipient: post.author,
+                        sender: userId,
+                        type: "like",
+                        post: postId,
+                    },
+                },
+                { upsert: true, new: true }
+            );
 
-                const recipientSocket = onlineUsers.get(post.author.toString());
-                if (recipientSocket) {
-                    getIO().to(recipientSocket).emit("notification:new", {
-                        notificationId: notification._id,
-                        type: notification.type,
-                    });
-                }
+            const recipientSocket = onlineUsers.get(post.author.toString());
+            if (recipientSocket) {
+                getIO().to(recipientSocket).emit("notification:new", {
+                    notificationId: notification._id,
+                    type: notification.type,
+                });
             }
         }
 

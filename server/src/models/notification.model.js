@@ -32,4 +32,12 @@ const notificationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+notificationSchema.index(
+  { recipient: 1, sender: 1, type: 1, post: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { type: "like", post: { $exists: true } },
+  }
+);
+
 export default mongoose.model("Notification", notificationSchema);
