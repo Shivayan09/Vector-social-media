@@ -33,19 +33,18 @@ class MockIntersectionObserver {
     if (MockIntersectionObserver.instance) {
       MockIntersectionObserver.instance.callback([
         { isIntersecting: true } as IntersectionObserverEntry,
-      ]);
+      ], MockIntersectionObserver.instance as unknown as IntersectionObserver);
     }
   }
 }
-// @ts-expect-error – assign to global for the test environment
 global.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver;
 
 // Helper to build a minimal Post object with optional overrides
 const buildPost = (id: string, overrides: Partial<Post> = {}): Post => ({
   _id: id,
-  author: { _id: `author-${id}`, name: 'Test User', username: 'testuser', avatar: '' },
+  author: { _id: `author-${id}`, id: `author-${id}`, name: 'Test User', username: 'testuser', avatar: '' },
   content: `Post ${id}`,
-  intent: '',
+  intent: 'share',
   likes: [],
   commentsCount: 0,
   sharesCount: 0,

@@ -89,7 +89,7 @@ describe("FollowButton Component", () => {
 
   describe("State Transitions & API Requests", () => {
     it("handles public account follow flow (Follow -> Following)", async () => {
-      let resolvePromise: (value: { data: { followed: boolean } }) => void;
+      let resolvePromise!: (value: { data: { followed: boolean } }) => void;
       const responsePromise = new Promise<{ data: { followed: boolean } }>((resolve) => {
         resolvePromise = resolve;
       });
@@ -130,7 +130,7 @@ describe("FollowButton Component", () => {
     });
 
     it("handles public account unfollow flow (Following -> Follow)", async () => {
-      let resolvePromise: (value: { data: { followed: boolean } }) => void;
+      let resolvePromise!: (value: { data: { followed: boolean } }) => void;
       const responsePromise = new Promise<{ data: { followed: boolean } }>((resolve) => {
         resolvePromise = resolve;
       });
@@ -217,7 +217,7 @@ describe("FollowButton Component", () => {
   describe("API Error Resilience", () => {
     it("reverts state to original and logs error if call fails", async () => {
       const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      let rejectPromise: (reason?: Error) => void;
+      let rejectPromise!: (reason?: Error) => void;
       const responsePromise = new Promise((_, reject) => {
         rejectPromise = reject;
       });

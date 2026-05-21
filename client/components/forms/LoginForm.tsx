@@ -44,6 +44,11 @@ export default function LoginForm() {
         };
 
         updateWidth();
+        if (typeof ResizeObserver === "undefined") {
+            window.addEventListener("resize", updateWidth);
+            return () => window.removeEventListener("resize", updateWidth);
+        }
+
         const resizeObserver = new ResizeObserver(updateWidth);
         resizeObserver.observe(buttonContainer);
 
