@@ -126,13 +126,7 @@ export default function MessagesSidebar() {
                     <UserPlus className="h-5 text-blue-500" />
                     Suggestions
                 </p>
-                <SearchBar
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search users..."
-                    wrapperClassName="mt-4 flex items-center gap-2 bg-white/10 px-3 py-2 rounded-md"
-                    inputClassName="bg-transparent outline-none text-sm text-white placeholder-gray-400 w-full"
-                />
+                {/* search removed to avoid duplicate searchbars on chat page; search now handled in chat layout */}
 
                 <div className="mt-5 flex flex-col gap-2 w-fit min-h-[75vh] max-h-[60vh] overflow-y-auto hide-scrollbar pr-1">
                     {loading ? (
