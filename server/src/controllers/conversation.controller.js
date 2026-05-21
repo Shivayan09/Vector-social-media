@@ -161,6 +161,8 @@ export const deleteConversation = async (req, res) => {
             return res.status(404).json({ message: "Conversation not found or unauthorized" });
         }
 
+        await Message.deleteMany({ conversation: req.params.conversationId });
+
         res.json({ message: "Conversation deleted successfully" });
     } catch (error) {
         res.status(500).json({ message: error.message });
