@@ -200,10 +200,19 @@ export const deleteMessage = async (req, res) => {
 
     const io = getIO();
 
-    io.emit("message_deleted", {
-      messageId: message._id,
-      conversationId: message.conversation,
-    });
+    // Emit only to participants of this conversation, not every connected client
+    const conversation = await Conversation.findById(message.conversation);
+    if (conversation) {
+      conversation.participants.forEach((participantId) => {
+        const socketId = onlineUsers.get(participantId.toString());
+        if (socketId) {
+          io.to(socketId).emit("message_deleted", {
+            messageId: message._id,
+            conversationId: message.conversation,
+          });
+        }
+      });
+    }
 
     res.json({
       success: true,
