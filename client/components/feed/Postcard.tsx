@@ -42,6 +42,17 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     const [showLikesModal, setShowLikesModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     type PostLike = Post["likes"][number];
+    const currentUserLike =
+        userData?.id
+            ? {
+                _id: userData.id,
+                id: userData.id,
+                name: userData.name,
+                surname: userData.surname,
+                username: userData.username,
+                avatar: userData.avatar,
+            }
+            : null;
     const getLikeUserId = (like: PostLike) => {
         if (!like) return "";
         return typeof like === "string" ? like : like._id;
@@ -112,7 +123,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
 
             const updatedLikes = isLiked
                 ? uniqueLikes.filter((like) => getLikeUserId(like) !== userData.id)
-                : getUniqueLikes([...uniqueLikes, userData.id]);
+                : getUniqueLikes([...uniqueLikes, currentUserLike ?? userData.id]);
 
             // ✅ update local state safely
             if (setPost) {
@@ -436,6 +447,7 @@ Report post </button>
                 open={showLikesModal}
                 onClose={() => setShowLikesModal(false)}
                 likers={uniqueLikes}
+                postId={post._id}
             />
 
             {showEditModal && (

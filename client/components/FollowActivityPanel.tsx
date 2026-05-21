@@ -8,7 +8,13 @@ import { UserSummary } from "@/lib/types";
 import { UserMinus, Check, X, ShieldAlert } from "lucide-react";
 import { useAppContext } from "@/context/AppContext";
 
-export default function FollowActivityPanel() {
+export default function FollowActivityPanel({
+  pendingFollowCount,
+  setPendingFollowCount,
+}: {
+  pendingFollowCount: number;
+  setPendingFollowCount: (count: number) => void;
+}) {
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
   const { userData, setUserData } = useAppContext();
   
@@ -26,6 +32,7 @@ export default function FollowActivityPanel() {
         withCredentials: true,
       });
       setReceived(data);
+      setPendingFollowCount(data.length);
     } catch {
       toast.error("Failed to load received follow requests");
     } finally {
@@ -58,6 +65,7 @@ export default function FollowActivityPanel() {
     try {
       await axios.put(`${BACKEND_URL}/api/users/${id}/accept-request`, {}, { withCredentials: true });
       setReceived((prev) => prev.filter((r) => r._id !== id));
+      setPendingFollowCount(Math.max(0, pendingFollowCount - 1));
       toast.success("Follow request accepted");
       if (userData) {
         setUserData({
@@ -78,6 +86,7 @@ export default function FollowActivityPanel() {
     try {
       await axios.put(`${BACKEND_URL}/api/users/${id}/reject-request`, {}, { withCredentials: true });
       setReceived((prev) => prev.filter((r) => r._id !== id));
+      setPendingFollowCount(Math.max(0, pendingFollowCount - 1));
       toast.success("Follow request rejected");
       if (userData) {
         setUserData({
