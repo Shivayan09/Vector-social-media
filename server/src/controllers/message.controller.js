@@ -18,6 +18,22 @@ export const getMessages = async (req, res) => {
       return res.status(403).json({ message: "Not a participant in this conversation" });
     }
 
+    // Re-verify block status
+    const otherParticipant = conversation.participants.find(
+      p => p.toString() !== req.user._id.toString()
+    );
+    if (otherParticipant) {
+      const otherUser = await User.findById(otherParticipant).select("blockedUsers");
+      const isBlocked = req.user.blockedUsers?.some(
+        id => id.toString() === otherParticipant.toString()
+      ) || otherUser?.blockedUsers?.some(
+        id => id.toString() === req.user._id.toString()
+      );
+      if (isBlocked) {
+        return res.status(403).json({ message: "Action forbidden due to block status" });
+      }
+    }
+
     const messages = await Message.find({ conversation: conversationId })
       .populate("sender", "username name avatar")
       .sort({ createdAt: 1 });

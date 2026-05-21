@@ -246,6 +246,19 @@ export const toggleLike = async (req, res) => {
             return res.status(404).json({ success: false });
         }
 
+        // Check block status between the requester and the post author
+        if (post.author.toString() !== userId) {
+            const authorUser = await User.findById(post.author).select("blockedUsers");
+            const isBlocked = req.user.blockedUsers?.some(
+                id => id.toString() === post.author.toString()
+            ) || authorUser?.blockedUsers?.some(
+                id => id.toString() === userId
+            );
+            if (isBlocked) {
+                return res.status(403).json({ success: false, message: "Action forbidden due to block status" });
+            }
+        }
+
         // Atomically determine whether the user was added or removed
         const addResult = await Post.updateOne(
             { _id: postId, likes: { $ne: userId } },
