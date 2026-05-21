@@ -235,35 +235,52 @@ export const updatePost = async (req, res) => {
 export const toggleLike = async (req, res) => {
     try {
         const postId = req.params.id;
-        
+        const userId = req.user.id;
+
         if (!mongoose.Types.ObjectId.isValid(postId)) {
             return res.status(400).json({ success: false, message: "Invalid post ID format" });
         }
 
-        const post = await Post.findById(postId);
+        const post = await Post.findById(postId).select("author");
         if (!post) {
             return res.status(404).json({ success: false });
         }
-    const userId = req.user.id;
-    const likesWithoutDuplicates = Array.from(
-        new Map(post.likes.map((likeId) => [likeId.toString(), likeId])).values()
-    );
-    const existingIndex = likesWithoutDuplicates.findIndex(
-        (likeId) => likeId.toString() === userId
-    );
-    const liked = existingIndex === -1;
 
-    post.likes = likesWithoutDuplicates;
+        // Atomically determine whether the user was added or removed
+        const addResult = await Post.updateOne(
+            { _id: postId, likes: { $ne: userId } },
+            { $addToSet: { likes: userId } }
+        );
 
-    if (liked) {
-        post.likes.push(userId);
-        if (post.author.toString() !== userId) {
-            const notification = await Notification.create({
-                recipient: post.author,
-                sender: userId,
-                type: "like",
-                post: post._id,
-            });
+        const liked = addResult.modifiedCount > 0;
+
+        if (!liked) {
+            await Post.updateOne(
+                { _id: postId, likes: userId },
+                { $pull: { likes: userId } }
+            );
+        }
+
+        const updatedPost = await Post.findById(postId).select("likes");
+
+        if (liked && post.author.toString() !== userId) {
+            const notification = await Notification.findOneAndUpdate(
+                {
+                    recipient: post.author,
+                    sender: userId,
+                    type: "like",
+                    post: postId,
+                },
+                {
+                    $setOnInsert: {
+                        recipient: post.author,
+                        sender: userId,
+                        type: "like",
+                        post: postId,
+                    },
+                },
+                { upsert: true, new: true }
+            );
 
             const recipientSocket = onlineUsers.get(post.author.toString());
             if (recipientSocket) {
@@ -273,15 +290,12 @@ export const toggleLike = async (req, res) => {
                 });
             }
         }
-    } else {
-        post.likes = post.likes.filter((likeId) => likeId.toString() !== userId);
-    }
-    await post.save();
-    res.json({
-        success: true,
-        likesCount: post.likes.length,
-        liked,
-    });
+
+        res.json({
+            success: true,
+            likesCount: updatedPost.likes.length,
+            liked,
+        });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
