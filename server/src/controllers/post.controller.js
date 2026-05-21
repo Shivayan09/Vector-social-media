@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
+import Comment from "../models/comment.model.js";
 import Notification from "../models/notification.model.js";
 import cloudinary from "../config/cloudinary.js";
 import { getIO, onlineUsers } from "../socket/socket.js";
@@ -15,6 +16,7 @@ export const removePostById = async (postId) => {
         await cloudinary.uploader.destroy(post.imagePublicId);
     }
 
+    await Comment.deleteMany({ post: postId });
     await post.deleteOne();
     return post;
 };
