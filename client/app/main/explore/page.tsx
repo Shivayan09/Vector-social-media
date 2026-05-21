@@ -299,7 +299,7 @@ export default function Explore() {
                       <p className="p-4 text-sm text-muted-foreground">
                         Searching...
                       </p>
-                    ) : results.length === 0 ? (
+                    ) : results.length === 0 && postResults.length === 0? (
                       <div className="p-4 text-center">
                         <p className="text-sm font-medium text-foreground">
                           No users found for &quot;{query}&quot;
