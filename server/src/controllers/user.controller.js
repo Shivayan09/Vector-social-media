@@ -490,9 +490,10 @@ export const getUserProfile = async (req, res) => {
             });
         }
 
-        // Strip internal arrays — never expose raw follower/request IDs to the client
+        // Strip internal arrays — never expose raw follower/request or block IDs to the client
         delete response.followers;
         delete response.followRequests;
+        delete response.blockedUsers;
 
         res.json(response);
     } catch (error) {
