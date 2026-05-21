@@ -235,53 +235,61 @@ export const updatePost = async (req, res) => {
 export const toggleLike = async (req, res) => {
     try {
         const postId = req.params.id;
-        
+        const userId = req.user.id;
+
         if (!mongoose.Types.ObjectId.isValid(postId)) {
             return res.status(400).json({ success: false, message: "Invalid post ID format" });
         }
 
-        const post = await Post.findById(postId);
+        const post = await Post.findById(postId).select("author likes");
         if (!post) {
             return res.status(404).json({ success: false });
         }
-    const userId = req.user.id;
-    const likesWithoutDuplicates = Array.from(
-        new Map(post.likes.map((likeId) => [likeId.toString(), likeId])).values()
-    );
-    const existingIndex = likesWithoutDuplicates.findIndex(
-        (likeId) => likeId.toString() === userId
-    );
-    const liked = existingIndex === -1;
 
-    post.likes = likesWithoutDuplicates;
+        const alreadyLiked = post.likes.some((id) => id.toString() === userId);
 
-    if (liked) {
-        post.likes.push(userId);
-        if (post.author.toString() !== userId) {
-            const notification = await Notification.create({
+        const update = alreadyLiked
+            ? { $pull: { likes: userId } }
+            : { $addToSet: { likes: userId } };
+
+        const updatedPost = await Post.findByIdAndUpdate(postId, update, { new: true });
+        if (!updatedPost) {
+            return res.status(404).json({ success: false });
+        }
+
+        const liked = !alreadyLiked;
+
+        if (liked && post.author.toString() !== userId) {
+            const existingNotification = await Notification.findOne({
                 recipient: post.author,
                 sender: userId,
                 type: "like",
-                post: post._id,
+                post: postId,
             });
 
-            const recipientSocket = onlineUsers.get(post.author.toString());
-            if (recipientSocket) {
-                getIO().to(recipientSocket).emit("notification:new", {
-                    notificationId: notification._id,
-                    type: notification.type,
+            if (!existingNotification) {
+                const notification = await Notification.create({
+                    recipient: post.author,
+                    sender: userId,
+                    type: "like",
+                    post: postId,
                 });
+
+                const recipientSocket = onlineUsers.get(post.author.toString());
+                if (recipientSocket) {
+                    getIO().to(recipientSocket).emit("notification:new", {
+                        notificationId: notification._id,
+                        type: notification.type,
+                    });
+                }
             }
         }
-    } else {
-        post.likes = post.likes.filter((likeId) => likeId.toString() !== userId);
-    }
-    await post.save();
-    res.json({
-        success: true,
-        likesCount: post.likes.length,
-        liked,
-    });
+
+        res.json({
+            success: true,
+            likesCount: updatedPost.likes.length,
+            liked,
+        });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
