@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
+import csrfProtection from "./middlewares/csrf.middleware.js";
 import passport from "./config/passport.js";
 import authRouter from "./routes/auth.routes.js";
 import postRouter from "./routes/post.routes.js";
@@ -29,6 +30,8 @@ app.use(passport.initialize());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+app.use(csrfProtection);
 
 app.get("/", (req, res) => {
   res.send("Server is up and running 🚀");
