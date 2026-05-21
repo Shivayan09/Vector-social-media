@@ -6,7 +6,7 @@ import Image from "next/image";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useAppContext } from "@/context/AppContext";
-import { ArrowRight, Trash2 } from "lucide-react";
+import { ArrowRight, Search, Trash2 } from "lucide-react";
 import ConfirmModal from "@/components/modals/DeleteWarning";
 import { toast } from "react-toastify";
 import SkeletonLoader from "@/components/loaders/SkeletonLoader";
@@ -184,6 +184,15 @@ export default function ChatListPage() {
                         placeholder="Search chats..."
                         inputClassName="chat-search-input"
                     />
+                    <div className="relative mb-6">
+                        <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                        <input
+                            type="text"
+                            placeholder="Search chats..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="chat-search-input pl-11"
+                        />
                     </div>
 
                 <div className="flex flex-col gap-3">
