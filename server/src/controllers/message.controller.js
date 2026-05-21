@@ -6,10 +6,19 @@ import { getIO, onlineUsers } from "../socket/socket.js";
 
 export const getMessages = async (req, res) => {
   try {
+    const { conversationId } = req.params;
 
-    const messages = await Message.find({
-      conversation: req.params.conversationId,
-    })
+    // Verify the requesting user is a participant in this conversation
+    const conversation = await Conversation.findOne({
+      _id: conversationId,
+      participants: req.user._id,
+    });
+
+    if (!conversation) {
+      return res.status(403).json({ message: "Not a participant in this conversation" });
+    }
+
+    const messages = await Message.find({ conversation: conversationId })
       .populate("sender", "username name avatar")
       .sort({ createdAt: 1 });
 
