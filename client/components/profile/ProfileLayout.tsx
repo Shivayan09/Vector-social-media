@@ -164,7 +164,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
         </div>
       </div>
 
-      <div className="mx-auto mb-8 flex max-w-[84rem] justify-between border-b border-border/80 md:justify-around">
+      <div className="mx-auto mb-8 flex max-w-336 justify-between border-b border-border/80 md:justify-around">
         {["posts", "followers", "following"].map((tab) => (
           <button
             key={tab}
@@ -186,7 +186,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
         ))}
       </div>
 
-      <div className="mt-8 ml-auto max-w-[68rem]">
+      <div className="mt-8 ml-auto max-w-272">
         {user.isBlockedByTarget ? (
           <div className="flex flex-col items-center justify-center py-20 text-center border-t border-dashed border-border/50">
             <Lock className="h-12 w-12 mb-3 opacity-30 text-foreground" />

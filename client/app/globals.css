@@ -246,6 +246,21 @@
     color: var(--soft-text);
   }
 
+  .google-login-shell {
+    background: transparent;
+  }
+
+  .google-login-shell > div,
+  .google-login-shell iframe {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .dark .google-login-shell {
+    background: var(--surface-strong);
+  }
+
   .avatar-upload {
     @apply relative flex items-center justify-center overflow-hidden rounded-full border transition-all duration-200 cursor-pointer;
     background: color-mix(in srgb, var(--card) 76%, transparent);

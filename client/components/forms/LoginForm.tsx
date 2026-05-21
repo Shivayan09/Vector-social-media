@@ -3,7 +3,7 @@
 import { Button } from "../ui/button";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useTheme } from "next-themes";
 import { toast } from "react-toastify";
@@ -19,8 +19,11 @@ export default function LoginForm() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
+    const googleButtonRef = useRef<HTMLDivElement>(null);
+    const [googleButtonWidth, setGoogleButtonWidth] = useState(0);
     const { resolvedTheme } = useTheme();
     const mounted = useMounted();
+    const googleTheme = resolvedTheme === "dark" ? "filled_black" : "outline";
 
     const { isLoggedIn, refreshAuth } = useAppContext();
 
@@ -31,6 +34,21 @@ export default function LoginForm() {
             router.replace("/main");
         }
     }, [isLoggedIn, router]);
+
+    useEffect(() => {
+        const buttonContainer = googleButtonRef.current;
+        if (!buttonContainer) return;
+
+        const updateWidth = () => {
+            setGoogleButtonWidth(Math.floor(buttonContainer.getBoundingClientRect().width));
+        };
+
+        updateWidth();
+        const resizeObserver = new ResizeObserver(updateWidth);
+        resizeObserver.observe(buttonContainer);
+
+        return () => resizeObserver.disconnect();
+    }, []);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -90,15 +108,16 @@ export default function LoginForm() {
             </div>
 
             {/* GOOGLE BUTTON */}
-           <div className="w-full overflow-hidden rounded-full transition-all duration-300">
+           <div ref={googleButtonRef} className="google-login-shell w-full overflow-hidden rounded-full transition-all duration-300">
               {mounted ? (
                 <GoogleLogin
+                  key={googleTheme}
                   onSuccess={handleGoogle}
                   onError={() => toast.error("Google login failed")}
-                  theme={resolvedTheme === "dark" ? "filled_black" : "outline"}
+                  theme={googleTheme}
                   size="large"
                   shape="pill"
-                  width="100%"
+                  width={googleButtonWidth > 0 ? `${googleButtonWidth}` : undefined}
                 />
               ) : (
                 <div className="h-11 w-full rounded-full border border-border bg-card" />
