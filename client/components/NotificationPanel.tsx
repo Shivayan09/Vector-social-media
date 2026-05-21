@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import { Trash2, MessageCircle, ArrowRight } from "lucide-react";
+import { Trash2, MessageCircle, ArrowRight, Heart, MessageSquare, UserCheck, Bell } from "lucide-react";
 import ConfirmModal from "./modals/DeleteWarning";
 import FollowRequestsModal from "./modals/FollowRequestsModal";
 import FollowButton from "./ui/FollowButton";
@@ -37,6 +37,7 @@ export default function NotificationPanel({ search = "" }: Props) {
   const [singleDeleteId, setSingleDeleteId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [activeFilter, setActiveFilter] = useState<"all" | "like" | "comment" | "follow" | "message">("all");
   const isFirstLoad = useRef(true);
   const getSenderName = (notification: Notification) =>
     notification.sender?.name || notification.sender?.username || "Someone";
@@ -131,7 +132,6 @@ export default function NotificationPanel({ search = "" }: Props) {
 
   const deleteSelected = async () => {
     if (selected.length === 0) return;
-
     try {
       await axios.post(
         `${BACKEND_URL}/api/notifications/bulk-delete`,
@@ -322,11 +322,54 @@ export default function NotificationPanel({ search = "" }: Props) {
     post_removed_reported: "post removed reported",
   };
 
+  // Filter tab definitions
+  const FILTER_TABS = [
+    { id: "all" as const,     label: "All",      Icon: Bell,           types: null },
+    { id: "like" as const,    label: "Likes",    Icon: Heart,          types: ["like"] },
+    { id: "comment" as const, label: "Comments", Icon: MessageSquare,  types: ["comment"] },
+    { id: "follow" as const,  label: "Follows",  Icon: UserCheck,      types: ["follow", "follow_request_accepted"] },
+    { id: "message" as const, label: "Messages", Icon: MessageCircle,  types: ["message"] },
+  ];
+
+  // Count helpers — exclude follow_request (those are managed in the separate modal)
+  const getTabCount = (types: string[] | null) =>
+    notifications.filter((n) => {
+      if (n.type === "follow_request") return false;
+      return types === null || types.includes(n.type);
+    }).length;
+
+  const getTabUnreadCount = (types: string[] | null) =>
+    notifications.filter((n) => {
+      if (n.type === "follow_request") return false;
+      const typeMatch = types === null || types.includes(n.type);
+      return typeMatch && !n.isRead;
+    }).length;
+
+  // Empty state config per category
+  const emptyStateConfig: Record<string, { icon: React.ElementType; message: string }> = {
+    all:     { icon: Bell,           message: "You're all caught up!" },
+    like:    { icon: Heart,          message: "No likes yet. Share something great!" },
+    comment: { icon: MessageSquare,  message: "No comments on your posts yet." },
+    follow:  { icon: UserCheck,      message: "No new follower notifications." },
+    message: { icon: MessageCircle,  message: "No message notifications." },
+  };
+
+  // Combined filter: active tab AND text search
   const filteredNotifications = notifications.filter((n) => {
     if (n.type === "follow_request") return false;
+
+    // Tab filter
+    const activeTab = FILTER_TABS.find((t) => t.id === activeFilter);
+    if (activeTab?.types && !activeTab.types.includes(n.type)) return false;
+
+    // Text search filter
     const query = search.toLowerCase();
-    const searchable = `${getSenderName(n)} ${getSenderUsername(n)} ${typeText[n.type]}`.toLowerCase();
-    return searchable.includes(query);
+    if (query) {
+      const searchable = `${getSenderName(n)} ${getSenderUsername(n)} ${typeText[n.type]}`.toLowerCase();
+      if (!searchable.includes(query)) return false;
+    }
+
+    return true;
   });
 
   return (
@@ -378,14 +421,46 @@ export default function NotificationPanel({ search = "" }: Props) {
 
       <FollowRequestsModal open={modalOpen} onClose={() => setModalOpen(false)} />
 
+      {/* ── Filter Tab Bar ── */}
+      <div className="notif-tab-bar">
+        {FILTER_TABS.map((tab) => {
+          const count = getTabCount(tab.types);
+          const unread = getTabUnreadCount(tab.types);
+          const isActive = activeFilter === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveFilter(tab.id)}
+              className={`notif-tab${isActive ? " notif-tab-active" : ""}`}
+            >
+              <tab.Icon className="h-3.5 w-3.5" />
+              {tab.label}
+              {count > 0 && (
+                <span className="notif-tab-badge">{count}</span>
+              )}
+              {unread > 0 && (
+                <span className="notif-tab-unread-dot" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
       {loading ? (
         <p className="surface-text-muted text-sm">
           Loading notifications...
         </p>
       ) : filteredNotifications.length === 0 ? (
-        <p className="surface-text-muted text-sm">
-            No notifications
-        </p>
+        (() => {
+          const cfg = emptyStateConfig[activeFilter];
+          const EmptyIcon = cfg.icon;
+          return (
+            <div className="notif-empty-state">
+              <EmptyIcon className="h-8 w-8 text-muted-foreground" />
+              <p className="text-sm surface-text-muted text-center">{cfg.message}</p>
+            </div>
+          );
+        })()
       ) : (
         <div className="flex flex-col gap-2">
           {filteredNotifications.map((n) => (
@@ -496,13 +571,44 @@ export default function NotificationPanel({ search = "" }: Props) {
                         </button>
                       </div>
                     )}
-                    {(n.type === "follow" || n.type === "follow_request_accepted") && (
-                      n.sender?._id ? (
-                        <div onClick={(e) => e.stopPropagation()}>
+                    {/* Someone accepted YOUR follow request → you already follow them → just Message */}
+                    {n.type === "follow_request_accepted" && n.sender?._id && (
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => {
+                            if (n.sender?._id) {
+                              void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
+                            }
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                          Message
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Someone followed YOU → Follow Back if not following, Message if already following */}
+                    {n.type === "follow" && n.sender?._id && (
+                      <div onClick={(e) => e.stopPropagation()}>
+                        {senderFollowState[n.sender._id]?.isFollowing ? (
+                          <button
+                            onClick={() => {
+                              if (n.sender?._id) {
+                                void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
+                              }
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                            Message
+                          </button>
+                        ) : (
                           <FollowButton
                             userId={n.sender._id}
-                            isFollowing={senderFollowState[n.sender._id]?.isFollowing ?? false}
+                            isFollowing={false}
                             isRequested={senderFollowState[n.sender._id]?.isRequested ?? false}
+                            isFollowBack={true}
                             onFollowChange={(next) =>
                               setSenderFollowState((prev) => ({
                                 ...prev,
@@ -513,9 +619,11 @@ export default function NotificationPanel({ search = "" }: Props) {
                               }))
                             }
                           />
-                        </div>
-                      ) : null
+                        )}
+                      </div>
                     )}
+
+
                     <button
                       type="button"
                       onClick={(e) => {

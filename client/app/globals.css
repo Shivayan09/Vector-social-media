@@ -474,6 +474,117 @@
   .notification-card-unread {
     background: color-mix(in srgb, var(--accent) 60%, var(--surface) 40%);
   }
+
+  /* ── Notification filter tab bar ── */
+  .notif-tab-bar {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--surface-border);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    margin-bottom: 1.25rem;
+  }
+
+  .notif-tab-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .notif-tab {
+    position: relative;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--soft-text);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.2s ease;
+    border: none;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+  }
+
+  .notif-tab:hover {
+    color: var(--foreground);
+  }
+
+  .notif-tab.notif-tab-active {
+    color: var(--primary);
+    font-weight: 600;
+  }
+
+  .notif-tab.notif-tab-active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    background: var(--primary);
+    border-radius: 2px 2px 0 0;
+    animation: notif-tab-slide-in 0.18s ease forwards;
+  }
+
+  @keyframes notif-tab-slide-in {
+    from { transform: scaleX(0.4); opacity: 0; }
+    to   { transform: scaleX(1);   opacity: 1; }
+  }
+
+  .notif-tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    background: color-mix(in srgb, var(--muted) 80%, transparent);
+    color: var(--muted-foreground);
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  .notif-tab-active .notif-tab-badge {
+    background: color-mix(in srgb, var(--primary) 16%, transparent);
+    color: var(--primary);
+  }
+
+  .notif-tab-unread-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: oklch(0.577 0.245 27.325);
+    flex-shrink: 0;
+    animation: notif-dot-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes notif-dot-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  /* Per-category empty state */
+  .notif-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    gap: 0.75rem;
+    border-radius: 1rem;
+    border: 1px solid var(--surface-border);
+    background: color-mix(in srgb, var(--secondary) 30%, transparent);
+    animation: notif-fade-up 0.3s ease forwards;
+  }
+
+  @keyframes notif-fade-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
 }
 
 .hide-scrollbar {
