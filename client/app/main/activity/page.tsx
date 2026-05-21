@@ -26,7 +26,8 @@ useEffect(() => {
       );
 
       setPendingFollowCount(data.length);
-    } catch (error) {
+    } catch {
+      // Removed unused `error` variable since it's not referenced; keep the same log message.
       console.error("Failed to fetch pending follow requests");
     }
   };

@@ -2,6 +2,7 @@
 
 import axios from "axios";
 import Image from "next/image";
+// Fix: include Search icon because the JSX uses <Search/> in the search input block
 import {
   ExternalLink,
   Flame,
@@ -11,6 +12,7 @@ import {
   UserPlus,
   UserCheck,
   Users,
+  Search,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
