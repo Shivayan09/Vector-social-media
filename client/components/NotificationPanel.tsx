@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import { Trash2, MessageCircle, ArrowRight } from "lucide-react";
+import { Trash2, MessageCircle, ArrowRight, Heart, MessageSquare, UserCheck, Bell } from "lucide-react";
 import ConfirmModal from "./modals/DeleteWarning";
 import FollowRequestsModal from "./modals/FollowRequestsModal";
 import FollowButton from "./ui/FollowButton";
@@ -33,8 +34,10 @@ export default function NotificationPanel({ search = "" }: Props) {
   const [messageLoading, setMessageLoading] = useState<Record<string, boolean>>({});
   const [deleteLoading, setDeleteLoading] = useState<Record<string, boolean>>({});
   const [modalOpen, setModalOpen] = useState(false);
+  const [singleDeleteId, setSingleDeleteId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [activeFilter, setActiveFilter] = useState<"all" | "like" | "comment" | "follow" | "message">("all");
   const isFirstLoad = useRef(true);
   const getSenderName = (notification: Notification) =>
     notification.sender?.name || notification.sender?.username || "Someone";
@@ -129,7 +132,6 @@ export default function NotificationPanel({ search = "" }: Props) {
 
   const deleteSelected = async () => {
     if (selected.length === 0) return;
-
     try {
       await axios.post(
         `${BACKEND_URL}/api/notifications/bulk-delete`,
@@ -179,16 +181,10 @@ export default function NotificationPanel({ search = "" }: Props) {
 
   const markAllAsRead = useCallback(async () => {
     try {
-      const unread = notifications.filter((n) => !n.isRead);
-
-      await Promise.all(
-        unread.map((n) =>
-          axios.put(
-            `${BACKEND_URL}/api/notifications/${n._id}/read`,
-            {},
-            { withCredentials: true }
-          )
-        )
+      await axios.put(
+        `${BACKEND_URL}/api/notifications/read-all`,
+        {},
+        { withCredentials: true }
       );
 
       setNotifications((prev) =>
@@ -197,7 +193,7 @@ export default function NotificationPanel({ search = "" }: Props) {
     } catch (err) {
       console.error(err);
     }
-  }, [BACKEND_URL, notifications]);
+  }, [BACKEND_URL]);
 
   const handleAcceptRequest = async (senderId: string) => {
     try {
@@ -317,13 +313,57 @@ export default function NotificationPanel({ search = "" }: Props) {
     message: "message messaged",
     follow_request: "follow request requested",
     follow_request_accepted: "accepted your follow request",
+    post_removed_reported: "post removed reported",
   };
 
+  // Filter tab definitions
+  const FILTER_TABS = [
+    { id: "all" as const,     label: "All",      Icon: Bell,           types: null },
+    { id: "like" as const,    label: "Likes",    Icon: Heart,          types: ["like"] },
+    { id: "comment" as const, label: "Comments", Icon: MessageSquare,  types: ["comment"] },
+    { id: "follow" as const,  label: "Follows",  Icon: UserCheck,      types: ["follow", "follow_request_accepted"] },
+    { id: "message" as const, label: "Messages", Icon: MessageCircle,  types: ["message"] },
+  ];
+
+  // Count helpers — exclude follow_request (those are managed in the separate modal)
+  const getTabCount = (types: string[] | null) =>
+    notifications.filter((n) => {
+      if (n.type === "follow_request") return false;
+      return types === null || types.includes(n.type);
+    }).length;
+
+  const getTabUnreadCount = (types: string[] | null) =>
+    notifications.filter((n) => {
+      if (n.type === "follow_request") return false;
+      const typeMatch = types === null || types.includes(n.type);
+      return typeMatch && !n.isRead;
+    }).length;
+
+  // Empty state config per category
+  const emptyStateConfig: Record<string, { icon: React.ElementType; message: string }> = {
+    all:     { icon: Bell,           message: "You're all caught up!" },
+    like:    { icon: Heart,          message: "No likes yet. Share something great!" },
+    comment: { icon: MessageSquare,  message: "No comments on your posts yet." },
+    follow:  { icon: UserCheck,      message: "No new follower notifications." },
+    message: { icon: MessageCircle,  message: "No message notifications." },
+  };
+
+  // Combined filter: active tab AND text search
   const filteredNotifications = notifications.filter((n) => {
     if (n.type === "follow_request") return false;
+
+    // Tab filter
+    const activeTab = FILTER_TABS.find((t) => t.id === activeFilter);
+    if (activeTab?.types && !activeTab.types.includes(n.type)) return false;
+
+    // Text search filter
     const query = search.toLowerCase();
-    const searchable = `${getSenderName(n)} ${getSenderUsername(n)} ${typeText[n.type]}`.toLowerCase();
-    return searchable.includes(query);
+    if (query) {
+      const searchable = `${getSenderName(n)} ${getSenderUsername(n)} ${typeText[n.type]}`.toLowerCase();
+      if (!searchable.includes(query)) return false;
+    }
+
+    return true;
   });
 
   return (
@@ -375,14 +415,46 @@ export default function NotificationPanel({ search = "" }: Props) {
 
       <FollowRequestsModal open={modalOpen} onClose={() => setModalOpen(false)} />
 
+      {/* ── Filter Tab Bar ── */}
+      <div className="notif-tab-bar">
+        {FILTER_TABS.map((tab) => {
+          const count = getTabCount(tab.types);
+          const unread = getTabUnreadCount(tab.types);
+          const isActive = activeFilter === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveFilter(tab.id)}
+              className={`notif-tab${isActive ? " notif-tab-active" : ""}`}
+            >
+              <tab.Icon className="h-3.5 w-3.5" />
+              {tab.label}
+              {count > 0 && (
+                <span className="notif-tab-badge">{count}</span>
+              )}
+              {unread > 0 && (
+                <span className="notif-tab-unread-dot" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
       {loading ? (
         <p className="surface-text-muted text-sm">
           Loading notifications...
         </p>
       ) : filteredNotifications.length === 0 ? (
-        <p className="surface-text-muted text-sm">
-          No notifications match your search.
-        </p>
+        (() => {
+          const cfg = emptyStateConfig[activeFilter];
+          const EmptyIcon = cfg.icon;
+          return (
+            <div className="notif-empty-state">
+              <EmptyIcon className="h-8 w-8 text-muted-foreground" />
+              <p className="text-sm surface-text-muted text-center">{cfg.message}</p>
+            </div>
+          );
+        })()
       ) : (
         <div className="flex flex-col gap-2">
           {filteredNotifications.map((n) => (
@@ -405,6 +477,7 @@ export default function NotificationPanel({ search = "" }: Props) {
               <div
                 onClick={() => {
                   if (!selectMode) {
+                    if (n.type === "post_removed_reported") return;
                     if (n.post?._id) {
                       router.push(`/main/post/${n.post._id}`);
                     } else if (n.type === "message") {
@@ -419,22 +492,29 @@ export default function NotificationPanel({ search = "" }: Props) {
                   }
                 }}
                 className="flex gap-3 flex-1 cursor-pointer p-2 rounded-lg">
-                <img alt={getSenderName(n)} src={getSenderAvatar(n)} className="h-10 w-10 rounded-full object-cover" />
+                {n.type === "post_removed_reported" ? (
+                  <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
+                    <span className="text-red-500 text-lg">⚠</span>
+                  </div>
+                ) : (
+                  <Image alt={getSenderName(n)} src={getSenderAvatar(n)} width={40} height={40} className="h-10 w-10 rounded-full object-cover" />
+                )}
 
                 <div>
                   <p className="text-foreground">
-                    <span className="font-semibold">
-                      {getSenderName(n)}
-                    </span>{" "}
+                    {n.type === "post_removed_reported" ? (
+                      <span className="text-red-500 font-semibold">Post removed</span>
+                    ) : (
+                      <span className="font-semibold">{getSenderName(n)}</span>
+                    )}{" "}
                     {n.type === "follow" && "followed you"}
                     {n.type === "follow_request" && "wants to follow you"}
                     {n.type === "follow_request_accepted" && "accepted your follow request"}
                     {n.type === "like" && "liked your post"}
-                    {n.type === "comment" &&
-                      "commented on your post"}
+                    {n.type === "comment" && "commented on your post"}
                     {n.type === "message" && "messaged you"}
+                    {n.type === "post_removed_reported" && "Your post was removed after receiving too many reports"}
                   </p>
-
                   <p className="surface-text-muted mt-1 text-xs">
                     {new Date(n.createdAt).toLocaleString()}
                   </p>
@@ -485,13 +565,44 @@ export default function NotificationPanel({ search = "" }: Props) {
                         </button>
                       </div>
                     )}
-                    {(n.type === "follow" || n.type === "follow_request_accepted") && (
-                      n.sender?._id ? (
-                        <div onClick={(e) => e.stopPropagation()}>
+                    {/* Someone accepted YOUR follow request → you already follow them → just Message */}
+                    {n.type === "follow_request_accepted" && n.sender?._id && (
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => {
+                            if (n.sender?._id) {
+                              void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
+                            }
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                          Message
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Someone followed YOU → Follow Back if not following, Message if already following */}
+                    {n.type === "follow" && n.sender?._id && (
+                      <div onClick={(e) => e.stopPropagation()}>
+                        {senderFollowState[n.sender._id]?.isFollowing ? (
+                          <button
+                            onClick={() => {
+                              if (n.sender?._id) {
+                                void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
+                              }
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                            Message
+                          </button>
+                        ) : (
                           <FollowButton
                             userId={n.sender._id}
-                            isFollowing={senderFollowState[n.sender._id]?.isFollowing ?? false}
+                            isFollowing={false}
                             isRequested={senderFollowState[n.sender._id]?.isRequested ?? false}
+                            isFollowBack={true}
                             onFollowChange={(next) =>
                               setSenderFollowState((prev) => ({
                                 ...prev,
@@ -502,15 +613,17 @@ export default function NotificationPanel({ search = "" }: Props) {
                               }))
                             }
                           />
-                        </div>
-                      ) : null
+                        )}
+                      </div>
                     )}
+
+
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         if (deleteLoading[n._id]) return;
-                        void deleteSingle(n._id);
+                        setSingleDeleteId(n._id);
                       }}
                       disabled={deleteLoading[n._id]}
                       className="p-1 text-foreground transition hover:text-red-400 disabled:pointer-events-none disabled:opacity-50"
@@ -548,6 +661,19 @@ export default function NotificationPanel({ search = "" }: Props) {
         title="Clear all notifications?"
         description="This will permanently delete all your notifications."
         confirmText="Clear All"
+      />
+      <ConfirmModal
+        open={!!singleDeleteId}
+        onClose={() => setSingleDeleteId(null)}
+        onConfirm={() => {
+          if (singleDeleteId) {
+            void deleteSingle(singleDeleteId);
+          }
+          setSingleDeleteId(null);
+        }}
+        title="Delete notification?"
+        description="Are you sure you want to delete this notification?"
+        confirmText="Delete"
       />
     </div>
   );

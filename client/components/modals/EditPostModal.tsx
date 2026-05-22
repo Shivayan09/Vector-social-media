@@ -1,6 +1,7 @@
 "use client";
 
 import { X, Image as ImageIcon, Send, Trash2 } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { toast } from "react-toastify";
@@ -110,9 +111,10 @@ export default function EditPostModal({
       />
 
       <div
+        onClick={(e) => e.stopPropagation()}
         className={cn(
-          "fixed z-60 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] md:w-[45vw] lg:w-[35vw]",
-          "glass-surface-strong rounded-3xl shadow-2xl p-0 overflow-hidden transition-all duration-300 ease-out border-t border-white/20",
+          "fixed z-60 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto",
+          "glass-surface-strong rounded-3xl shadow-2xl p-0 max-h-[90vh] flex flex-col transition-all duration-300 ease-out border-t border-white/20",
           visible
             ? "opacity-100 scale-100 translate-y-[-50%]"
             : "opacity-0 scale-95 translate-y-[-48%]",
@@ -129,7 +131,7 @@ export default function EditPostModal({
           </button>
         </div>
 
-        <div className="p-6">
+   <div className="p-6 overflow-y-auto flex-1">     
           {/* Intent Selector */}
           <div className="mb-6">
             <label className="text-sm font-semibold text-foreground/80 mb-3 block">
@@ -184,9 +186,12 @@ export default function EditPostModal({
           {imagePreview && (
             <div className="relative mt-4 group">
               <div className="w-full max-h-64 rounded-2xl overflow-hidden border border-white/10 shadow-lg">
-                <img
+                <Image
                   src={imagePreview}
                   alt="Preview"
+                  width={800}
+                  height={512}
+                  unoptimized={imagePreview.startsWith("blob:")}
                   className="w-full h-full object-cover"
                 />
               </div>

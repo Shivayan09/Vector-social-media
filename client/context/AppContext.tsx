@@ -52,7 +52,7 @@ type AppContextType = {
   refreshAuth: () => Promise<void>;
 };
 
-const AppContext = createContext<AppContextType | undefined>(
+export const AppContext = createContext<AppContextType | undefined>(
   undefined
 );
 
@@ -64,7 +64,7 @@ export function AppContextProvider({
   const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [userData, setUserData] = useState<User | null>(null);
 
-  // 🔥 IMPORTANT: default false rakho (warna hamesha loader dikhega)
+
   const [loading, setLoading] = useState(false);
 
   const [posts, setPosts] = useState<Post[]>([]);
@@ -79,7 +79,7 @@ export function AppContextProvider({
     }
 
     try {
-      setLoading(true); // ✅ loader start
+      setLoading(true); 
 
       const { data } = await axios.get<{ user: User }>(
         `${BACKEND_URL}/api/auth/me`,
@@ -92,7 +92,7 @@ export function AppContextProvider({
       setIsLoggedIn(false);
       setUserData(null);
     } finally {
-      setLoading(false); // ✅ loader stop
+      setLoading(false); 
     }
   }, [BACKEND_URL]);
 

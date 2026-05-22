@@ -1,9 +1,17 @@
-import request from 'supertest';
-import app from '../src/app.js';
-import User from '../src/models/user.model.js';
-import Notification from '../src/models/notification.model.js';
-import jwt from 'jsonwebtoken';
+import { jest } from '@jest/globals';
 
+jest.unstable_mockModule('../src/socket/socket.js', () => ({
+  getIO: () => ({
+    to: () => ({ emit: () => {} }),
+    emit: () => {},
+  }),
+}));
+
+const { default: request } = await import('supertest');
+const { default: app } = await import('../src/app.js');
+const { default: User } = await import('../src/models/user.model.js');
+const { default: Notification } = await import('../src/models/notification.model.js');
+const { default: jwt } = await import('jsonwebtoken');
 describe('User Follow Request Flows', () => {
   let user1, user2, user3;
   let token1, token2;

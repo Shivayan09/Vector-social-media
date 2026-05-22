@@ -1,9 +1,11 @@
 import mongoose from "mongoose";
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
+import Comment from "../models/comment.model.js";
 import Notification from "../models/notification.model.js";
+import Report from "../models/report.model.js";
 import cloudinary from "../config/cloudinary.js";
-import { getIO, onlineUsers } from "../socket/socket.js";
+import { getIO } from "../socket/socket.js";
 
 export const removePostById = async (postId) => {
     const post = await Post.findById(postId);
@@ -15,6 +17,9 @@ export const removePostById = async (postId) => {
         await cloudinary.uploader.destroy(post.imagePublicId);
     }
 
+    await Comment.deleteMany({ post: postId });
+    await Notification.deleteMany({ post: postId });
+    await Report.deleteMany({ targetType: "post", targetId: postId });
     await post.deleteOne();
     return post;
 };
@@ -70,9 +75,8 @@ export const createPost = async (req, res) => {
 
 export const getPosts = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
+        const cursor = req.query.cursor;
         const limit = parseInt(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
 
         const currentUserId = req.user?.id || req.user?._id || null;
         const boostWindowMs = 30 * 60 * 1000; // 30 minutes
@@ -123,13 +127,28 @@ export const getPosts = async (req, res) => {
             }
         ]);
 
-        const total = await Post.countDocuments();
+        if (cursor) {
+            if (mongoose.Types.ObjectId.isValid(cursor)) {
+                filter._id = { $lt: cursor };
+            } else {
+                return res.status(400).json({ success: false, message: "Invalid cursor format" });
+            }
+        }
+
+        const posts = await Post.find(filter)
+            .sort({ _id: -1 })
+            .limit(limit)
+            .populate("author", "username name surname avatar")
+            .populate("likes", "username name avatar _id");
+
+        const hasMore = posts.length === limit;
+        const nextCursor = hasMore ? posts[posts.length - 1]._id : null;
+
         res.status(200).json({
             posts,
-            total,
-            page,
             limit,
-            hasMore: skip + limit < total
+            hasMore,
+            nextCursor
         });
     } catch (error) {
         res.status(500).json({
@@ -142,6 +161,11 @@ export const getPosts = async (req, res) => {
 export const deletePost = async (req, res) => {
     try {
         const postId = req.params.id;
+        
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).json({ success: false, message: "Invalid post ID format" });
+        }
+
         const userId = req.user.id;
         const post = await Post.findById(postId);
         if (!post) {
@@ -223,21 +247,19 @@ export const updatePost = async (req, res) => {
             });
         }
 
-        if ((req.file || shouldRemoveImage) && post.imagePublicId) {
-            await cloudinary.uploader.destroy(post.imagePublicId);
-        }
-
-        if (req.file || shouldRemoveImage) {
-            post.image = null;
-            post.imagePublicId = null;
-        }
-
         if (req.file) {
             const uploadResult = await cloudinary.uploader.upload(req.file.path, {
                 folder: "posts",
             });
+            if (post.imagePublicId) {
+                await cloudinary.uploader.destroy(post.imagePublicId).catch(() => {});
+            }
             post.image = uploadResult.secure_url;
             post.imagePublicId = uploadResult.public_id;
+        } else if (shouldRemoveImage && post.imagePublicId) {
+            await cloudinary.uploader.destroy(post.imagePublicId);
+            post.image = null;
+            post.imagePublicId = null;
         }
 
         post.content = normalizedContent;
@@ -262,48 +284,83 @@ export const updatePost = async (req, res) => {
 };
 
 export const toggleLike = async (req, res) => {
-    const post = await Post.findById(req.params.id);
-    if (!post) {
-        return res.status(404).json({ success: false });
-    }
-    const userId = req.user.id;
-    const likesWithoutDuplicates = Array.from(
-        new Map(post.likes.map((likeId) => [likeId.toString(), likeId])).values()
-    );
-    const existingIndex = likesWithoutDuplicates.findIndex(
-        (likeId) => likeId.toString() === userId
-    );
-    const liked = existingIndex === -1;
+    try {
+        const postId = req.params.id;
+        const userId = req.user.id;
 
-    post.likes = likesWithoutDuplicates;
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).json({ success: false, message: "Invalid post ID format" });
+        }
 
-    if (liked) {
-        post.likes.push(userId);
+        const post = await Post.findById(postId).select("author");
+        if (!post) {
+            return res.status(404).json({ success: false });
+        }
+
+        // Check block status between the requester and the post author
         if (post.author.toString() !== userId) {
-            const notification = await Notification.create({
-                recipient: post.author,
-                sender: userId,
-                type: "like",
-                post: post._id,
-            });
-
-            const recipientSocket = onlineUsers.get(post.author.toString());
-            if (recipientSocket) {
-                getIO().to(recipientSocket).emit("notification:new", {
-                    notificationId: notification._id,
-                    type: notification.type,
-                });
+            const authorUser = await User.findById(post.author).select("blockedUsers");
+            const isBlocked = req.user.blockedUsers?.some(
+                id => id.toString() === post.author.toString()
+            ) || authorUser?.blockedUsers?.some(
+                id => id.toString() === userId
+            );
+            if (isBlocked) {
+                return res.status(403).json({ success: false, message: "Action forbidden due to block status" });
             }
         }
-    } else {
-        post.likes = post.likes.filter((likeId) => likeId.toString() !== userId);
+
+        // Atomically determine whether the user was added or removed
+        const addResult = await Post.updateOne(
+            { _id: postId, likes: { $ne: userId } },
+            { $addToSet: { likes: userId } }
+        );
+
+        const liked = addResult.modifiedCount > 0;
+
+        if (!liked) {
+            await Post.updateOne(
+                { _id: postId, likes: userId },
+                { $pull: { likes: userId } }
+            );
+            await Notification.deleteOne({ recipient: post.author, sender: userId, type: "like", post: postId });
+        }
+
+        const updatedPost = await Post.findById(postId).select("likes");
+
+        if (liked && post.author.toString() !== userId) {
+            const notification = await Notification.findOneAndUpdate(
+                {
+                    recipient: post.author,
+                    sender: userId,
+                    type: "like",
+                    post: postId,
+                },
+                {
+                    $setOnInsert: {
+                        recipient: post.author,
+                        sender: userId,
+                        type: "like",
+                        post: postId,
+                    },
+                },
+                { upsert: true, new: true }
+            );
+
+            getIO().to(post.author.toString()).emit("notification:new", {
+                notificationId: notification._id,
+                type: notification.type,
+            });
+        }
+
+        res.json({
+            success: true,
+            likesCount: updatedPost.likes.length,
+            liked,
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
     }
-    await post.save();
-    res.json({
-        success: true,
-        likesCount: post.likes.length,
-        liked,
-    });
 };
 
 export const getPostsByUser = async (req, res) => {
@@ -370,7 +427,7 @@ export const getSinglePost = async (req, res) => {
             return res.status(400).json({ message: "Invalid post ID format" });
         }
 
-        const post = await Post.findById(postId).populate("author", "username name avatar isPrivate followers blockedUsers").populate("likes", "username name avatar _id");
+        const post = await Post.findById(postId).populate("author", "username name avatar isPrivate").populate("likes", "username name avatar _id");
         if (!post) {
             return res.status(404).json({ message: "Post not found" });
         }
@@ -404,14 +461,58 @@ export const getTopPostsOfWeek = async (req, res) => {
     try {
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        const requestedLimit = Number.parseInt(req.query.limit, 10);
+        const limit = Number.isFinite(requestedLimit) && requestedLimit > 0
+            ? requestedLimit
+            : 10;
+        let filter = { createdAt: { $gte: oneWeekAgo } };
+
+        if (req.user) {
+            const currentUserId = req.user._id || req.user.id;
+            const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
+            const blockerIds = blockers.map((user) => user._id);
+            const blockedIds = req.user.blockedUsers || [];
+            const excludeUserIds = [...blockedIds, ...blockerIds];
+
+            if (excludeUserIds.length > 0) {
+                filter = {
+                    ...filter,
+                    author: { $nin: excludeUserIds },
+                };
+            }
+        }
+
         const posts = await Post.aggregate([
-            { $match: { createdAt: { $gte: oneWeekAgo } } },
-            { $addFields: { likesCount: { $size: "$likes" } } },
-            { $sort: { likesCount: -1, createdAt: -1 } },
-            { $limit: 10 },
+            { $match: filter },
+            {
+                $addFields: {
+                    likesCount: { $size: "$likes" },
+                    commentsCount: { $ifNull: ["$commentsCount", 0] },
+                    sharesCount: { $ifNull: ["$sharesCount", 0] },
+                },
+            },
+            {
+                $addFields: {
+                    engagementScore: {
+                        $add: [
+                            { $multiply: ["$likesCount", 4] },
+                            { $multiply: ["$commentsCount", 3] },
+                            { $multiply: ["$sharesCount", 2] },
+                        ],
+                    },
+                },
+            },
+            { $sort: { engagementScore: -1, createdAt: -1 } },
+            { $limit: limit },
             { $lookup: { from: "users", localField: "author", foreignField: "_id", as: "author" } },
             { $unwind: "$author" },
-            { $project: { "author.password": 0, "author.email": 0 } }
+            {
+                $project: {
+                    engagementScore: 0,
+                    "author.password": 0,
+                    "author.email": 0,
+                },
+            }
         ]);
         res.status(200).json({
             success: true,
@@ -429,15 +530,55 @@ export const getTopPostsOfMonth = async (req, res) => {
     try {
         const oneMonthAgo = new Date();
         oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
-        
+
+        let filter = { createdAt: { $gte: oneMonthAgo } };
+
+        if (req.user) {
+            const currentUserId = req.user._id || req.user.id;
+            const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
+            const blockerIds = blockers.map((user) => user._id);
+            const blockedIds = req.user.blockedUsers || [];
+            const excludeUserIds = [...blockedIds, ...blockerIds];
+
+            if (excludeUserIds.length > 0) {
+                filter = {
+                    ...filter,
+                    author: { $nin: excludeUserIds },
+                };
+            }
+        }
+
         const posts = await Post.aggregate([
-            { $match: { createdAt: { $gte: oneMonthAgo } } },
-            { $addFields: { likesCount: { $size: "$likes" } } },
-            { $sort: { likesCount: -1, createdAt: -1 } },
-            { $limit: 10 },
+            { $match: filter },
+            {
+                $addFields: {
+                    likesCount: { $size: "$likes" },
+                    commentsCount: { $ifNull: ["$commentsCount", 0] },
+                    sharesCount: { $ifNull: ["$sharesCount", 0] },
+                },
+            },
+            {
+                $addFields: {
+                    engagementScore: {
+                        $add: [
+                            { $multiply: ["$likesCount", 4] },
+                            { $multiply: ["$commentsCount", 3] },
+                            { $multiply: ["$sharesCount", 2] },
+                        ],
+                    },
+                },
+            },
+            { $sort: { engagementScore: -1, createdAt: -1 } },
+            { $limit: 3 },
             { $lookup: { from: "users", localField: "author", foreignField: "_id", as: "author" } },
             { $unwind: "$author" },
-            { $project: { "author.password": 0, "author.email": 0 } }
+            {
+                $project: {
+                    engagementScore: 0,
+                    "author.password": 0,
+                    "author.email": 0,
+                },
+            },
         ]);
         
         res.status(200).json({
@@ -454,8 +595,14 @@ export const getTopPostsOfMonth = async (req, res) => {
 
 export const incrementShare = async (req, res) => {
     try {
+        const postId = req.params.id;
+        
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).json({ success: false, message: "Invalid post ID format" });
+        }
+
         const post = await Post.findByIdAndUpdate(
-            req.params.id,
+            postId,
             { $inc: { sharesCount: 1 } },
             { new: true }
         );
