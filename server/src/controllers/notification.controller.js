@@ -2,52 +2,71 @@ import Notification from "../models/notification.model.js";
 import User from "../models/user.model.js";
 
 export const getNotifications = async (req, res) => {
-    const currentUserId = req.user?._id || req.user?.id;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-    const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
-    const blockerIds = blockers.map(u => u._id);
-    const blockedIds = req.user?.blockedUsers || [];
-    const excludeIds = [...blockedIds, ...blockerIds];
-    const notifications = await Notification.find({ 
-        recipient: currentUserId,
-        sender: { $nin: excludeIds } 
-    })
-        .populate("sender", "name username avatar _id")
-        .populate("post")
-        .populate("conversation")
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean();
+    try {
+        const currentUserId = req.user?._id || req.user?.id;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+        const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
+        const blockerIds = blockers.map(u => u._id);
+        const blockedIds = req.user?.blockedUsers || [];
+        const excludeIds = [...blockedIds, ...blockerIds];
 
-    const followingUserIds = new Set(
-        (req.user?.following || []).map(id => id.toString())
-    );
+        const baseFilter = {
+            recipient: currentUserId,
+            sender: { $nin: excludeIds },
+        };
 
-    const senderIds = notifications
-        .map(n => n.sender?._id)
-        .filter(id => id);
+        const [notifications, total] = await Promise.all([
+            Notification.find(baseFilter)
+                .populate("sender", "name username avatar _id")
+                .populate("post")
+                .populate("conversation")
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+            Notification.countDocuments(baseFilter),
+        ]);
 
-    const requestedUsers = await User.find({
-        _id: { $in: senderIds },
-        followRequests: currentUserId,
-    }).select("_id").lean();
+        const followingUserIds = new Set(
+            (req.user?.following || []).map(id => id.toString())
+        );
 
-    const requestedUserIds = new Set(
-        requestedUsers.map((user) => user._id.toString())
-    );
+        const senderIds = notifications
+            .map(n => n.sender?._id)
+            .filter(id => id);
 
-    const notificationsWithFollowState = notifications.map(notification => {
-        if (notification.sender) {
-            notification.sender.isFollowedByCurrentUser = followingUserIds.has(notification.sender._id.toString());
-            notification.sender.isRequestedByCurrentUser = requestedUserIds.has(notification.sender._id.toString());
-        }
-        return notification;
-    });
+        const requestedUsers = await User.find({
+            _id: { $in: senderIds },
+            followRequests: currentUserId,
+        }).select("_id").lean();
 
-    return res.json(notificationsWithFollowState);
+        const requestedUserIds = new Set(
+            requestedUsers.map((user) => user._id.toString())
+        );
+
+        const notificationsWithFollowState = notifications.map(notification => {
+            if (notification.sender) {
+                notification.sender.isFollowedByCurrentUser = followingUserIds.has(notification.sender._id.toString());
+                notification.sender.isRequestedByCurrentUser = requestedUserIds.has(notification.sender._id.toString());
+            }
+            return notification;
+        });
+
+        return res.json({
+            notifications: notificationsWithFollowState,
+            total,
+            page,
+            limit,
+            hasMore: skip + limit < total,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch notifications: " + error.message,
+        });
+    }
 };
 
 

@@ -25,7 +25,7 @@ export const createPost = async (req, res) => {
     try {
         const { content, intent } = req.body;
         if (!intent || (!content && !req.file)) {
-            return res.json({
+            return res.status(400).json({
                 success: false,
                 message: "Intent and either content or image are required"
             });
@@ -468,6 +468,10 @@ export const getTopPostsOfMonth = async (req, res) => {
     try {
         const oneMonthAgo = new Date();
         oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
+        const requestedLimit = Number.parseInt(req.query.limit, 10);
+        const limit = Number.isFinite(requestedLimit) && requestedLimit > 0
+            ? requestedLimit
+            : 10;
 
         let filter = { createdAt: { $gte: oneMonthAgo } };
 
@@ -507,7 +511,7 @@ export const getTopPostsOfMonth = async (req, res) => {
                 },
             },
             { $sort: { engagementScore: -1, createdAt: -1 } },
-            { $limit: 3 },
+            { $limit: limit },
             { $lookup: { from: "users", localField: "author", foreignField: "_id", as: "author" } },
             { $unwind: "$author" },
             {
