@@ -171,7 +171,7 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                                 <li>Be respectful and constructive.</li>
                                 <li>No harassment, hate, or violence.</li>
                                 <li>Avoid spam, self-promotion, and misinformation.</li>
-                                <li>Don't share private or illegal content.</li>
+                                <li>Don&apos;t share private or illegal content.</li>
                                 <li>Give context and cite sources when possible.</li>
                             </ul>
                         </div>
