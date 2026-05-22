@@ -8,6 +8,11 @@ describe('User Search and Suggestions Endpoints', () => {
   let user1, user2, user3, user4;
   let token1;
 
+  beforeAll(async () => {
+    await User.createIndexes();
+    await Post.createIndexes();
+  });
+
   beforeEach(async () => {
     // Clean up collections (handled by setup.js but good to be explicit for Posts if needed, setup.js does all collections)
     
