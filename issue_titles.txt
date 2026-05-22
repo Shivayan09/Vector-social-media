@@ -1,0 +1,100 @@
+fix: prevent social graph race conditions in block/follow/unfollow
+feat: add post guidelines toggle to create post modal
+Block/follow/unfollow race conditions permanently corrupt follower counts
+fix: prevent permanent data loss on Cloudinary image upload failure
+Fix unread message badge visibility for Messages tab
+Permanent data loss on Cloudinary image/avatar update when upload fails — old image deleted before new one uploaded
+ Fix: Prevent CSRF Protection Bypass via Origin Prefix Spoofing
+fix: add try/catch to getNotifications, fix hardcoded limit in getTopPostsOfMonth, fix HTTP status codes
+[Bug] Multiple backend bugs: missing try/catch in getNotifications, hardcoded limit in getTopPostsOfMonth, wrong HTTP status codes
+feat: add notification filter tabs (All/Likes/Comments/Follows/Messages)
+fix: prevent blocked users from reading messages and liking posts
+[Security] Critical CSRF Protection Bypass via Origin Prefix Matching that can bypass backend security
+Block System Completely Broken which means Conversations, Messages, and Post Likes Bypass All Block Restrictions
+Fix incorrect empty state in explore search
+[Bug] New message notification badge appears on Activity tab instead of Messages tab
+fix: prevent race condition in toggleLike with atomic MongoDB operators
+toggleLike` race condition causes permanent like loss, phantom likes, and duplicate notifications under concurrent access
+fix: emit message_deleted socket event only to conversation participants
+fix: add participant authorization check to getMessages endpoint
+fix: add try-catch error handling to all comment controller handlers
+fix: cascade delete comments when a post is removed
+fix: strip blockedUsers from getUserProfile response to prevent block list leak
+getUserProfile leaks blockedUsers array to all users, exposing private block lists
+fix: add CSRF protection via Origin/Referer validation middleware
+Added search icon in the main/chat
+feat: add scroll-to-bottom button in chat
+Bug: comment controller handlers missing try-catch blocks, unhandled DB errors crash with no HTTP response
+Bug: post deletion does not cascade delete associated comments, leaving orphaned documents
+Bug: createCommentReport missing auto-removal threshold, reported comments are never actioned
+Bug: deleteMessage broadcasts socket event to all connected clients instead of conversation participants only
+Bug: getMessages endpoint missing authorization check allows any user to read private conversations
+CSRF risk: logged-in users can be tricked into doing actions via their cookies
+fix(conversation): delete orphaned messages when conversation is deleted
+fix(explore): filter blocked users from getTopPostsOfMonth
+feat(explore): add suggested users section to explore page
+Create reusable universal SearchBar component
+[Enhancement] Add Scroll-to-Bottom Button in Chat
+Follow Back System
+fix: add defensive guards and try-catch to getMe endpoint
+fix: add rate limiting to auth endpoints to prevent brute force
+refactor: move hardcoded CORS origins to ALLOWED_ORIGINS env variable
+[Refactor] Production CORS origins are hardcoded in source code  should use environment variables
+fix: add rate limiting to auth endpoints to prevent brute force
+[Security] Auth endpoints have no rate limiting vulnerable to brute force attacks
+Fix edit post modal click propagation
+Improve login page UI spacing and visual balance
+Fix edit post modal click propagation issue
+defensive tightening of getMe
+refactor : added stricter password safety rules to Zod schemas and unit tests
+refactor : add stricter password safety rules to Zod schemas and unit tests
+feat : added JWT helper utility and unit tests in generateToken
+feat : implement JWT helper utility and unit tests in generateToken
+feat : added Zod validator and unit tests for comment submissions
+feat : add Zod validator and unit tests for comment submissions
+feat : added Zod validator and unit tests for contact submissions
+feat : add Zod validator and unit tests for contact submissions
+feat : added Zod validator and unit tests for report submissions
+feat : add Zod validator and unit tests for report submissions
+[Bug]: deleteConversation leaves all messages as orphans in the database
+[Bug]: getTopPostsOfMonth does not filter blocked users, exposing their posts in explore trending
+feat: auto-delete posts with 5+ reports and notify the author
+fix(auth): return correct HTTP status codes on error responses
+fix(privacy): clear followRequests when account switches private to public
+fix(security): verify sender is participant before sending message
+[Bug]: sendMessage allows non-participants to send messages into any conversation
+Fix pending request users showing in activity sidebar
+fix(security): hide private profile data from unauthenticated requests
+fix(security): verify conversation participant before returning messages
+[FEAT] Add Bookmark / Save Posts Feature
+fix: prevent false share count increment
+fix: add schema validation and username uniqueness check to updateProfile
+fix: show only 3 top posts in "Top posts of the month" section on Explore page
+Fix explore search intent results visibility
+fix: add participant verification to getConversation endpoint
+chore: remove unused resume controller and related files
+Test: Add post creation and edit integration tests
+[Security] getConversation endpoint missing participant verification
+Test(client): Add EditPostModal image update and removal tests
+fix: log in page UI
+Test(client): Add FollowButton state transition tests
+Test(client): Add CreatePostModal image validation and preview tests
+[Cleanup] Debug console.log statements left in production code
+Fix logout button hover alignment in sidebar
+Test: Add Postcard image loading fallback tests
+test(post): add malformed ObjectId tests for delete/like/share endpoints
+feat(reviews): add review model/controller/routes and client reviews
+Add Feed tests for top‑weekly posts pinning 
+Stop propagation in edit post modal
+Loading state in delete modal
+Universal searchbar component
+Fix hover effect on log out button in sidebar
+Add pending follow activity count display
+Feat: add conversational skeletal message loaders for chat (#236)
+Fix: Add warning modal before deleting single notification
+Improve chat list UI/UX on /main/chat page
+fix(auth): return correct HTTP status codes on error responses
+[Bug]: Auth endpoints return HTTP 200 for error responses
+fix(privacy): clear followRequests when account switches private to public
+[Bug]: Pending follow requests not cleared when account switches from private to public
+fix(security): hide private profile data from unauthenticated requests
