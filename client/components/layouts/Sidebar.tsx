@@ -34,6 +34,7 @@ export default function Sidebar() {
 
   const { isLoggedIn, setIsLoggedIn, setUserData, userData, setPosts } = useAppContext();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
 
   const handleLogout = async () => {
     try {
@@ -66,6 +67,22 @@ export default function Sidebar() {
     }
   }, [BACKEND_URL]);
 
+  const fetchUnreadMessageCount = useCallback(async () => {
+    try {
+      const response = await axios.get<
+        { unreadCount: number }[]
+      >(`${BACKEND_URL}/api/conversation`, 
+        { withCredentials: true, });
+      const conversations = Array.isArray(response.data) ? response.data : [];
+      const unreadMessages = conversations.filter(
+        (conversation) => (conversation.unreadCount ?? 0) > 0
+      ).length;
+      setUnreadMessageCount(unreadMessages);
+    } catch (error) {
+      console.error("Failed to fetch unread message count:", error);
+    }
+  }, [BACKEND_URL]);
+
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       void fetchUnreadCount();
@@ -83,6 +100,21 @@ export default function Sidebar() {
       socket.off("notification:new", handleNotification);
     };
   }, [fetchUnreadCount]);
+
+  useEffect(() => {
+    void fetchUnreadMessageCount();
+    const messageInterval = window.setInterval(() => {
+      void fetchUnreadMessageCount();
+    }, 10000);
+    const handleNotification = () => {
+      void fetchUnreadMessageCount();
+    };
+    socket.on("notification:new", handleNotification);
+    return () => {
+      window.clearInterval(messageInterval);
+      socket.off("notification:new", handleNotification);
+    };
+  }, [fetchUnreadMessageCount]);
 
   const isMain = pathname === "/main";
 
@@ -157,6 +189,7 @@ export default function Sidebar() {
             label="Messages"
             href="/main/chat"
             active={pathname === "/main/chat"}
+            unreadCount={unreadMessageCount}
           />
 
           <SidebarItem
