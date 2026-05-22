@@ -35,6 +35,8 @@ export default function Sidebar() {
   const { isLoggedIn, setIsLoggedIn, setUserData, userData, setPosts } = useAppContext();
   const [unreadCount, setUnreadCount] = useState(0);
 
+  const [unreadMessageCount,setUnreadMessageCount]=useState(0);
+
   const handleLogout = async () => {
     try {
       const { data } = await axios.post(BACKEND_URL + "/api/auth/logout", {}, { withCredentials: true });
@@ -83,6 +85,42 @@ export default function Sidebar() {
       socket.off("notification:new", handleNotification);
     };
   }, [fetchUnreadCount]);
+
+  const fetchUnreadMessageCount = useCallback(async () => {
+    try {
+      const { data } = await axios.get(
+        `${BACKEND_URL}/api/conversation`,
+        { withCredentials: true }
+      );
+
+      const unreadMessages = data.filter(
+        (conversation: any) => conversation.unreadCount > 0
+      ).length;
+
+      setUnreadMessageCount(unreadMessages);
+
+    } catch (error) {
+      console.error(error);
+    }
+  }, [BACKEND_URL]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void fetchUnreadMessageCount();
+    }, 0);
+    const interval = window.setInterval(() => {
+      void fetchUnreadMessageCount();
+    }, 10000);
+    const handleNotification = () => {
+      void fetchUnreadMessageCount();
+    };
+    socket.on("notification:new", handleNotification);
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.clearInterval(interval);
+      socket.off("notification:new", handleNotification);
+    };
+  }, [fetchUnreadMessageCount]);
 
   const isMain = pathname === "/main";
 
@@ -157,6 +195,7 @@ export default function Sidebar() {
             label="Messages"
             href="/main/chat"
             active={pathname === "/main/chat"}
+            unreadCount={unreadMessageCount}
           />
 
           <SidebarItem
