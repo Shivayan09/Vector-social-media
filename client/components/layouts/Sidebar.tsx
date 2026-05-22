@@ -102,15 +102,28 @@ export default function Sidebar() {
   }, [fetchUnreadCount]);
 
   useEffect(() => {
-    void fetchUnreadMessageCount();
-    const messageInterval = window.setInterval(() => {
-      void fetchUnreadMessageCount();
-    }, 10000);
-    const handleNotification = () => {
-      void fetchUnreadMessageCount();
+    let isMounted = true;
+
+    const fetchAndUpdate = async () => {
+      if (isMounted) {
+        await fetchUnreadMessageCount();
+      }
     };
+
+    void fetchAndUpdate();
+
+    const messageInterval = window.setInterval(() => {
+      if (isMounted) void fetchUnreadMessageCount();
+    }, 10000);
+
+    const handleNotification = () => {
+      if (isMounted) void fetchUnreadMessageCount();
+    };
+
     socket.on("notification:new", handleNotification);
+
     return () => {
+      isMounted = false;
       window.clearInterval(messageInterval);
       socket.off("notification:new", handleNotification);
     };
