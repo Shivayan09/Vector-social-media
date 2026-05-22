@@ -390,7 +390,7 @@ export const getSinglePost = async (req, res) => {
             return res.status(400).json({ message: "Invalid post ID format" });
         }
 
-        const post = await Post.findById(postId).populate("author", "username name avatar isPrivate followers blockedUsers").populate("likes", "username name avatar _id");
+        const post = await Post.findById(postId).populate("author", "username name avatar isPrivate").populate("likes", "username name avatar _id");
         if (!post) {
             return res.status(404).json({ message: "Post not found" });
         }
