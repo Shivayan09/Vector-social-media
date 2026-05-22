@@ -4,7 +4,7 @@ import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
 import Notification from "../models/notification.model.js";
 import Post from "../models/post.model.js";
-import { getIO, onlineUsers } from "../socket/socket.js";
+import { getIO } from "../socket/socket.js";
 
 export const uploadAvatar = async (req, res) => {
     try {
@@ -263,15 +263,10 @@ export const toggleFollowUser = async (req, res) => {
                             sender: req.user._id,
                             type: "follow_request",
                         });
-                        const recipientSockets = onlineUsers.get(targetUser._id.toString());
-                        if (recipientSockets) {
-                            for (const socketId of recipientSockets) {
-                                getIO().to(socketId).emit("notification:new", {
-                                    notificationId: notification._id,
-                                    type: notification.type,
-                                });
-                            }
-                        }
+                        getIO().to(targetUser._id.toString()).emit("notification:new", {
+                            notificationId: notification._id,
+                            type: notification.type,
+                        });
                     }
                     return res.json({
                         requested: true,
@@ -295,15 +290,10 @@ export const toggleFollowUser = async (req, res) => {
                         sender: req.user._id,
                         type: "follow",
                     });
-                    const recipientSockets = onlineUsers.get(targetUser._id.toString());
-                    if (recipientSockets) {
-                        for (const socketId of recipientSockets) {
-                            getIO().to(socketId).emit("notification:new", {
-                                notificationId: notification._id,
-                                type: notification.type,
-                            });
-                        }
-                    }
+                    getIO().to(targetUser._id.toString()).emit("notification:new", {
+                        notificationId: notification._id,
+                        type: notification.type,
+                    });
                 }
                 return res.json({
                     followed: true
@@ -386,15 +376,10 @@ export const acceptFollowRequest = async (req, res) => {
                 sender: currentUserId,
                 type: "follow_request_accepted",
             });
-            const recipientSockets = onlineUsers.get(requesterId.toString());
-            if (recipientSockets) {
-                for (const socketId of recipientSockets) {
-                    getIO().to(socketId).emit("notification:new", {
-                        notificationId: notification._id,
-                        type: notification.type,
-                    });
-                }
-            }
+            getIO().to(requesterId.toString()).emit("notification:new", {
+                notificationId: notification._id,
+                type: notification.type,
+            });
         }
 
         res.json({ success: true, message: "Follow request accepted" });

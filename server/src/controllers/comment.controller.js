@@ -2,7 +2,7 @@ import Comment from "../models/comment.model.js";
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
 import Notification from '../models/notification.model.js'
-import { getIO, onlineUsers } from "../socket/socket.js";
+import { getIO } from "../socket/socket.js";
 
 export const addComment = async (req, res) => {
     try {
@@ -43,15 +43,10 @@ export const addComment = async (req, res) => {
                 post: post._id,
             });
 
-            const recipientSockets = onlineUsers.get(post.author.toString());
-            if (recipientSockets) {
-                for (const socketId of recipientSockets) {
-                    getIO().to(socketId).emit("notification:new", {
-                        notificationId: notification._id,
-                        type: notification.type,
-                    });
-                }
-            }
+            getIO().to(post.author.toString()).emit("notification:new", {
+                notificationId: notification._id,
+                type: notification.type,
+            });
         }
         return res.status(201).json(populated);
     } catch (error) {

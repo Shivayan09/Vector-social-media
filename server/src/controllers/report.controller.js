@@ -3,7 +3,7 @@ import Comment from "../models/comment.model.js";
 import Report from "../models/report.model.js";
 import Notification from "../models/notification.model.js";
 import { removePostById } from "./post.controller.js";
-import { getIO, onlineUsers } from "../socket/socket.js";
+import { getIO } from "../socket/socket.js";
 
 const REPORT_THRESHOLD = 5;
 
@@ -90,16 +90,10 @@ export const createPostReport = async (req, res) => {
         post: postId,
       });
 
-      // Emit real-time notification if author is online
-      const authorSockets = onlineUsers.get(authorId.toString());
-      if (authorSockets) {
-        for (const socketId of authorSockets) {
-          getIO().to(socketId).emit("notification:new", {
-            notificationId: notification._id,
-            type: notification.type,
-          });
-        }
-      }
+      getIO().to(authorId.toString()).emit("notification:new", {
+        notificationId: notification._id,
+        type: notification.type,
+      });
 
       return res.status(200).json({
         success: true,

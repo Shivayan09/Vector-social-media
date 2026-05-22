@@ -1,7 +1,8 @@
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
+import { createAdapter } from "@socket.io/redis-adapter";
+import { createClient } from "redis";
 
-export const onlineUsers = new Map();
 let io;
 
 const parseCookies = (cookieHeader) => {
@@ -16,13 +17,23 @@ const parseCookies = (cookieHeader) => {
   return cookies;
 };
 
-export const initSocket = (server) => {
+export const initSocket = async (server) => {
   io = new Server(server, {
     cors: {
       origin: ["http://localhost:3000", "http://vector-lac.vercel.app", "https://vector-lac.vercel.app", process.env.FRONTEND_URL],
       credentials: true,
     },
   });
+
+  const pubClient = createClient({ url: process.env.REDIS_URL || "redis://localhost:6379" });
+  const subClient = pubClient.duplicate();
+
+  pubClient.on("error", (err) => console.error("Redis Pub Client Error", err));
+  subClient.on("error", (err) => console.error("Redis Sub Client Error", err));
+
+  await Promise.all([pubClient.connect(), subClient.connect()]);
+
+  io.adapter(createAdapter(pubClient, subClient));
 
   io.use((socket, next) => {
     try {
@@ -47,19 +58,7 @@ export const initSocket = (server) => {
 
     socket.on("register", () => {
       if (socket.userId) {
-        if (!onlineUsers.has(socket.userId)) {
-          onlineUsers.set(socket.userId, new Set());
-        }
-        onlineUsers.get(socket.userId).add(socket.id);
-      }
-    });
-
-    socket.on("disconnect", () => {
-      if (socket.userId && onlineUsers.has(socket.userId)) {
-        onlineUsers.get(socket.userId).delete(socket.id);
-        if (onlineUsers.get(socket.userId).size === 0) {
-          onlineUsers.delete(socket.userId);
-        }
+        socket.join(socket.userId);
       }
     });
 

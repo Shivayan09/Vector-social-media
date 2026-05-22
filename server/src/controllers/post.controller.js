@@ -5,7 +5,7 @@ import Comment from "../models/comment.model.js";
 import Notification from "../models/notification.model.js";
 import Report from "../models/report.model.js";
 import cloudinary from "../config/cloudinary.js";
-import { getIO, onlineUsers } from "../socket/socket.js";
+import { getIO } from "../socket/socket.js";
 
 export const removePostById = async (postId) => {
     const post = await Post.findById(postId);
@@ -310,15 +310,10 @@ export const toggleLike = async (req, res) => {
                 { upsert: true, new: true }
             );
 
-            const recipientSockets = onlineUsers.get(post.author.toString());
-            if (recipientSockets) {
-                for (const socketId of recipientSockets) {
-                    getIO().to(socketId).emit("notification:new", {
-                        notificationId: notification._id,
-                        type: notification.type,
-                    });
-                }
-            }
+            getIO().to(post.author.toString()).emit("notification:new", {
+                notificationId: notification._id,
+                type: notification.type,
+            });
         }
 
         res.json({

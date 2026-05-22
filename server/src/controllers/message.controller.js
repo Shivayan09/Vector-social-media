@@ -2,7 +2,7 @@ import Message from "../models/message.model.js";
 import Conversation from "../models/conversation.model.js";
 import Notification from "../models/notification.model.js";
 import User from "../models/user.model.js";
-import { getIO, onlineUsers } from "../socket/socket.js";
+import { getIO } from "../socket/socket.js";
 
 export const getMessages = async (req, res) => {
   try {
@@ -104,17 +104,12 @@ export const sendMessage = async (req, res) => {
         conversation: conversationId,
       });
       const io = getIO();
-      const receiverSockets = onlineUsers.get(receiverId.toString());
-
-      if (receiverSockets) {
-        for (const socketId of receiverSockets) {
-          io.to(socketId).emit("notification:new", {
-            notificationId: notification._id,
-            type: notification.type,
-          });
-          io.to(socketId).emit("receive_message", populated);
-        }
-      }
+      io.to(receiverId.toString()).emit("notification:new", {
+        notificationId: notification._id,
+        type: notification.type,
+      });
+      
+      io.to(receiverId.toString()).emit("receive_message", populated);
 
     }
 
@@ -219,15 +214,10 @@ export const deleteMessage = async (req, res) => {
     const conversation = await Conversation.findById(message.conversation);
     if (conversation) {
       conversation.participants.forEach((participantId) => {
-        const participantSockets = onlineUsers.get(participantId.toString());
-        if (participantSockets) {
-          for (const socketId of participantSockets) {
-            io.to(socketId).emit("message_deleted", {
-              messageId: message._id,
-              conversationId: message.conversation,
-            });
-          }
-        }
+        io.to(participantId.toString()).emit("message_deleted", {
+          messageId: message._id,
+          conversationId: message.conversation,
+        });
       });
     }
 
