@@ -23,7 +23,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
   const [activeTab, setActiveTab] = useState<"posts" | "followers" | "following">("posts");
 
   const router = useRouter();
-  const { userData } = useAppContext();
+  const { userData, setUserData } = useAppContext();
   const followsYou = !!userData?.followers?.includes(user._id);
   const isSelfProfile = userData?.id === user._id;
   const [postsCount, setPostsCount] = useState<number>(0);
@@ -118,7 +118,15 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
                         isFollowing={following}
                         isFollowBack={!following && followsYou}
                         isRequested={requested}
-                        onFollowChange={setFollowing}
+                        onFollowChange={(next) => {
+                          setFollowing(next);
+                          setUserData(prev => prev ? {
+                            ...prev,
+                            following: next
+                              ? [...(prev.following || []), user._id]
+                              : (prev.following || []).filter(id => id !== user._id),
+                          } : null);
+                        }}
                       />
 
                       <button onClick={startChat} className="h-9 w-28 cursor-pointer rounded-md bg-blue-500 text-white transition hover:bg-blue-600">

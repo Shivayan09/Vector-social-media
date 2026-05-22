@@ -347,6 +347,19 @@ export const acceptFollowRequest = async (req, res) => {
             return res.status(400).json({ message: "No follow request from this user" });
         }
 
+        // Check bidirectional block status before accepting
+        if (user.blockedUsers?.some(id => id.toString() === requesterId)) {
+            return res.status(403).json({ message: "You have blocked this user" });
+        }
+
+        const requesterDoc = await User.findById(requesterId).select("blockedUsers");
+        if (!requesterDoc) {
+            return res.status(404).json({ message: "Requester not found" });
+        }
+        if (requesterDoc.blockedUsers?.some(id => id.toString() === currentUserId)) {
+            return res.status(403).json({ message: "This user has blocked you" });
+        }
+
         const result = await User.updateOne(
             { _id: currentUserId, followRequests: requesterId, followers: { $ne: requesterId } },
             {
@@ -397,6 +410,8 @@ export const rejectFollowRequest = async (req, res) => {
         await User.findByIdAndUpdate(currentUserId, {
             $pull: { followRequests: requesterId }
         });
+
+        await Notification.deleteOne({ recipient: currentUserId, sender: requesterId, type: "follow_request" });
 
         res.json({ success: true, message: "Follow request rejected" });
     } catch (err) {
@@ -725,31 +740,23 @@ export const blockUser = async (req, res) => {
             { $addToSet: { blockedUsers: targetUserId } }
         );
 
-        // Remove follow relationships
-        const wasFollowingTarget = currentUser.following.some(id => id.toString() === targetUserId);
-        const wasFollowedByTarget = currentUser.followers.some(id => id.toString() === targetUserId);
-
-        if (wasFollowingTarget) {
-            await User.updateOne(
-                { _id: currentUserId },
-                { $pull: { following: targetUserId }, $inc: { followingCount: -1 } }
-            );
-            await User.updateOne(
-                { _id: targetUserId },
-                { $pull: { followers: currentUserId }, $inc: { followersCount: -1 } }
-            );
-        }
-
-        if (wasFollowedByTarget) {
-            await User.updateOne(
-                { _id: currentUserId },
-                { $pull: { followers: targetUserId }, $inc: { followersCount: -1 } }
-            );
-            await User.updateOne(
-                { _id: targetUserId },
-                { $pull: { following: currentUserId }, $inc: { followingCount: -1 } }
-            );
-        }
+        // Remove follow relationships with atomic guards — no pre-reads, no races
+        await User.updateOne(
+            { _id: currentUserId, following: targetUserId },
+            { $pull: { following: targetUserId }, $inc: { followingCount: -1 } }
+        );
+        await User.updateOne(
+            { _id: targetUserId, followers: currentUserId },
+            { $pull: { followers: currentUserId }, $inc: { followersCount: -1 } }
+        );
+        await User.updateOne(
+            { _id: currentUserId, followers: targetUserId },
+            { $pull: { followers: targetUserId }, $inc: { followersCount: -1 } }
+        );
+        await User.updateOne(
+            { _id: targetUserId, following: currentUserId },
+            { $pull: { following: currentUserId }, $inc: { followingCount: -1 } }
+        );
 
         // Remove follow requests in both directions
         await User.updateOne(
@@ -819,6 +826,25 @@ export const unblockUser = async (req, res) => {
         await User.updateOne(
             { _id: currentUserId },
             { $pull: { blockedUsers: targetUserId } }
+        );
+
+        // Clean up any stale follow relationships that accumulated during the block
+        // (due to race conditions in blockUser's original unconditional $inc)
+        await User.updateOne(
+            { _id: currentUserId, following: targetUserId },
+            { $pull: { following: targetUserId }, $inc: { followingCount: -1 } }
+        );
+        await User.updateOne(
+            { _id: currentUserId, followers: targetUserId },
+            { $pull: { followers: targetUserId }, $inc: { followersCount: -1 } }
+        );
+        await User.updateOne(
+            { _id: targetUserId, followers: currentUserId },
+            { $pull: { followers: currentUserId }, $inc: { followersCount: -1 } }
+        );
+        await User.updateOne(
+            { _id: targetUserId, following: currentUserId },
+            { $pull: { following: currentUserId }, $inc: { followingCount: -1 } }
         );
 
         return res.json({
