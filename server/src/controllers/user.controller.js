@@ -639,12 +639,7 @@ export const searchUsers = async (req, res) => {
 
         const users = await User.find({
             $and: [
-                {
-                    $or: [
-                        { name: { $regex: query, $options: "i" } },
-                        { username: { $regex: query, $options: "i" } }
-                    ]
-                },
+                { $text: { $search: query } },
                 { _id: { $nin: excludeIds } }
             ]
         })
@@ -673,12 +668,7 @@ export const searchUsers = async (req, res) => {
 
         const posts = await Post.find({
             $and: [
-                {
-                    $or: [
-                        { content: { $regex: query, $options: "i" } },
-                        { intent: { $regex: query, $options: "i" } }
-                    ]
-                },
+                { $text: { $search: query } },
                 { author: { $nin: postExcludeIds } }
             ]
         })

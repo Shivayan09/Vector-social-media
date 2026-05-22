@@ -64,11 +64,10 @@ describe('Feed component – top weekly posts pinning', () => {
         return Promise.resolve({ data: { posts: topPosts } });
       }
       if (url.includes('/api/posts?')) {
-        if (url.includes('page=1')) {
-          return Promise.resolve({ data: { posts: feedPosts, hasMore: true } });
-        }
-        if (url.includes('page=2')) {
-          return Promise.resolve({ data: { posts: page2Posts, hasMore: false } });
+        if (!url.includes('cursor=')) {
+          return Promise.resolve({ data: { posts: feedPosts, hasMore: true, nextCursor: 'cursor123' } });
+        } else {
+          return Promise.resolve({ data: { posts: page2Posts, hasMore: false, nextCursor: null } });
         }
       }
       // fallback for auth/me – not used in this test

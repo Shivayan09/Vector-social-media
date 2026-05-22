@@ -3,6 +3,7 @@ import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
 import Comment from "../models/comment.model.js";
 import Notification from "../models/notification.model.js";
+import Report from "../models/report.model.js";
 import cloudinary from "../config/cloudinary.js";
 import { getIO } from "../socket/socket.js";
 
@@ -17,6 +18,8 @@ export const removePostById = async (postId) => {
     }
 
     await Comment.deleteMany({ post: postId });
+    await Notification.deleteMany({ post: postId });
+    await Report.deleteMany({ targetType: "post", targetId: postId });
     await post.deleteOne();
     return post;
 };
@@ -72,9 +75,8 @@ export const createPost = async (req, res) => {
 
 export const getPosts = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
+        const cursor = req.query.cursor;
         const limit = parseInt(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
 
         let filter = {};
         if (req.user) {
@@ -88,14 +90,28 @@ export const getPosts = async (req, res) => {
             }
         }
 
-        const posts = await Post.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).populate("author", "username name surname avatar").populate("likes", "username name avatar _id");
-        const total = await Post.countDocuments(filter);
+        if (cursor) {
+            if (mongoose.Types.ObjectId.isValid(cursor)) {
+                filter._id = { $lt: cursor };
+            } else {
+                return res.status(400).json({ success: false, message: "Invalid cursor format" });
+            }
+        }
+
+        const posts = await Post.find(filter)
+            .sort({ _id: -1 })
+            .limit(limit)
+            .populate("author", "username name surname avatar")
+            .populate("likes", "username name avatar _id");
+
+        const hasMore = posts.length === limit;
+        const nextCursor = hasMore ? posts[posts.length - 1]._id : null;
+
         res.status(200).json({
             posts,
-            total,
-            page,
             limit,
-            hasMore: skip + limit < total
+            hasMore,
+            nextCursor
         });
     } catch (error) {
         res.status(500).json({
@@ -270,6 +286,7 @@ export const toggleLike = async (req, res) => {
                 { _id: postId, likes: userId },
                 { $pull: { likes: userId } }
             );
+            await Notification.deleteOne({ recipient: post.author, sender: userId, type: "like", post: postId });
         }
 
         const updatedPost = await Post.findById(postId).select("likes");
