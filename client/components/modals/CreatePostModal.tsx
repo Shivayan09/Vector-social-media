@@ -163,7 +163,7 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                     </button>
                 </div>
 
-                <div className="p-6 max-h-[70vh] overflow-y-auto">
+                <div className="p-6 max-h-[90vh] overflow-y-auto">
                     {showGuidelines && (
                         <div className="mb-6 p-4 rounded-xl border border-white/10 bg-black/5 dark:bg-white/5 text-sm text-foreground/70">
                             <strong className="block mb-2 text-foreground">Posting Guidelines</strong>
