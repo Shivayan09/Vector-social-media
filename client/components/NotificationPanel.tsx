@@ -21,8 +21,6 @@ export default function NotificationPanel({ search = "" }: Props) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
   const [warningOpen, setWarningOpen] = useState(false);
-  const [selectMode, setSelectMode] = useState(false);
-  const [selected, setSelected] = useState<string[]>([]);
   const [followLoading, setFollowLoading] = useState<Record<string, boolean>>({});
   const [messageLoading, setMessageLoading] = useState<Record<string, boolean>>({});
 
@@ -65,35 +63,6 @@ export default function NotificationPanel({ search = "" }: Props) {
     }
   };
 
-  const deleteSelected = async () => {
-    if (selected.length === 0) return;
-
-    try {
-      await axios.post(
-        `${BACKEND_URL}/api/notifications/bulk-delete`,
-        { ids: selected },
-        { withCredentials: true }
-      );
-
-      setNotifications((prev) =>
-        prev.filter((n) => !selected.includes(n._id))
-      );
-
-      setSelected([]);
-      setSelectMode(false);
-
-      toast.success("Selected notifications deleted");
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        toast.error(
-          err.response?.data?.message || "Bulk delete failed"
-        );
-      } else {
-        toast.error("Bulk delete failed");
-      }
-    }
-  };
-
   const deleteAll = async () => {
     try {
       await axios.delete(
@@ -101,8 +70,6 @@ export default function NotificationPanel({ search = "" }: Props) {
         { withCredentials: true }
       );
       setNotifications([]);
-      setSelected([]);
-      setSelectMode(false);
       toast.success("All notifications cleared");
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
@@ -231,26 +198,9 @@ export default function NotificationPanel({ search = "" }: Props) {
         </p>
 
         <div className="flex gap-2">
-          {selectMode && selected.length > 0 && (
-            <button onClick={deleteSelected} className="h-9 text-sm w-35 cursor-pointer bg-blue-600 text-white rounded-md">
-              Delete Selected
-            </button>
-          )}
-
           {notifications.length > 0 && (
             <button onClick={() => setWarningOpen(true)} className="h-9 text-sm cursor-pointer w-[50%] md:w-25 py-1 bg-blue-600 text-white rounded-md">
               Clear All
-            </button>
-          )}
-
-          {notifications.length > 0 && (
-            <button
-              onClick={() => {
-                setSelectMode((prev) => !prev);
-                setSelected([]);
-              }}
-              className="h-9 text-sm cursor-pointer w-[50%] md:w-25 rounded-md bg-blue-600 text-white">
-              {selectMode ? "Cancel" : "Select"}
             </button>
           )}
         </div>
@@ -270,27 +220,12 @@ export default function NotificationPanel({ search = "" }: Props) {
             <div key={n._id}
               className={`notification-card ${!n.isRead ? "notification-card-unread" : ""
                 }`}>
-              {selectMode && (
-                <input type="checkbox" className="h-4 w-4 cursor-pointer"
-                  checked={selected.includes(n._id)}
-                  onChange={() =>
-                    setSelected((prev) =>
-                      prev.includes(n._id)
-                        ? prev.filter((id) => id !== n._id)
-                        : [...prev, n._id]
-                    )
-                  }
-                />
-              )}
-
               <div
                 onClick={() => {
-                  if (!selectMode) {
-                    if (n.post?._id) {
-                      router.push(`/main/post/${n.post._id}`);
-                    } else {
-                      router.push(`/main/user/${n.sender.username}`);
-                    }
+                  if (n.post?._id) {
+                    router.push(`/main/post/${n.post._id}`);
+                  } else {
+                    router.push(`/main/user/${n.sender.username}`);
                   }
                 }}
                 className="flex gap-3 flex-1 cursor-pointer p-2 rounded-lg">
@@ -313,55 +248,53 @@ export default function NotificationPanel({ search = "" }: Props) {
                   </p>
                 </div>
 
-                {!selectMode && (
-                  <div className="flex items-center gap-2 ml-auto">
-                    {n.type === "message" && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
-                        }}
-                        disabled={messageLoading[n._id]}
-                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:opacity-70 text-white rounded-md transition"
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                        {messageLoading[n._id] ? "Loading..." : "Reply"}
-                      </button>
-                    )}
-                    {n.type === "follow" && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!isFollowingUser(n.sender._id)) {
-                            handleFollowBack(n.sender._id);
-                          }
-                        }}
-                        disabled={followLoading[n.sender._id] || isFollowingUser(n.sender._id)}
-                        className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-md transition ${
-                          isFollowingUser(n.sender._id)
-                            ? "bg-gray-600 text-gray-300 cursor-default"
-                            : "bg-blue-600 hover:bg-blue-700 text-white"
-                        }`}
-                      >
-                        <UserPlus className="h-4 w-4" />
-                        {followLoading[n.sender._id]
-                          ? "Loading..."
-                          : isFollowingUser(n.sender._id)
-                          ? "Following"
-                          : "Follow back"}
-                      </button>
-                    )}
+                <div className="flex items-center gap-2 ml-auto">
+                  {n.type === "message" && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        deleteSingle(n._id);
+                        void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
                       }}
-                      className="p-1 text-foreground transition hover:text-red-400"
+                      disabled={messageLoading[n._id]}
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:opacity-70 text-white rounded-md transition"
                     >
-                      <Trash2 className="h-5 cursor-pointer" />
+                      <MessageCircle className="h-4 w-4" />
+                      {messageLoading[n._id] ? "Loading..." : "Reply"}
                     </button>
-                  </div>
-                )}
+                  )}
+                  {n.type === "follow" && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!isFollowingUser(n.sender._id)) {
+                          handleFollowBack(n.sender._id);
+                        }
+                      }}
+                      disabled={followLoading[n.sender._id] || isFollowingUser(n.sender._id)}
+                      className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-md transition ${
+                        isFollowingUser(n.sender._id)
+                          ? "bg-gray-600 text-gray-300 cursor-default"
+                          : "bg-blue-600 hover:bg-blue-700 text-white"
+                      }`}
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      {followLoading[n.sender._id]
+                        ? "Loading..."
+                        : isFollowingUser(n.sender._id)
+                        ? "Following"
+                        : "Follow back"}
+                    </button>
+                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteSingle(n._id);
+                    }}
+                    className="p-1 text-foreground transition hover:text-red-400"
+                  >
+                    <Trash2 className="h-5 cursor-pointer" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
