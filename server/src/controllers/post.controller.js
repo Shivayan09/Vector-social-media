@@ -194,21 +194,19 @@ export const updatePost = async (req, res) => {
             });
         }
 
-        if ((req.file || shouldRemoveImage) && post.imagePublicId) {
-            await cloudinary.uploader.destroy(post.imagePublicId);
-        }
-
-        if (req.file || shouldRemoveImage) {
-            post.image = null;
-            post.imagePublicId = null;
-        }
-
         if (req.file) {
             const uploadResult = await cloudinary.uploader.upload(req.file.path, {
                 folder: "posts",
             });
+            if (post.imagePublicId) {
+                await cloudinary.uploader.destroy(post.imagePublicId).catch(() => {});
+            }
             post.image = uploadResult.secure_url;
             post.imagePublicId = uploadResult.public_id;
+        } else if (shouldRemoveImage && post.imagePublicId) {
+            await cloudinary.uploader.destroy(post.imagePublicId);
+            post.image = null;
+            post.imagePublicId = null;
         }
 
         post.content = normalizedContent;

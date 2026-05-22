@@ -37,9 +37,6 @@ export const uploadAvatar = async (req, res) => {
                 message: "User not found",
             });
         }
-        if (user.avatarPublicId) {
-            await cloudinary.uploader.destroy(user.avatarPublicId);
-        }
         const uploadResult = await cloudinary.uploader.upload(req.file.path, {
             folder: "avatars",
             transformation: [
@@ -47,6 +44,9 @@ export const uploadAvatar = async (req, res) => {
                 { quality: "auto" },
             ],
         });
+        if (user.avatarPublicId) {
+            await cloudinary.uploader.destroy(user.avatarPublicId).catch(() => {});
+        }
         user.avatar = uploadResult.secure_url;
         user.avatarPublicId = uploadResult.public_id;
         await user.save();
