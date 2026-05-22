@@ -9,11 +9,10 @@ export default function NotFound() {
     <div className="min-h-screen relative flex flex-col items-center justify-center bg-background text-foreground p-6 overflow-hidden">
       {/* Animated Background Elements */}
       <motion.div 
-        className="absolute top-1/4 left-1/4 w-72 h-72 bg-primary/20 rounded-full blur-3xl pointer-events-none"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30rem] h-[30rem] bg-primary/10 rounded-full blur-3xl pointer-events-none"
         animate={{
-          x: [0, 50, -50, 0],
-          y: [0, -50, 50, 0],
-          scale: [1, 1.2, 0.8, 1]
+          scale: [1, 1.2, 0.9, 1],
+          opacity: [0.5, 0.8, 0.5]
         }}
         transition={{
           duration: 8,
@@ -22,24 +21,10 @@ export default function NotFound() {
         }}
       />
       <motion.div 
-        className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/20 rounded-full blur-3xl pointer-events-none"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] bg-primary/5 rounded-full blur-3xl pointer-events-none"
         animate={{
-          x: [0, -60, 60, 0],
-          y: [0, 60, -60, 0],
-          scale: [1, 0.8, 1.2, 1]
-        }}
-        transition={{
-          duration: 10,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      />
-      <motion.div 
-        className="absolute top-3/4 left-1/2 w-64 h-64 bg-accent/10 rounded-full blur-3xl pointer-events-none"
-        animate={{
-          x: [0, 80, -80, 0],
-          y: [0, -30, 30, 0],
-          scale: [1, 1.3, 0.9, 1]
+          scale: [0.9, 1.1, 1, 0.9],
+          opacity: [0.3, 0.6, 0.3]
         }}
         transition={{
           duration: 12,
@@ -56,7 +41,7 @@ export default function NotFound() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          <h1 className="font-serif text-5xl md:text-7xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+          <h1 className="font-serif text-5xl md:text-7xl font-extrabold tracking-tight text-primary">
             Vector
           </h1>
         </motion.div>
