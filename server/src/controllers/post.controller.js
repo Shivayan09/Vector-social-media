@@ -1,6 +1,10 @@
+import mongoose from "mongoose";
 import Post from "../models/post.model.js";
+import User from "../models/user.model.js";
+import Comment from "../models/comment.model.js";
 import Notification from "../models/notification.model.js";
 import cloudinary from "../config/cloudinary.js";
+import { getIO, onlineUsers } from "../socket/socket.js";
 
 export const removePostById = async (postId) => {
     const post = await Post.findById(postId);
@@ -12,6 +16,7 @@ export const removePostById = async (postId) => {
         await cloudinary.uploader.destroy(post.imagePublicId);
     }
 
+    await Comment.deleteMany({ post: postId });
     await post.deleteOne();
     return post;
 };
@@ -23,6 +28,14 @@ export const createPost = async (req, res) => {
             return res.json({
                 success: false,
                 message: "Intent and either content or image are required"
+            });
+        }
+
+        const validIntents = ["ask", "build", "share", "discuss", "reflect"];
+        if (!validIntents.includes(intent)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid intent. Must be one of: ask, build, share, discuss, reflect"
             });
         }
         
@@ -62,8 +75,21 @@ export const getPosts = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
-        const posts = await Post.find().sort({ createdAt: -1 }).skip(skip).limit(limit).populate("author", "username name surname avatar").populate("likes", "username name avatar _id");
-        const total = await Post.countDocuments();
+
+        let filter = {};
+        if (req.user) {
+            const currentUserId = req.user._id || req.user.id;
+            const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
+            const blockerIds = blockers.map(u => u._id);
+            const blockedIds = req.user.blockedUsers || [];
+            const excludeUserIds = [...blockedIds, ...blockerIds];
+            if (excludeUserIds.length > 0) {
+                filter = { author: { $nin: excludeUserIds } };
+            }
+        }
+
+        const posts = await Post.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).populate("author", "username name surname avatar").populate("likes", "username name avatar _id");
+        const total = await Post.countDocuments(filter);
         res.status(200).json({
             posts,
             total,
@@ -82,6 +108,11 @@ export const getPosts = async (req, res) => {
 export const deletePost = async (req, res) => {
     try {
         const postId = req.params.id;
+        
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).json({ success: false, message: "Invalid post ID format" });
+        }
+
         const userId = req.user.id;
         const post = await Post.findById(postId);
         if (!post) {
@@ -110,60 +141,268 @@ export const deletePost = async (req, res) => {
     }
 };
 
-export const toggleLike = async (req, res) => {
-    const post = await Post.findById(req.params.id);
-    if (!post) {
-        return res.status(404).json({ success: false });
-    }
-    const userId = req.user.id;
-    const index = post.likes.indexOf(userId);
-    const liked = index === -1;
-    if (index === -1) {
-        post.likes.push(userId);
-        if (post.author.toString() !== userId) {
-            await Notification.create({
-                recipient: post.author,
-                sender: userId,
-                type: "like",
-                post: post._id,
+export const updatePost = async (req, res) => {
+    try {
+        const postId = req.params.id;
+        const userId = req.user.id;
+        const { content = "", intent, removeImage } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid post ID format",
             });
         }
-    } else {
-        post.likes.splice(index, 1);
+
+        const validIntents = ["ask", "build", "share", "discuss", "reflect"];
+        if (!intent || !validIntents.includes(intent)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid intent. Must be one of: ask, build, share, discuss, reflect",
+            });
+        }
+
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({
+                success: false,
+                message: "Post not found",
+            });
+        }
+
+        if (post.author.toString() !== userId) {
+            return res.status(403).json({
+                success: false,
+                message: "You are not allowed to edit this post",
+            });
+        }
+
+        const normalizedContent = content.trim();
+        const shouldRemoveImage = removeImage === "true" || removeImage === true;
+
+        if (normalizedContent.length > 1000) {
+            return res.status(400).json({
+                success: false,
+                message: "Content must be 1000 characters or less",
+            });
+        }
+
+        if (!normalizedContent && !req.file && (shouldRemoveImage || !post.image)) {
+            return res.status(400).json({
+                success: false,
+                message: "Either content or image is required",
+            });
+        }
+
+        if (req.file) {
+            const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+                folder: "posts",
+            });
+            if (post.imagePublicId) {
+                await cloudinary.uploader.destroy(post.imagePublicId).catch(() => {});
+            }
+            post.image = uploadResult.secure_url;
+            post.imagePublicId = uploadResult.public_id;
+        } else if (shouldRemoveImage && post.imagePublicId) {
+            await cloudinary.uploader.destroy(post.imagePublicId);
+            post.image = null;
+            post.imagePublicId = null;
+        }
+
+        post.content = normalizedContent;
+        post.intent = intent;
+
+        await post.save();
+        const populatedPost = await post.populate([
+            { path: "author", select: "username name surname avatar" },
+            { path: "likes", select: "username name avatar _id" },
+        ]);
+
+        res.status(200).json({
+            success: true,
+            post: populatedPost,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message,
+        });
     }
-    await post.save();
-    res.json({
-        success: true,
-        likesCount: post.likes.length,
-        liked,
-    });
+};
+
+export const toggleLike = async (req, res) => {
+    try {
+        const postId = req.params.id;
+        const userId = req.user.id;
+
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).json({ success: false, message: "Invalid post ID format" });
+        }
+
+        const post = await Post.findById(postId).select("author");
+        if (!post) {
+            return res.status(404).json({ success: false });
+        }
+
+        // Check block status between the requester and the post author
+        if (post.author.toString() !== userId) {
+            const authorUser = await User.findById(post.author).select("blockedUsers");
+            const isBlocked = req.user.blockedUsers?.some(
+                id => id.toString() === post.author.toString()
+            ) || authorUser?.blockedUsers?.some(
+                id => id.toString() === userId
+            );
+            if (isBlocked) {
+                return res.status(403).json({ success: false, message: "Action forbidden due to block status" });
+            }
+        }
+
+        // Atomically determine whether the user was added or removed
+        const addResult = await Post.updateOne(
+            { _id: postId, likes: { $ne: userId } },
+            { $addToSet: { likes: userId } }
+        );
+
+        const liked = addResult.modifiedCount > 0;
+
+        if (!liked) {
+            await Post.updateOne(
+                { _id: postId, likes: userId },
+                { $pull: { likes: userId } }
+            );
+        }
+
+        const updatedPost = await Post.findById(postId).select("likes");
+
+        if (liked && post.author.toString() !== userId) {
+            const notification = await Notification.findOneAndUpdate(
+                {
+                    recipient: post.author,
+                    sender: userId,
+                    type: "like",
+                    post: postId,
+                },
+                {
+                    $setOnInsert: {
+                        recipient: post.author,
+                        sender: userId,
+                        type: "like",
+                        post: postId,
+                    },
+                },
+                { upsert: true, new: true }
+            );
+
+            const recipientSocket = onlineUsers.get(post.author.toString());
+            if (recipientSocket) {
+                getIO().to(recipientSocket).emit("notification:new", {
+                    notificationId: notification._id,
+                    type: notification.type,
+                });
+            }
+        }
+
+        res.json({
+            success: true,
+            likesCount: updatedPost.likes.length,
+            liked,
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
 };
 
 export const getPostsByUser = async (req, res) => {
     try {
         const { userId } = req.params;
+        
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid user ID format",
+            });
+        }
+
+        // Fetch target user to check privacy status
+        const targetUser = await User.findById(userId);
+        if (!targetUser) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+
+        // Check if current user is allowed to see posts
+        const isSelf = req.user?.id === userId;
+        const isFollower = targetUser.followers.some(id => id.toString() === req.user?.id);
+
+        if (req.user) {
+            const currentUserId = req.user.id;
+            const isBlocked = req.user.blockedUsers?.some(id => id.toString() === userId) ||
+                              targetUser.blockedUsers?.some(id => id.toString() === currentUserId);
+            if (isBlocked) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Action forbidden due to block status"
+                });
+            }
+        }
+
+        if (targetUser.isPrivate && !isSelf && !isFollower) {
+            return res.status(200).json({
+                success: true,
+                posts: [],
+                message: "This account is private. Follow to see posts."
+            });
+        }
+
         const posts = await Post.find({ author: userId }).populate("author", "username name avatar").populate("likes", "username name avatar _id").sort({ createdAt: -1 });
         return res.status(200).json({
             success: true,
             posts,
         });
-    } catch {
+    } catch (error) {
         return res.status(500).json({
             success: false,
-            message: "Failed to fetch user posts",
+            message: "Failed to fetch user posts: " + error.message,
         });
     }
 };
 
 export const getSinglePost = async (req, res) => {
     try {
-        const post = await Post.findById(req.params.postId).populate("author", "username name avatar").populate("likes", "username name avatar _id");
+        const { postId } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).json({ message: "Invalid post ID format" });
+        }
+
+        const post = await Post.findById(postId).populate("author", "username name avatar isPrivate followers blockedUsers").populate("likes", "username name avatar _id");
         if (!post) {
             return res.status(404).json({ message: "Post not found" });
         }
+
+        // Privacy check for single post
+        const author = post.author;
+
+        if (req.user) {
+            const currentUserId = req.user.id;
+            const isBlocked = req.user.blockedUsers?.some(id => id.toString() === author._id.toString()) ||
+                              author.blockedUsers?.some(id => id.toString() === currentUserId);
+            if (isBlocked) {
+                return res.status(403).json({ message: "Action forbidden due to block status" });
+            }
+        }
+
+        const isSelf = req.user?.id === author._id.toString();
+        const isFollower = author.followers?.some(id => id.toString() === req.user?.id);
+
+        if (author.isPrivate && !isSelf && !isFollower) {
+            return res.status(403).json({ message: "This post is from a private account. Follow them to see it." });
+        }
+
         res.json(post);
-    } catch {
-        res.status(500).json({ message: "Server error" });
+    } catch (error) {
+        res.status(500).json({ message: "Server error: " + error.message });
     }
 };
 
@@ -171,14 +410,58 @@ export const getTopPostsOfWeek = async (req, res) => {
     try {
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        const requestedLimit = Number.parseInt(req.query.limit, 10);
+        const limit = Number.isFinite(requestedLimit) && requestedLimit > 0
+            ? requestedLimit
+            : 10;
+        let filter = { createdAt: { $gte: oneWeekAgo } };
+
+        if (req.user) {
+            const currentUserId = req.user._id || req.user.id;
+            const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
+            const blockerIds = blockers.map((user) => user._id);
+            const blockedIds = req.user.blockedUsers || [];
+            const excludeUserIds = [...blockedIds, ...blockerIds];
+
+            if (excludeUserIds.length > 0) {
+                filter = {
+                    ...filter,
+                    author: { $nin: excludeUserIds },
+                };
+            }
+        }
+
         const posts = await Post.aggregate([
-            { $match: { createdAt: { $gte: oneWeekAgo } } },
-            { $addFields: { likesCount: { $size: "$likes" } } },
-            { $sort: { likesCount: -1, createdAt: -1 } },
-            { $limit: 10 },
+            { $match: filter },
+            {
+                $addFields: {
+                    likesCount: { $size: "$likes" },
+                    commentsCount: { $ifNull: ["$commentsCount", 0] },
+                    sharesCount: { $ifNull: ["$sharesCount", 0] },
+                },
+            },
+            {
+                $addFields: {
+                    engagementScore: {
+                        $add: [
+                            { $multiply: ["$likesCount", 4] },
+                            { $multiply: ["$commentsCount", 3] },
+                            { $multiply: ["$sharesCount", 2] },
+                        ],
+                    },
+                },
+            },
+            { $sort: { engagementScore: -1, createdAt: -1 } },
+            { $limit: limit },
             { $lookup: { from: "users", localField: "author", foreignField: "_id", as: "author" } },
             { $unwind: "$author" },
-            { $project: { "author.password": 0, "author.email": 0 } }
+            {
+                $project: {
+                    engagementScore: 0,
+                    "author.password": 0,
+                    "author.email": 0,
+                },
+            }
         ]);
         res.status(200).json({
             success: true,
@@ -196,15 +479,55 @@ export const getTopPostsOfMonth = async (req, res) => {
     try {
         const oneMonthAgo = new Date();
         oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
-        
+
+        let filter = { createdAt: { $gte: oneMonthAgo } };
+
+        if (req.user) {
+            const currentUserId = req.user._id || req.user.id;
+            const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
+            const blockerIds = blockers.map((user) => user._id);
+            const blockedIds = req.user.blockedUsers || [];
+            const excludeUserIds = [...blockedIds, ...blockerIds];
+
+            if (excludeUserIds.length > 0) {
+                filter = {
+                    ...filter,
+                    author: { $nin: excludeUserIds },
+                };
+            }
+        }
+
         const posts = await Post.aggregate([
-            { $match: { createdAt: { $gte: oneMonthAgo } } },
-            { $addFields: { likesCount: { $size: "$likes" } } },
-            { $sort: { likesCount: -1, createdAt: -1 } },
-            { $limit: 10 },
+            { $match: filter },
+            {
+                $addFields: {
+                    likesCount: { $size: "$likes" },
+                    commentsCount: { $ifNull: ["$commentsCount", 0] },
+                    sharesCount: { $ifNull: ["$sharesCount", 0] },
+                },
+            },
+            {
+                $addFields: {
+                    engagementScore: {
+                        $add: [
+                            { $multiply: ["$likesCount", 4] },
+                            { $multiply: ["$commentsCount", 3] },
+                            { $multiply: ["$sharesCount", 2] },
+                        ],
+                    },
+                },
+            },
+            { $sort: { engagementScore: -1, createdAt: -1 } },
+            { $limit: 3 },
             { $lookup: { from: "users", localField: "author", foreignField: "_id", as: "author" } },
             { $unwind: "$author" },
-            { $project: { "author.password": 0, "author.email": 0 } }
+            {
+                $project: {
+                    engagementScore: 0,
+                    "author.password": 0,
+                    "author.email": 0,
+                },
+            },
         ]);
         
         res.status(200).json({
@@ -221,8 +544,14 @@ export const getTopPostsOfMonth = async (req, res) => {
 
 export const incrementShare = async (req, res) => {
     try {
+        const postId = req.params.id;
+        
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).json({ success: false, message: "Invalid post ID format" });
+        }
+
         const post = await Post.findByIdAndUpdate(
-            req.params.id,
+            postId,
             { $inc: { sharesCount: 1 } },
             { new: true }
         );

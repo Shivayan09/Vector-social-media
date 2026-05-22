@@ -2,7 +2,8 @@
 
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
-import { Bookmark, Heart, MessageCircle, HelpCircle, Hammer, Share2, MessagesSquare, MoreHorizontal, Trash2, Flag, Forward } from "lucide-react";
+import Image from "next/image";
+import { Bookmark, Heart, MessageCircle, HelpCircle, Hammer, Share2, MessagesSquare, MoreHorizontal, Trash2, Flag, Forward, Pencil } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
@@ -12,6 +13,12 @@ import LikesModal from "../modals/LikesModal";
 import { useRouter } from "next/navigation";
 import type { Post, ReportReason } from "@/lib/types";
 import { reportPost } from "@/lib/reportApi";
+import SkeletonLoader from "@/components/loaders/SkeletonLoader";
+import Linkify from "../ui/Linkify";
+import Avatar from "../ui/Avatar";
+import EditPostModal from "../modals/EditPostModal";
+import Portal from "../ui/Portal";
+
 
 type PostCardProps = {
     post: Post;
@@ -33,15 +40,50 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
     const [showLikesModal, setShowLikesModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    type PostLike = Post["likes"][number];
+    const currentUserLike =
+        userData?.id
+            ? {
+                _id: userData.id,
+                id: userData.id,
+                name: userData.name,
+                surname: userData.surname,
+                username: userData.username,
+                avatar: userData.avatar,
+            }
+            : null;
+    const getLikeUserId = (like: PostLike) => {
+        if (!like) return "";
+        return typeof like === "string" ? like : like._id;
+    };
+    const getUniqueLikes = (likes: Post["likes"]): Post["likes"] =>
+        Array.from(
+            new Map<string, PostLike>(
+                likes
+                    .filter((like): like is PostLike => Boolean(like))
+                    .map((like) => [getLikeUserId(like), like] as const)
+                    .filter((entry): entry is [string, PostLike] => Boolean(entry[0]))
+            ).values()
+        );
+    const uniqueLikes = getUniqueLikes(post.likes);
+    const likeCount = uniqueLikes.length;
 
     const isOwner = userData?.id === post?.author?._id;
-    const isLiked = post.likes?.some(like => 
-        typeof like === "object" ? like._id === userData?.id : like === userData?.id
-    );
+    const isLiked = uniqueLikes.some((like) => getLikeUserId(like) === userData?.id);
 
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
     const [likeAnimating, setLikeAnimating] = useState(false);
+    const [imageState, setImageState] = useState<{
+        src: string | null;
+        loaded: boolean;
+        failed: boolean;
+    }>({
+        src: post.image || null,
+        loaded: false,
+        failed: false,
+    });
 
     function timeAgo(dateString: string) {
         const now = new Date().getTime();
@@ -80,8 +122,8 @@ export default function PostCard({ post, setPost }: PostCardProps) {
             }
 
             const updatedLikes = isLiked
-                ? post.likes.filter(id => String(id) !== String(userData.id))
-                : [...post.likes, userData.id]; // ✅ now always string
+                ? uniqueLikes.filter((like) => getLikeUserId(like) !== userData.id)
+                : getUniqueLikes([...uniqueLikes, currentUserLike ?? userData.id]);
 
             // ✅ update local state safely
             if (setPost) {
@@ -129,6 +171,16 @@ export default function PostCard({ post, setPost }: PostCardProps) {
         await reportPost(post._id, reason, details);
     };
 
+    const handlePostUpdate = (updatedPost: Post) => {
+        if (setPost) {
+            setPost(updatedPost);
+        } else {
+            setPosts(prevPosts =>
+                prevPosts.map(p => p._id === updatedPost._id ? updatedPost : p)
+            );
+        }
+    };
+
     useEffect(() => {
         if (!menuOpen) return;
         const handleOutsideClick = (e: MouseEvent) => {
@@ -145,8 +197,36 @@ export default function PostCard({ post, setPost }: PostCardProps) {
         };
     }, [menuOpen]);
 
+    useEffect(() => {
+        if (!post.image) {
+            return;
+        }
+
+        const timeoutId = setTimeout(() => {
+            setImageState((prev) => {
+                const currentSrc = post.image || null;
+                if (prev.src === currentSrc && (prev.loaded || prev.failed)) {
+                    return prev;
+                }
+
+                return {
+                    src: currentSrc,
+                    loaded: true,
+                    failed: true,
+                };
+            });
+        }, 8000);
+
+        return () => clearTimeout(timeoutId);
+    }, [post.image]);
+
     // prevent crash if author missing
     if (!post?.author) return null;
+
+    const isCurrentImageLoaded =
+        imageState.src === (post.image || null) && imageState.loaded;
+    const isCurrentImageFailed =
+        imageState.src === (post.image || null) && imageState.failed;
 
     const handleShare = async (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -195,7 +275,11 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                 <div className="flex items-center flex-wrap sm:justify-between w-[90%]">
                     <div className="flex items-center gap-2">
                     <div className="h-8 md:h-12 w-8 md:w-12 rounded-full transition-all duration-200" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
-                        <img alt={post.author?.name || "Post author"} src={post?.author?.avatar || "/default-avatar.png"} className="h-full w-full rounded-full object-cover" />
+                        <Avatar 
+                            src={post.author?.avatar} 
+                            alt={post.author?.name || "Post author"} 
+                            className="h-full w-full" 
+                        />
                     </div>
                     <span className="ml-1 font-semibold text-foreground transition-all duration-200 hover:text-blue-500" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>{post?.author?.name}</span>
                     <span className="surface-text-muted text-[0.9rem] transition-all duration-200 hover:text-foreground" onClick={(e) => { e.stopPropagation(); openUserProfile(); }}>
@@ -203,14 +287,14 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                     </span>
                     </div>
                     <div className="w-full sm:w-auto">
-                    <p className="text-[0.9rem] font-semibold text-blue-500 flex items-center gap-1.5 truncate">
-                        Intent:
-                        {(() => {
-                            const Icon = post.intent ? intentIconMap[post.intent] : null;
-                            return Icon ? <Icon size={16} className="text-blue-500 mt-0.5" /> : null;
-                        })()}
-                        <span className="capitalize">{post.intent}</span>
-                    </p>
+                        <p className="text-[0.9rem] font-semibold text-blue-500 flex items-center gap-1.5 truncate">
+                            Intent:
+                            {(() => {
+                                const Icon = post.intent ? intentIconMap[post.intent] : null;
+                                return Icon ? <Icon size={16} className="text-blue-500 mt-0.5" /> : null;
+                            })()}
+                            <span className="capitalize">{post.intent}</span>
+                        </p>
                     </div>
                 </div>
 
@@ -220,12 +304,38 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                     </button>
 
                     {menuOpen && (
-                        <div className="absolute overflow-clip top-0 right-0 w-30 bg-white border border-black/10 rounded-md shadow-lg z-50">
-                            <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-blue-500 transition-all duration-300 hover:bg-black/3 dark:hover:bg-white/5"
-                                onClick={handleShare}>
-                                <Share2 size={14} />
-                                Share post
-                            </button>
+                        <div className="absolute overflow-clip top-0 right-0 w-30 bg-background border border-border rounded-md shadow-lg z-50">
+                            <button
+    className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-black/3 dark:hover:bg-white/5"
+    onClick={handleShare}
+>
+    <Forward size={14} />
+    Share post
+</button>
+                            {!isOwner && (
+<button
+className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-black/3 dark:hover:bg-white/5"
+onClick={(e) => {
+e.stopPropagation();
+setMenuOpen(false);
+setShowReportModal(true);
+}}
+> <Flag size={14} />
+Report post </button>
+)}
+
+                            {isOwner && (
+                                <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-black/3 dark:hover:bg-white/5"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setMenuOpen(false);
+                                        setShowEditModal(true);
+                                    }}>
+                                    <Pencil size={14} />
+                                    Edit post
+                                </button>
+                            )}
+
                             {isOwner && (
                                 <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-black/3 dark:hover:bg-white/5"
                                     onClick={(e) => {
@@ -237,15 +347,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                                     Delete post
                                 </button>
                             )}
-                            <button className="w-full cursor-pointer flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-black/3 dark:hover:bg-white/5"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setMenuOpen(false);
-                                    setShowReportModal(true);
-                                }}>
-                                <Flag size={14} />
-                                Report post
-                            </button>
+                           
                         </div>
                     )}
                 </div>
@@ -253,13 +355,51 @@ export default function PostCard({ post, setPost }: PostCardProps) {
 
             {post.content && (
                 <p className="mt-2 mb-3 p-1 text-[0.9rem] text-foreground md:text-[1.1rem]">
-                    {post.content}
+                    <Linkify text={post.content} />
                 </p>
             )}
 
             {post.image && (
-                <div className="w-full mb-4 rounded-xl overflow-hidden border border-white/10 max-h-125">
-                    <img src={post.image} alt="Post attachment" className="w-full h-full object-cover" />
+                <div className="relative w-full mb-4 rounded-xl overflow-hidden border border-white/10 max-h-125">
+                    {!isCurrentImageLoaded && !isCurrentImageFailed && (
+                        <div className="absolute inset-0 z-10">
+                            <SkeletonLoader
+                                count={1}
+                                height="h-[500px]"
+                                className="w-full"
+                            />
+                        </div>
+                    )}
+
+                    {!isCurrentImageFailed ? (
+                        <Image
+                            key={post.image}
+                            src={post.image}
+                            alt="Post attachment"
+                            width={1200}
+                            height={800}
+                            onLoad={() =>
+                                setImageState({
+                                    src: post.image || null,
+                                    loaded: true,
+                                    failed: false,
+                                })
+                            }
+                            onError={() => {
+                                setImageState({
+                                    src: post.image || null,
+                                    loaded: true,
+                                    failed: true,
+                                });
+                            }}
+                            className={`w-full h-full object-cover transition-opacity duration-200 ${isCurrentImageLoaded ? "opacity-100" : "opacity-0"
+                                }`}
+                        />
+                    ) : (
+                        <div className="flex h-60 items-center justify-center bg-black/5 px-4 text-center text-sm text-muted-foreground dark:bg-white/5">
+                            Failed to load image
+                        </div>
+                    )}
                 </div>
             )}
             <div className="flex w-full gap-x-2 border-t border-border/80 pt-3 text-foreground sm:justify-between">
@@ -278,7 +418,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                             <Heart className={`h-4.5 md:h-5 cursor-pointer transition-transform duration-300 hover:text-blue-500 ${isLiked ? "text-blue-500" : ""} ${likeAnimating ? "scale-135" : "scale-100"}`} fill={isLiked ? "currentColor" : "none"} />
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); setShowLikesModal(true) }} className="cursor-pointer text-sm hover:text-blue-500">
-                            {post.likes.length} {post.likes.length === 1 ? 'Like' : 'Likes'}
+                            {likeCount} {likeCount === 1 ? 'Like' : 'Likes'}
                         </button>
                     </div>
                 </div>
@@ -306,8 +446,19 @@ export default function PostCard({ post, setPost }: PostCardProps) {
             <LikesModal
                 open={showLikesModal}
                 onClose={() => setShowLikesModal(false)}
-                likers={post.likes}
+                likers={uniqueLikes}
+                postId={post._id}
             />
+
+            {showEditModal && (
+                <Portal>
+                    <EditPostModal
+                        post={post}
+                        onClose={() => setShowEditModal(false)}
+                        onPostUpdated={handlePostUpdate}
+                    />
+                </Portal>
+            )}
         </div>
     );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { Home, Search, Bell, User, Plus, Menu, X, Settings, LogOut, Send } from "lucide-react";
 import CreateModal from "../modals/CreatePostModal";
@@ -9,8 +10,9 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import LogoutWarning from "../modals/LogoutWarning";
-import Themetoggle from "@/app/theme-toggle";
+import ThemeToggle from "@/app/theme-toggle";
 import type { Notification, Post } from "@/lib/types";
+import { socket } from "@/socket/socket";
 
 interface SidebarItemProps {
   icon: ReactNode;
@@ -22,7 +24,7 @@ interface SidebarItemProps {
 }
 
 export default function Sidebar() {
-  const [open, setOpen] = useState<boolean>(false);
+  const [open, setOpen] = useState<boolean>(true);
   const [createOpen, setCreateOpen] = useState<boolean>(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const pathname = usePathname();
@@ -32,13 +34,6 @@ export default function Sidebar() {
 
   const { isLoggedIn, setIsLoggedIn, setUserData, userData, setPosts } = useAppContext();
   const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      setOpen(false);
-    }, 0);
-    return () => window.clearTimeout(timeoutId);
-  }, [pathname]);
 
   const handleLogout = async () => {
     try {
@@ -78,9 +73,14 @@ export default function Sidebar() {
     const interval = window.setInterval(() => {
       void fetchUnreadCount();
     }, 10000);
+    const handleNotification = () => {
+      void fetchUnreadCount();
+    };
+    socket.on("notification:new", handleNotification);
     return () => {
       window.clearTimeout(timeoutId);
       window.clearInterval(interval);
+      socket.off("notification:new", handleNotification);
     };
   }, [fetchUnreadCount]);
 
@@ -90,93 +90,100 @@ export default function Sidebar() {
     <>
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className={`glass-surface-strong fixed z-50 rounded-lg p-2 md:hidden ${isMain ? "top-7.5 left-6" : "top-4 left-3"
-          }`}
+        className={`fixed z-60 p-2 rounded-lg ${open? "top-4 left-40 md:left-45":isMain ? "top-7.5 left-6" : "top-4 left-3"
+          } text-slate-900 dark:text-white transition-all duration-300 ease-in-out`}
         aria-label="Toggle menu"
       >
-        {open ? <X className="h-6 w-6 text-foreground" /> : <Menu className="h-6 w-6 text-foreground" />}
+        {open ? <X className="size-5 cursor-pointer" /> : <Menu className="size-7 cursor-pointer" />}
       </button>
 
       {open && (
         <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={() => setOpen(false)} />
       )}
 
-      <aside className={`sidebar-shell transform transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
+      <aside className={`fixed md:static top-0 left-0 z-50 h-screen overflow-hidden! hide-scrollbar text-slate-900 dark:text-white 
+  ${open ? "w-50 md:w-55" : "w-0 md:w-16"} 
+  border-r border-border shadow-lg flex flex-col gap-5 px-2 py-5 font-serif text-[1.1rem] bg-background
+  transform transition-all duration-300 ${open ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex w-full">
           <div className="flex justify-center ml-3">
-            <img
+            <Image
               alt={userData?.name || "User avatar"}
               src={userData?.avatar || "/default-avatar.png"}
+              width={48}
+              height={48}
               className="h-12 w-12 rounded-full object-cover border shrink-0"
             />
 
             <div className="flex flex-col ml-3">
               <p className="font-semibold text-[1.1rem]">Hello</p>
-              <p className="surface-text-muted">{userData?.name}</p>
+              <p className="text-slate-600 dark:text-gray-300">{userData?.name}!</p>
             </div>
           </div>
         </div>
 
-        <div className="w-full flex items-center gap-2 md:pl-5">
-          <Themetoggle />
+
+        <div className="flex-1 overflow-y-auto hide-scrollbar flex flex-col gap-5">
+          <SidebarItem
+            icon={<Home className="h-5 md:h-7" />}
+            label="Home"
+            href="/main"
+            active={pathname === "/main"}
+          />
+
+          <SidebarItem
+            icon={<Search className="h-5 md:h-7" />}
+            label="Explore"
+            href="/main/explore"
+            active={pathname === "/main/explore"}
+          />
+
+          <SidebarItem
+            icon={<Plus className="h-5 md:h-7" />}
+            label="Create"
+            onClick={() => setCreateOpen(true)}
+          />
+
+          <SidebarItem
+            icon={<Bell className="h-5 md:h-7" />}
+            label="Activity"
+            href="/main/activity"
+            active={pathname === "/main/activity"}
+            unreadCount={unreadCount}
+          />
+
+          <SidebarItem
+            icon={<Send className="h-5 md:h-7" />}
+            label="Messages"
+            href="/main/chat"
+            active={pathname === "/main/chat"}
+          />
+
+          <SidebarItem
+            icon={<User className="h-5 md:h-7" />}
+            label="Profile"
+            href={`/main/user/${userData?.username}`}
+            active={pathname === `/main/user/${userData?.username}`}
+          />
+
+          <SidebarItem
+            icon={<Settings className="h-5 md:h-7" />}
+            label="Settings"
+            href="/main/settings"
+            active={pathname === "/main/settings"}
+          />
         </div>
 
-        <SidebarItem
-          icon={<Home className="h-5 md:h-7" />}
-          label="Home"
-          href="/main"
-          active={pathname === "/main"}
-        />
-
-        <SidebarItem
-          icon={<Search className="h-5 md:h-7" />}
-          label="Explore"
-          href="/main/explore"
-          active={pathname === "/main/explore"}
-        />
-
-        <SidebarItem
-          icon={<Plus className="h-5 md:h-7" />}
-          label="Create"
-          onClick={() => setCreateOpen(true)}
-        />
-
-        <SidebarItem
-          icon={<Bell className="h-5 md:h-7" />}
-          label="Activity"
-          href="/main/activity"
-          active={pathname === "/main/activity"}
-          unreadCount={unreadCount}
-        />
-
-        <SidebarItem
-          icon={<Send className="h-5 md:h-7" />}
-          label="Messages"
-          href="/main/chat"
-          active={pathname === "/main/chat"}
-        />
-
-        <SidebarItem
-          icon={<User className="h-5 md:h-7" />}
-          label="Profile"
-          href={`/main/user/${userData?.username}`}
-          active={pathname === `/main/user/${userData?.username}`}
-        />
-
-        <SidebarItem
-          icon={<Settings className="h-5 md:h-7" />}
-          label="Settings"
-          href="/main/settings"
-          active={pathname === "/main/settings"}
-        />
-
-        <p
-          className="sidebar-item mt-auto mr-auto h-10 items-center pl-2 md:pl-5"
-          onClick={() => setLogoutOpen(true)}
-        >
-          <LogOut className="sidebar-icon opacity-60" />
-          {isLoggedIn ? "Log out" : "Log in"}
-        </p>
+        <div className="mt-auto flex items-center justify-between w-full pr-2 pt-4 border-t border-border/50">
+          <p
+            className="flex items-center justify-center gap-2 h-10 px-4 rounded-lg cursor-pointer transition-all duration-300 hover:bg-black/10 text-slate-700 hover:text-slate-900 dark:text-white dark:hover:text-white/70"
+            onClick={() => setLogoutOpen(true)}
+          >
+            <LogOut className="opacity-60" />
+            {isLoggedIn ? "Log out" : "Log in"}
+          </p>
+          <ThemeToggle />
+        </div>
       </aside>
 
       {logoutOpen && (
@@ -194,7 +201,7 @@ export default function Sidebar() {
             setPosts((prev) => [post, ...prev]);
           }}
         />
-      )}
+      )} 
     </>
   );
 }
@@ -202,8 +209,8 @@ export default function Sidebar() {
 function SidebarItem({ icon, label, href, active, onClick, unreadCount = 0 }: SidebarItemProps) {
   if (onClick) {
     return (
-      <button onClick={onClick} className="sidebar-item">
-        <span className="sidebar-icon h-4 md:h-6">
+      <button onClick={onClick} className="flex gap-2 cursor-pointer transition-all duration-200 p-2 rounded-lg w-full md:pl-5 text-slate-700 hover:bg-black/10 hover:text-slate-900 dark:text-white dark:hover:bg-blue-400/20 dark:hover:text-white/70">
+        <span className="h-4 md:h-6 text-slate-500 dark:text-white/50">
           {icon}
         </span>
         {label}
@@ -214,11 +221,11 @@ function SidebarItem({ icon, label, href, active, onClick, unreadCount = 0 }: Si
   return (
     <Link
       href={href!}
-      className={`${active ? "sidebar-item-active" : "sidebar-item"} ${active
-        ? ""
-        : ""
+      className={`relative flex gap-2 cursor-pointer transition-all duration-200 p-2 rounded-lg w-full md:pl-5 ${active
+        ? "bg-blue-500 text-white"
+        : "text-slate-700 hover:bg-black/10 hover:text-slate-900 dark:text-white dark:hover:bg-blue-400/20 dark:hover:text-white/70"
         }`}>
-      <span className={`h-4 md:h-6 ${active ? "sidebar-icon" : "sidebar-icon"}`}>
+      <span className={`h-4 md:h-6 ${active ? "text-white" : "text-slate-500 dark:text-white/50"}`}>
         {icon}
       </span>
       {label}

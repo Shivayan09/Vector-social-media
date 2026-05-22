@@ -2,26 +2,73 @@
 
 import { X } from "lucide-react";
 import { createPortal } from "react-dom";
+import { useEffect, useMemo, useState } from "react";
+import axios from "axios";
 import { useMounted } from "@/lib/useMounted";
-import { useAppContext } from "@/context/AppContext";
 import UserRow from "../profile/UserRow";
-import type { UserSummary } from "@/lib/types";
+import type { Post, UserSummary } from "@/lib/types";
 
 type LikesModalProps = {
   open: boolean;
   onClose: () => void;
   likers: (string | UserSummary)[];
+  postId: string;
 };
 
-export default function LikesModal({ open, onClose, likers }: LikesModalProps) {
+export default function LikesModal({ open, onClose, likers, postId }: LikesModalProps) {
   const mounted = useMounted();
-  const { userData } = useAppContext();
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
+  const [resolvedLikers, setResolvedLikers] = useState<UserSummary[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  // Backend always populates likes with full user objects (username, name, avatar, _id)
-  // Filter ensures we only render valid user objects, ignoring any legacy string IDs
-  const userLikers = likers.filter(
-    (liker) => typeof liker === "object"
-  ) as UserSummary[];
+  const fallbackLikers = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          likers
+            .filter(
+              (liker): liker is UserSummary =>
+                typeof liker === "object" && liker !== null && "_id" in liker
+            )
+            .map((liker) => [liker._id, liker])
+        ).values()
+      ),
+    [likers]
+  );
+
+  useEffect(() => {
+    if (!open || !postId) return;
+
+    const fetchLikers = async () => {
+      try {
+        setLoading(true);
+        const { data } = await axios.get<Post>(`${BACKEND_URL}/api/posts/${postId}`, {
+          withCredentials: true,
+        });
+
+        const populatedLikers = Array.from(
+          new Map(
+            (data.likes || [])
+              .filter(
+                (liker): liker is UserSummary =>
+                  typeof liker === "object" && liker !== null && "_id" in liker
+              )
+              .map((liker) => [liker._id, liker])
+          ).values()
+        );
+
+        setResolvedLikers(populatedLikers);
+      } catch {
+        setResolvedLikers(fallbackLikers);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void fetchLikers();
+  }, [BACKEND_URL, fallbackLikers, open, postId]);
+
+  const userLikers = resolvedLikers.length > 0 ? resolvedLikers : fallbackLikers;
 
   if (!mounted) return null;
 
@@ -49,7 +96,9 @@ export default function LikesModal({ open, onClose, likers }: LikesModalProps) {
           </button>
         </div>
 
-        {userLikers.length === 0 ? (
+        {loading ? (
+          <p className="py-8 text-center text-gray-500">Loading likes...</p>
+        ) : userLikers.length === 0 ? (
           <p className="text-center text-gray-500 py-8">No likes yet</p>
         ) : (
           <div className="max-h-96 overflow-y-auto">

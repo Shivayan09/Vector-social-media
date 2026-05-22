@@ -1,6 +1,7 @@
 "use client";
 
 import { Search, UserPlus, X } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
@@ -14,6 +15,8 @@ type SuggestedUser = {
   username: string;
   bio?: string;
   avatar?: string;
+  isFollowedByCurrentUser?: boolean;
+  isRequestedByCurrentUser?: boolean;
 };
 
 type User = {
@@ -21,29 +24,49 @@ type User = {
   name: string;
   username?: string;
   avatar?: string;
+  isFollowedByCurrentUser?: boolean;
+  isRequestedByCurrentUser?: boolean;
+};
+
+
+
+type SuggestionsResponse = {
+  users?: SuggestedUser[];
+};
+
+type SearchResponse = {
+  users?: User[];
 };
 
 export default function ActivitySidebar() {
   const [open, setOpen] = useState(false);
   const [users, setUsers] = useState<SuggestedUser[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<User[]>([]);
   const [searching, setSearching] = useState(false);
-
   const wrapperRef = useRef<HTMLDivElement>(null);
-
   const { userData } = useAppContext();
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
   const router = useRouter();
 
+
   useEffect(() => {
+    if (!userData?.id) {
+      setUsers([]);
+      setLoading(false);
+      return;
+    }
+
     const fetchUsers = async () => {
       try {
-        const res = await axios.get(`${BACKEND_URL}/api/users/suggestions`, { withCredentials: true });
-        setUsers(res.data.users);
+        setLoading(true);
+        const res = await axios.get<SuggestionsResponse>(
+          `${BACKEND_URL}/api/users/suggestions`,
+          { withCredentials: true }
+        );
+        setUsers(res.data.users || []);
       } catch (err) {
         console.error("Failed to fetch users:", err);
       } finally {
@@ -51,9 +74,15 @@ export default function ActivitySidebar() {
       }
     };
     fetchUsers();
-  }, [BACKEND_URL]);
+  }, [BACKEND_URL, query, userData?.id]);
 
   useEffect(() => {
+    if (!userData?.id) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+
     const delay = setTimeout(async () => {
       if (!query.trim()) {
         setResults([]);
@@ -61,8 +90,11 @@ export default function ActivitySidebar() {
       }
       try {
         setSearching(true);
-        const res = await axios.get(`${BACKEND_URL}/api/users/search?query=${query}`, { withCredentials: true });
-        setResults(res.data.users);
+        const res = await axios.get<SearchResponse>(
+          `${BACKEND_URL}/api/users/search?query=${query}`,
+          { withCredentials: true }
+        );
+        setResults(res.data.users || []);
       } catch (err) {
         console.error("Search failed:", err);
       } finally {
@@ -70,7 +102,7 @@ export default function ActivitySidebar() {
       }
     }, 400);
     return () => clearTimeout(delay);
-  }, [query, BACKEND_URL]);
+  }, [BACKEND_URL, query, userData?.id]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -86,8 +118,6 @@ export default function ActivitySidebar() {
       document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredUsers = users;
-
   const handleClick = (username?: string) => {
     if (!username) {
       return;
@@ -95,6 +125,15 @@ export default function ActivitySidebar() {
     router.push(`/main/user/${username}`);
   };
 
+  // 1. Search Results: Only hide the current user (so people can still search for pending users)
+  const filteredSearchResults = results.filter(
+    (user) => user._id !== userData?.id
+  );
+
+  // 2. Suggestions: Hide the current user AND users with pending requests
+  const filteredUsers = users.filter(
+    (user) => user._id !== userData?.id && !user.isRequestedByCurrentUser
+  );
   return (
     <>
       <button onClick={() => setOpen(true)} className="fixed top-4 right-4 z-50 rounded-full bg-blue-500 p-2 text-white shadow-lg lg:hidden">
@@ -130,15 +169,16 @@ export default function ActivitySidebar() {
           ) : query.trim() ? (
             searching ? (
               <p className="surface-text-muted text-sm">Searching...</p>
-            ) : results.length === 0 ? (
+            ) : filteredSearchResults.length === 0 ? (
               <p className="surface-text-muted text-sm">No users found.</p>
             ) : (
-              results.filter((user) => user._id !== userData?.id).map((user) => {
-                const isFollowing = userData?.following?.includes(user._id.toString()) ?? false;
+              filteredSearchResults.map((user) => {
+                const followsYou =
+                  !!userData?.followers?.includes(user._id);
                 return (
                   <div key={user._id} className="flex items-center gap-2">
                     <div className="h-12 w-12 rounded-full overflow-hidden">
-                      <img src={user.avatar || "/default-avatar.png"} alt={user.name} className="h-full w-full object-cover" />
+                      <Image src={user.avatar || "/default-avatar.png"} alt={user.name} width={48} height={48} className="h-full w-full object-cover" />
                     </div>
                     <div className="flex flex-col w-30">
                       <p className="text-[0.9rem] truncate">{user.name}</p>
@@ -148,7 +188,11 @@ export default function ActivitySidebar() {
                     </div>
                     <FollowButton
                       userId={user._id}
-                      isFollowing={isFollowing}
+                      isFollowing={user.isFollowedByCurrentUser ?? false}
+                      isRequested={user.isRequestedByCurrentUser ?? false}
+                      isFollowBack={
+                        !(user.isFollowedByCurrentUser ?? false) && followsYou
+                      }
                     />
                   </div>
                 );
@@ -158,11 +202,12 @@ export default function ActivitySidebar() {
             <p className="surface-text-muted text-sm">No users found.</p>
           ) : (
             filteredUsers.map((suggestedUser) => {
-              const isFollowing = userData?.following?.includes(suggestedUser._id.toString()) ?? false;
+              const followsYou =
+                !!userData?.followers?.includes(suggestedUser._id);
               return (
                 <div key={suggestedUser._id} className="flex items-center gap-2">
                   <div className="h-12 w-12 rounded-full overflow-hidden">
-                    <img src={suggestedUser.avatar || "/default-avatar.png"} alt={suggestedUser.name} className="h-full w-full object-cover" />
+                    <Image src={suggestedUser.avatar || "/default-avatar.png"} alt={suggestedUser.name} width={48} height={48} className="h-full w-full object-cover" />
                   </div>
 
                   <div className="flex flex-col w-30">
@@ -176,7 +221,11 @@ export default function ActivitySidebar() {
 
                   <FollowButton
                     userId={suggestedUser._id}
-                    isFollowing={isFollowing}
+                    isFollowing={suggestedUser.isFollowedByCurrentUser ?? false}
+                    isRequested={suggestedUser.isRequestedByCurrentUser ?? false}
+                    isFollowBack={
+                      !(suggestedUser.isFollowedByCurrentUser ?? false) && followsYou
+                    }
                   />
                 </div>
               );

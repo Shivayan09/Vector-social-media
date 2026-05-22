@@ -1,14 +1,40 @@
 import Message from "../models/message.model.js";
 import Conversation from "../models/conversation.model.js";
 import Notification from "../models/notification.model.js";
+import User from "../models/user.model.js";
 import { getIO, onlineUsers } from "../socket/socket.js";
 
 export const getMessages = async (req, res) => {
   try {
+    const { conversationId } = req.params;
 
-    const messages = await Message.find({
-      conversation: req.params.conversationId,
-    })
+    // Verify the requesting user is a participant in this conversation
+    const conversation = await Conversation.findOne({
+      _id: conversationId,
+      participants: req.user._id,
+    });
+
+    if (!conversation) {
+      return res.status(403).json({ message: "Not a participant in this conversation" });
+    }
+
+    // Re-verify block status
+    const otherParticipant = conversation.participants.find(
+      p => p.toString() !== req.user._id.toString()
+    );
+    if (otherParticipant) {
+      const otherUser = await User.findById(otherParticipant).select("blockedUsers");
+      const isBlocked = req.user.blockedUsers?.some(
+        id => id.toString() === otherParticipant.toString()
+      ) || otherUser?.blockedUsers?.some(
+        id => id.toString() === req.user._id.toString()
+      );
+      if (isBlocked) {
+        return res.status(403).json({ message: "Action forbidden due to block status" });
+      }
+    }
+
+    const messages = await Message.find({ conversation: conversationId })
       .populate("sender", "username name avatar")
       .sort({ createdAt: 1 });
 
@@ -34,6 +60,29 @@ export const sendMessage = async (req, res) => {
       return res.status(404).json({ message: "Conversation not found" });
     }
 
+    const isSenderParticipant = conversation.participants.some(
+      (id) => id.toString() === req.user._id.toString()
+    );
+    if (!isSenderParticipant) {
+      return res.status(403).json({ message: "Not a participant in this conversation" });
+    }
+
+    const receiverId = conversation.participants.find(
+      (id) => id.toString() !== req.user._id.toString()
+    );
+
+    if (receiverId) {
+      const receiver = await User.findById(receiverId);
+      if (!receiver) {
+        return res.status(404).json({ message: "Recipient not found" });
+      }
+      const isBlocked = req.user.blockedUsers?.some(id => id.toString() === receiverId.toString()) ||
+                        receiver.blockedUsers?.some(id => id.toString() === req.user._id.toString());
+      if (isBlocked) {
+        return res.status(403).json({ message: "Action forbidden due to block status" });
+      }
+    }
+
     const message = await Message.create({
       conversation: conversationId,
       sender: req.user._id,
@@ -46,20 +95,22 @@ export const sendMessage = async (req, res) => {
       "username name avatar"
     );
 
-    const receiverId = conversation.participants.find(
-      (id) => id.toString() !== req.user._id.toString()
-    );
-
     if (receiverId) {
 
-      await Notification.create({
+      const notification = await Notification.create({
         recipient: receiverId,
         sender: req.user._id,
         type: "message",
         conversation: conversationId,
       });
-
       const io = getIO();
+      const notificationSocket = onlineUsers.get(receiverId.toString());
+      if (notificationSocket) {
+        io.to(notificationSocket).emit("notification:new", {
+          notificationId: notification._id,
+          type: notification.type,
+        });
+      }
       const receiverSocket = onlineUsers.get(receiverId.toString());
 
       if (receiverSocket) {
@@ -137,22 +188,60 @@ export const markConversationAsRead = async (req, res) => {
 
 export const deleteMessage = async (req, res) => {
   try {
+
     const message = await Message.findById(req.params.messageId);
+
     if (!message) {
-      return res.status(404).json({ message: "Message not found" });
+      return res.status(404).json({
+        message: "Message not found"
+      });
     }
+
     if (message.sender.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Not allowed" });
+      return res.status(403).json({
+        message: "Not allowed"
+      });
     }
-    await message.deleteOne();
+
+    if (message.isDeleted) {
+      return res.status(400).json({
+        message: "Message already deleted"
+      });
+    }
+
+    message.isDeleted = true;
+    message.deletedAt = new Date();
+
+    await message.save();
+
     const io = getIO();
-    io.emit("message_deleted", {
-      messageId: message._id,
-      conversationId: message.conversation,
+
+    // Emit only to participants of this conversation, not every connected client
+    const conversation = await Conversation.findById(message.conversation);
+    if (conversation) {
+      conversation.participants.forEach((participantId) => {
+        const socketId = onlineUsers.get(participantId.toString());
+        if (socketId) {
+          io.to(socketId).emit("message_deleted", {
+            messageId: message._id,
+            conversationId: message.conversation,
+          });
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Message deleted successfully"
     });
-    res.json({ success: true });
+
   } catch (error) {
+
     console.error("DELETE MESSAGE ERROR:", error);
-    res.status(500).json({ message: error.message });
+
+    res.status(500).json({
+      message: error.message
+    });
+
   }
 };

@@ -3,13 +3,15 @@
 import { Button } from "../ui/button";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { useTheme } from "next-themes";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import { GoogleLogin } from "@react-oauth/google";
 import type { GoogleCredentialResponseLite } from "@/lib/types";
+import { useMounted } from "@/lib/useMounted";
 
 export default function LoginForm() {
     const router = useRouter();
@@ -17,6 +19,11 @@ export default function LoginForm() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
+    const googleButtonRef = useRef<HTMLDivElement>(null);
+    const [googleButtonWidth, setGoogleButtonWidth] = useState(0);
+    const { resolvedTheme } = useTheme();
+    const mounted = useMounted();
+    const googleTheme = resolvedTheme === "dark" ? "filled_black" : "outline";
 
     const { isLoggedIn, refreshAuth } = useAppContext();
 
@@ -27,6 +34,26 @@ export default function LoginForm() {
             router.replace("/main");
         }
     }, [isLoggedIn, router]);
+
+    useEffect(() => {
+        const buttonContainer = googleButtonRef.current;
+        if (!buttonContainer) return;
+
+        const updateWidth = () => {
+            setGoogleButtonWidth(Math.floor(buttonContainer.getBoundingClientRect().width));
+        };
+
+        updateWidth();
+        if (typeof ResizeObserver === "undefined") {
+            window.addEventListener("resize", updateWidth);
+            return () => window.removeEventListener("resize", updateWidth);
+        }
+
+        const resizeObserver = new ResizeObserver(updateWidth);
+        resizeObserver.observe(buttonContainer);
+
+        return () => resizeObserver.disconnect();
+    }, []);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -74,24 +101,34 @@ export default function LoginForm() {
     };
 
     return (
-        <div className="form-card w-80 md:w-100">
-            <p className="form-title">
-                Welcome back!
-            </p>
+        <div className="form-card w-full max-w-md mx-auto">
+            <div className="mb-6 space-y-2">
+                <p className="form-title">
+                    Welcome back!
+                </p>
 
-            <p className="form-subtitle md:text-[1.1rem]">
-                Log in to get right back in!
-            </p>
+                <p className="form-subtitle md:text-[1.1rem]">
+                    Log in to get right back in!
+                </p>
+            </div>
 
             {/* GOOGLE BUTTON */}
-            <GoogleLogin
-                    onSuccess={handleGoogle}
-                    onError={() => toast.error("Google login failed")}
-                    theme="outline"
-                    size="medium"
+           <div ref={googleButtonRef} className="google-login-shell w-full overflow-hidden rounded-full transition-all duration-300">
+              {mounted ? (
+                <GoogleLogin
+                  key={googleTheme}
+                  onSuccess={handleGoogle}
+                  onError={() => toast.error("Google login failed")}
+                  theme={googleTheme}
+                  size="large"
+                  shape="pill"
+                  width={googleButtonWidth > 0 ? `${googleButtonWidth}` : undefined}
                 />
-
-            <div className="relative flex items-center justify-center mt-5">
+              ) : (
+                <div className="h-11 w-full rounded-full border border-border bg-card" />
+              )}
+            </div>
+            <div className="relative my-5 flex items-center justify-center">
                 <div className="form-divider"></div>
                 <span className="form-divider-text backdrop-blur-3xl">
                     or
@@ -138,17 +175,16 @@ export default function LoginForm() {
 
             <Button
                 disabled={loading}
-                className={`w-full mt-5 cursor-pointer dark:text-white ${
-                    loading
-                        ? "bg-blue-400"
-                        : "bg-blue-500 hover:bg-blue-600"
-                }`}
+                className={`mt-6 w-full cursor-pointer dark:text-white ${loading
+                    ? "bg-blue-400"
+                    : "bg-blue-500 hover:bg-blue-600"
+                    }`}
                 onClick={handleLogin}
             >
                 {loading ? "Logging in" : "Log in"}
             </Button>
 
-            <div className="flex items-center justify-between gap-2 mt-5 text-sm">
+            <div className="mt-5 flex items-center justify-between gap-2 text-sm">
                 <p className=" text-foreground">
                     Don&apos;t have an account?
                 </p>
@@ -161,7 +197,7 @@ export default function LoginForm() {
             </div>
 
             <p className="mt-4 text-center text-xs leading-6 surface-text-muted">
-                By Contunuing, you agree to Vector&apos;s{" "}
+                By Continuing, you agree to Vector&apos;s{" "}
                 <Link href="/terms" className="text-primary underline underline-offset-4">
                     Terms & Guidelines
                 </Link>

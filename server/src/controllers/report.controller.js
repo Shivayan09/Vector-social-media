@@ -1,6 +1,11 @@
 import Post from "../models/post.model.js";
 import Comment from "../models/comment.model.js";
 import Report from "../models/report.model.js";
+import Notification from "../models/notification.model.js";
+import { removePostById } from "./post.controller.js";
+import { getIO, onlineUsers } from "../socket/socket.js";
+
+const REPORT_THRESHOLD = 5;
 
 const VALID_REASONS = ["spam", "harassment", "hate_speech", "violence", "nudity", "misinformation", "other"];
 
@@ -39,6 +44,11 @@ export const createPostReport = async (req, res) => {
       return res.status(404).json({ success: false, message: "Post not found" });
     }
 
+    // Authors can't report their own post
+    if (post.author.toString() === reporterId) {
+      return res.status(400).json({ success: false, message: "You cannot report your own post" });
+    }
+
     const existingReport = await Report.findOne({
       targetType: "post",
       targetId: postId,
@@ -52,7 +62,7 @@ export const createPostReport = async (req, res) => {
       });
     }
 
-    const report = await Report.create({
+    await Report.create({
       targetType: "post",
       targetModel: "Post",
       targetId: postId,
@@ -61,10 +71,45 @@ export const createPostReport = async (req, res) => {
       details: details.trim(),
     });
 
+    // Count unique reporters for this post after saving
+    const reportCount = await Report.countDocuments({ targetType: "post", targetId: postId });
+
+    if (reportCount >= REPORT_THRESHOLD) {
+      const authorId = post.author;
+
+      // Delete post (handles cloudinary cleanup too)
+      await removePostById(postId);
+
+      // Clean up all reports for this post
+      await Report.deleteMany({ targetType: "post", targetId: postId });
+
+      // Notify the post author
+      const notification = await Notification.create({
+        recipient: authorId,
+        type: "post_removed_reported",
+        post: postId,
+      });
+
+      // Emit real-time notification if author is online
+      const authorSocketId = onlineUsers.get(authorId.toString());
+      if (authorSocketId) {
+        getIO().to(authorSocketId).emit("notification:new", {
+          notificationId: notification._id,
+          type: notification.type,
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Report submitted. Post has been removed due to multiple reports.",
+        removed: true,
+      });
+    }
+
     return res.status(201).json({
       success: true,
       message: "Report submitted",
-      report,
+      removed: false,
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

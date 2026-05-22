@@ -1,6 +1,7 @@
 "use client";
 
 import axios from "axios";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
@@ -12,6 +13,8 @@ import type { Comment } from "@/lib/types";
 import ReportPost from "../modals/ReportPost";
 import type { ReportReason } from "@/lib/types";
 import { reportComment } from "@/lib/reportApi";
+import Linkify from "../ui/Linkify";
+
 
 export default function CommentsSection({ postId }: { postId: string }) {
     const { userData } = useAppContext();
@@ -24,6 +27,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
     const [showReportModal, setShowReportModal] = useState(false);
     const [selectedComment, setSelectedComment] = useState<Comment | null>(null);
     const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+    const [visibleCount, setVisibleCount] = useState(5);
 
     function timeAgo(dateString: string) {
         const now = new Date().getTime();
@@ -106,16 +110,18 @@ export default function CommentsSection({ postId }: { postId: string }) {
     }
 
     return (
-        <div className="mt-3 rounded-b-xl border-t border-border/80 px-3 pt-3 pb-5 md:px-5">
+        <div className="mt-3 rounded-b-xl px-3 pt-4 pb-5 md:px-5">
+            <p className="text-[0.8rem] font-semibold uppercase tracking-wide surface-text-muted mb-4">
+                Comments {comments.length > 0 && `· ${comments.length}`}
+            </p>
             {userData && (
-                <div className="flex gap-2 my-4">
-                    <textarea value={text} onChange={(e) => setText(e.target.value)} onKeyDown={handleKeyDown} placeholder="Write a comment.." className="form-textarea mt-0 flex-1" rows={1} />
-                    <button disabled={!text.trim() || buttonLoading} onClick={handlePost} className="w-20 md:w-25 h-9 md:h-10 cursor-pointer bg-blue-500 text-white rounded-md disabled:opacity-50">
+                <div className="flex gap-2 mb-5">
+                    <textarea value={text} onChange={(e) => setText(e.target.value)} onKeyDown={handleKeyDown} placeholder="Write a comment.." className="form-textarea mt-0 flex-1" rows={2} />
+                    <button disabled={!text.trim() || buttonLoading} onClick={handlePost} className="w-20 md:w-25 h-9 md:h-10 cursor-pointer bg-blue-500 text-white text-sm font-medium rounded-md disabled:opacity-50 self-end">
                         Post
                     </button>
                 </div>
             )}
-
             <div className="flex flex-col">
                 {comments.length === 0 && (
                     <p className="surface-text-muted py-3 text-center text-[0.9rem]">
@@ -123,13 +129,13 @@ export default function CommentsSection({ postId }: { postId: string }) {
                     </p>
                 )}
 
-                {comments.map((c) => {
+                {comments.slice(0, visibleCount).map((c) => {
                     const isOwner =
                         String(c.author?._id) === String(userData?.id);
 
                     return (
-                        <div key={c._id} className="flex gap-3 py-3 px-2 rounded-lg">
-                            <img alt={c.author?.name || "Comment author"} src={c.author?.avatar || "/default-avatar.png"} className="h-8 w-8 md:h-9 md:w-9 object-cover rounded-full shrink-0"/>
+                        <div key={c._id} className="flex gap-3 py-3 px-2 rounded-lg border-b border-border/50 last:border-b-0">
+                            <Image alt={c.author?.name || "Comment author"} src={c.author?.avatar || "/default-avatar.png"} width={36} height={36} className="h-8 w-8 md:h-9 md:w-9 object-cover rounded-full shrink-0"/>
 
                             <div className="flex flex-col w-full">
 
@@ -190,9 +196,9 @@ export default function CommentsSection({ postId }: { postId: string }) {
                                     </div>
                                 </div>
 
-                                <p className="surface-text-muted text-[0.9rem] wrap-break-word">
-                                    {c?.content}
-                                </p>
+                                <div className="surface-text-muted text-[0.9rem] whitespace-pre-wrap break-words">
+                                    <Linkify text={c?.content || ""} />
+                                </div>
 
                                 <p className="text-[0.75rem] text-gray-500 mt-1">
                                     {timeAgo(c.createdAt)}
@@ -202,6 +208,15 @@ export default function CommentsSection({ postId }: { postId: string }) {
                         </div>
                     );
                 })}
+
+                {comments.length > visibleCount && (
+                    <button
+                        onClick={() => setVisibleCount(prev => prev + 5)}
+                        className="mt-3 w-full text-sm text-blue-500 hover:text-blue-600 font-medium transition"
+                    >
+                        Load more comments ({comments.length - visibleCount} remaining)
+                    </button>
+                )}
             </div>
 
             <DeleteWarning

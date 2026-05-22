@@ -1,7 +1,7 @@
 import User from "../models/user.model.js"
+import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "../validators/user.validator.js";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import validator from 'validator';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 
@@ -14,7 +14,7 @@ const sendResetEmail = async (email, token) => {
         },
     });
 
-    const resetLink = `http://localhost:3000/reset-password/${token}`;
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${token}`;
 
     const mailOptions = {
         from: process.env.EMAIL,
@@ -26,8 +26,29 @@ const sendResetEmail = async (email, token) => {
     await transporter.sendMail(mailOptions);
 };
 
+const getValidationMessage = (validationResult, fallbackMessage) => {
+    const firstIssue = validationResult?.error?.issues?.[0];
+    return firstIssue?.message || fallbackMessage;
+};
+
 export const register = async (req, res) => {
     try {
+        if (typeof req.body?.name !== "string" || !req.body.name.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Please enter your name!",
+            });
+        }
+
+        const validation = registerSchema.safeParse(req.body);
+
+        if (!validation.success) {
+            return res.status(400).json({
+                success: false,
+                message: getValidationMessage(validation, "Invalid registration data"),
+            });
+        }
+
         const {
             name,
             surname,
@@ -37,67 +58,14 @@ export const register = async (req, res) => {
             username,
             bio,
             description,
-        } = req.body;
+            isPrivate,
+        } = validation.data;
 
-        // basic validations
-        if (!name) {
-            return res.json({ success: false, message: "Please enter your name!" });
-        }
-
-        if (!email) {
-            return res.json({ success: false, message: "Please enter your email!" });
-        }
-
-        if (!validator.isEmail(email)) {
-            return res.json({ success: false, message: "Please enter a valid email!" });
-        }
-
-        if (!phoneNumber) {
-            return res.json({
-                success: false,
-                message: "Please enter your phone number!",
-            });
-        }
-
-        if (!validator.isMobilePhone(phoneNumber, "any")) {
-            return res.json({
-                success: false,
-                message: "Please enter a valid phone number!",
-            });
-        }
-
-        if (!password) {
-            return res.json({
-                success: false,
-                message: "Please enter a password!",
-            });
-        }
-
-        if (!username) {
-            return res.json({
-                success: false,
-                message: "Please enter a username!",
-            });
-        }
-
-        if (!bio) {
-            return res.json({
-                success: false,
-                message: "Please enter a bio!",
-            });
-        }
-
-        if (!description) {
-            return res.json({
-                success: false,
-                message: "Please enter a description!",
-            });
-        }
 
         // check existing email
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-            return res.json({
+            return res.status(409).json({
                 success: false,
                 message: "User already exists!",
             });
@@ -106,7 +74,7 @@ export const register = async (req, res) => {
         // check username
         const existingUsername = await User.findOne({ username });
         if (existingUsername) {
-            return res.json({
+            return res.status(409).json({
                 success: false,
                 message: "Username already taken!",
             });
@@ -123,6 +91,7 @@ export const register = async (req, res) => {
             username,
             bio,
             description,
+            isPrivate: isPrivate === true,
             isProfileComplete: true,
         });
 
@@ -153,51 +122,62 @@ export const register = async (req, res) => {
 };
 
 export const getMe = (req, res) => {
-    const user = req.user;
-    return res.status(200).json({
-        success: true,
-        user: {
-            id: user._id,
-            name: user.name,
-            surname: user.surname,
-            email: user.email,
-            username: user.username,
-            bio: user.bio,
-            description: user.description,
-            avatar: user.avatar,
-            followers: user.followers.map(id => id.toString()),
-            following: user.following.map(id => id.toString()),
-        },
-    });
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Not authenticated",
+            });
+        }
+        const user = req.user;
+        return res.status(200).json({
+            success: true,
+            user: {
+                id: user._id,
+                _id: user._id,
+                name: user.name,
+                surname: user.surname,
+                email: user.email,
+                username: user.username,
+                bio: user.bio,
+                description: user.description,
+                avatar: user.avatar,
+                isProfileComplete: user.isProfileComplete,
+                signupStep: user.signupStep,
+                followers: (user.followers || []).map(id => id.toString()),
+                following: (user.following || []).map(id => id.toString()),
+                isPrivate: user.isPrivate,
+                followRequests: (user.followRequests || []).map(id => id.toString()),
+                blockedUsers: (user.blockedUsers || []).map(id => id.toString()),
+            },
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
 };
 
 export const login = async (req, res) => {
-    const { username, password } = req.body;
-    if (!username) {
-        return res.json({
+    const validation = loginSchema.safeParse(req.body);
+
+    if (!validation.success) {
+        return res.status(400).json({
             success: false,
-            message: "Enter your username!"
-        })
+            message: getValidationMessage(validation, "Invalid login data"),
+        });
     }
-    if (!password) {
-        return res.json({
-            success: false,
-            message: "Enter your password!"
-        })
-    }
+
+    const { username, password } = validation.data;
+
     try {
         const user = await User.findOne({ username }).select("+password");
-        if (!user) {
-            return res.json({
+        const matched = user && await bcrypt.compare(password, user.password);
+        if (!user || !matched) {
+            return res.status(401).json({
                 success: false,
-                message: "User not found!"
-            })
-        }
-        const matched = await bcrypt.compare(password, user.password)
-        if (!matched) {
-            return res.json({
-                success: false,
-                message: "Incorrect password!"
+                message: "Invalid username or password."
             })
         }
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' })
@@ -242,10 +222,16 @@ export const logout = async (req, res) => {
 
 export const forgotPassword = async (req, res) => {
     try {
-        const { email } = req.body;
-        if (!email) {
-            return res.json({ success: false, message: "Please enter your email!" });
+        const validation = forgotPasswordSchema.safeParse(req.body);
+
+        if (!validation.success) {
+            return res.status(400).json({
+                success: false,
+                message: getValidationMessage(validation, "Invalid email"),
+            });
         }
+
+        const { email } = validation.data;
         
         const user = await User.findOne({ email });
         if (!user) {
@@ -253,9 +239,10 @@ export const forgotPassword = async (req, res) => {
         }
 
         const resetToken = crypto.randomBytes(32).toString('hex');
+        const hashedResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
         const resetTokenExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes
 
-        user.resetToken = resetToken;
+        user.resetToken = hashedResetToken;
         user.resetTokenExpiry = resetTokenExpiry;
         await user.save({ validateBeforeSave: false });
 
@@ -272,13 +259,20 @@ export const forgotPassword = async (req, res) => {
 
 export const resetPassword = async (req, res) => {
     try {
-        const { resetToken, newPassword } = req.body;
-        if (!resetToken || !newPassword) {
-            return res.json({ success: false, message: "Please provide token and new password!" });
+        const validation = resetPasswordSchema.safeParse(req.body);
+
+        if (!validation.success) {
+            return res.status(400).json({
+                success: false,
+                message: getValidationMessage(validation, "Invalid password reset request"),
+            });
         }
 
+        const { resetToken, newPassword } = validation.data;
+        const hashedResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
         const user = await User.findOne({
-            resetToken,
+            resetToken: hashedResetToken,
             resetTokenExpiry: { $gt: Date.now() }
         });
 

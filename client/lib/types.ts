@@ -5,6 +5,13 @@ export type Intent =
   | "discuss"
   | "reflect";
 
+export type MutualFollower = {
+  _id: string;
+  name: string;
+  username: string;
+  avatar?: string;
+};
+
 export type UserSummary = {
   _id: string;
   id: string;
@@ -22,6 +29,14 @@ export type UserSummary = {
   following?: string[];
   followersCount?: number;
   followingCount?: number;
+  isPrivate?: boolean;
+  followRequests?: string[] | UserSummary[];
+  isFollowedByCurrentUser?: boolean;
+  isRequestedByCurrentUser?: boolean;
+  mutualFollowers?: MutualFollower[];
+  mutualFollowersCount?: number;
+  isBlockedByCurrentUser?: boolean;
+  isBlockedByTarget?: boolean;
 };
 
 export type Post = {
@@ -46,20 +61,28 @@ export type Comment = {
 export type Conversation = {
   _id: string;
   participants: UserSummary[];
+  lastMessage?: Message;
+  unreadCount?: number;
+  updatedAt?: string;
+  createdAt?: string;
 };
 
 export type Message = {
   _id: string;
   sender: UserSummary;
   content: string;
+
+  isDeleted?: boolean;
+  deletedAt?: string | null;
+
   createdAt: string;
   conversation: string;
 };
 
 export type Notification = {
   _id: string;
-  type: "follow" | "like" | "comment" | "message";
-  sender: UserSummary;
+  type: "follow" | "like" | "comment" | "message" | "follow_request" | "follow_request_accepted" | "post_removed_reported";
+  sender: UserSummary | null;
   post?: {
     _id: string;
   };
@@ -77,6 +100,7 @@ export type ProfileFormData = {
   phoneNumber: string;
   bio: string;
   description: string;
+  isPrivate: boolean;
 };
 
 export type GoogleCredentialResponseLite = {

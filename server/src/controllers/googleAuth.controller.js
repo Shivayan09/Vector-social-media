@@ -55,6 +55,7 @@ export const googleAuth = async (req, res) => {
 
       user = await User.create({
         googleId: sub,
+        provider: "google",
         email,
         name: given_name || name,
         surname: family_name || "",

@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useAppContext } from "@/context/AppContext";
-import { ArrowRight, Trash2 } from "lucide-react";
+import { ArrowRight, Search, Trash2 } from "lucide-react";
 import ConfirmModal from "@/components/modals/DeleteWarning";
 import { toast } from "react-toastify";
+import SkeletonLoader from "@/components/loaders/SkeletonLoader";
 import type { Conversation, UserSummary } from "@/lib/types";
 
 export default function ChatListPage() {
@@ -16,53 +18,44 @@ export default function ChatListPage() {
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [filteredConversations, setFilteredConversations] = useState<Conversation[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
+    const [allUserResults, setAllUserResults] = useState<UserSummary[]>([]);
     const [chatToDelete, setChatToDelete] = useState<Conversation | null>(null);
     const [hasMessages, setHasMessages] = useState(false);
     const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+    const [loading, setLoading] = useState(true);
 
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
     useEffect(() => {
         const fetchConversations = async () => {
-            const { data: allConvos } = await axios.get(
-                `${BACKEND_URL}/api/conversation`,
-                { withCredentials: true }
-            );
+            try {
+                setLoading(true);
+                const { data: validConvos } = await axios.get(
+                    `${BACKEND_URL}/api/conversation`,
+                    { withCredentials: true }
+                );
 
-            const results = await Promise.all(
-                allConvos.map(async (convo: Conversation) => {
-                    const { data: messages } = await axios.get(
-                        `${BACKEND_URL}/api/messages/${convo._id}`,
-                        { withCredentials: true }
-                    );
-                    return messages.length > 0 ? convo : null;
-                })
-            );
+                setConversations(validConvos);
 
-            const validConvos = results.filter(Boolean);
+                // Extract unread counts from response (already aggregated in backend)
+                const counts: Record<string, number> = {};
+                validConvos.forEach((convo: Conversation) => {
+                    counts[convo._id] = convo.unreadCount || 0;
+                });
 
-            setConversations(validConvos);
-
-            const unreadCountEntries = await Promise.all(
-                validConvos.map(async (convo: Conversation) => {
-                    try {
-                        const { data } = await axios.get(
-                            `${BACKEND_URL}/api/messages/${convo._id}/unread-count`,
-                            { withCredentials: true }
-                        );
-                        return [convo._id, data.unreadCount] as const;
-                    } catch {
-                        return [convo._id, 0] as const;
-                    }
-                })
-            );
-
-            const counts = Object.fromEntries(unreadCountEntries) as Record<string, number>;
-            setUnreadCounts(counts);
-            setFilteredConversations(validConvos);
+                setUnreadCounts(counts);
+                setFilteredConversations(validConvos);
+            } catch (error) {
+                console.error("Failed to fetch conversations:", error);
+                setConversations([]);
+                setFilteredConversations([]);
+                setUnreadCounts({});
+            } finally {
+                setLoading(false);
+            }
         };
 
-        if (userData?.id) fetchConversations();
+        if (userData?.id) void fetchConversations();
     }, [BACKEND_URL, userData]);
 
     useEffect(() => {
@@ -83,6 +76,48 @@ export default function ChatListPage() {
 
         setFilteredConversations(filtered);
     }, [searchTerm, conversations, userData]);
+
+    useEffect(() => {
+        if (!searchTerm.trim()) {
+            setAllUserResults([]);
+            return;
+        }
+
+        const timeout = setTimeout(async () => {
+            try {
+                const { data } = await axios.get(
+                    `${BACKEND_URL}/api/users/search?query=${encodeURIComponent(searchTerm)}`,
+                    { withCredentials: true }
+                );
+                const existingParticipantIds = new Set(
+                    conversations.flatMap((c) =>
+                        c.participants.map((p: UserSummary) => p._id)
+                    )
+                );
+                const newUsers = (data.users as UserSummary[]).filter(
+                    (u) => u._id !== userData?.id && !existingParticipantIds.has(u._id)
+                );
+                setAllUserResults(newUsers);
+            } catch {
+                setAllUserResults([]);
+            }
+        }, 300);
+
+        return () => clearTimeout(timeout);
+    }, [searchTerm, BACKEND_URL, conversations, userData]);
+
+    const handleNewUserClick = async (user: UserSummary) => {
+        try {
+            const { data } = await axios.post(
+                `${BACKEND_URL}/api/conversation`,
+                { receiverId: user._id },
+                { withCredentials: true }
+            );
+            router.push(`/main/chat/${data._id}`);
+        } catch (error) {
+            console.error("Failed to open chat", error);
+        }
+    };
 
     const handleDeleteClick = async (
         e: React.MouseEvent,
@@ -129,74 +164,121 @@ export default function ChatListPage() {
     };
 
     return (
-        <div className="flex w-full h-screen">
-            <div className="flex-1 h-screen overflow-y-auto hide-scrollbar">
+        <div className="chat-page-shell flex h-screen w-full overflow-hidden">
+            <div className="flex-1 overflow-y-auto hide-scrollbar">
+                <div className="chat-list-shell">
+                    <div className="mb-5">
+                        <h1 className="chat-list-title text-center md:text-left">
+                            Your chats
+                        </h1>
+                        <p className="chat-list-subtitle text-center md:text-left">
+                            Quiet, focused conversations that feel like part of Vector.
+                        </p>
+                    </div>
 
+                    <div className="relative mb-6">
+                        <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                        <input
+                            type="text"
+                            placeholder="Search chats..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="chat-search-input pl-11"
+                        />
+                    </div>
 
-                <h1 className="px-5 pt-3 text-xl font-bold text-foreground">
-                    Your chats
-                </h1>
-                <div className="p-5 pb-0">
-                    <input
-                        type="text"
-                        placeholder="Search chats..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="chat-search-input"
-                    />
-                </div>
-                <div className="flex flex-col p-5 gap-2">
-                    {filteredConversations.map((convo) => {
-                        const otherUser = convo.participants.find(
-                            (p: UserSummary) => p._id !== userData?.id
-                        );
+                <div className="flex flex-col gap-3">
+                    {loading ? (
+                        <SkeletonLoader count={5} height="h-16" />
+                    ) : filteredConversations.length > 0 ? (
+                        filteredConversations.map((convo) => {
+                            const otherUser = convo.participants.find(
+                                (p: UserSummary) => p._id !== userData?.id
+                            );
 
-                        return (
-                            <div
-                                key={convo._id}
-                                onClick={() =>
-                                    router.push(`/main/chat/${convo._id}`)
-                                }
-                                className="chat-list-item cursor-pointer"
-                            >
-                                <img
-                                    alt={otherUser?.name || "Chat user"}
-                                    src={
-                                        otherUser?.avatar ||
-                                        "/default-avatar.png"
+                            return (
+                                <div
+                                    key={convo._id}
+                                    onClick={() =>
+                                        router.push(`/main/chat/${convo._id}`)
                                     }
-                                    className="h-12 w-12 rounded-full object-cover"
-                                />
+                                    className="chat-list-item group cursor-pointer"
+                                >
+                                    <Image
+                                        alt={otherUser?.name || "Chat user"}
+                                        src={
+                                            otherUser?.avatar ||
+                                            "/default-avatar.png"
+                                        }
+                                        width={48}
+                                        height={48}
+                                        className="h-12 w-12 rounded-full object-cover ring-2 ring-background/70"
+                                    />
 
-                                <div>
-                                    <p className="font-semibold text-foreground">
-                                        {otherUser?.name}
-                                    </p>
-                                    <p className="surface-text-muted text-sm">
-                                        @{otherUser?.username}
-                                    </p>
-                                </div>
-
-                                <div className="w-full">
-                                    {unreadCounts[convo._id] > 0 && (
-                                        <div className="ml-auto w-6 mr-2 bg-red-500 text-white rounded-full h-6 flex items-center justify-center text-xs font-bold">
-                                            {unreadCounts[convo._id]}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between items-baseline">
+                                            <p className="truncate font-semibold text-foreground">
+                                                {otherUser?.name}
+                                            </p>
+                                            {convo.lastMessage && (
+                                                <span className="chat-list-meta ml-2">
+                                                    {new Date(convo.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            )}
                                         </div>
-                                    )}
+                                        <div className="flex justify-between items-center">
+                                            <p className="surface-text-muted truncate pr-2 text-sm">
+                                                {convo.lastMessage?.content || `@${otherUser?.username}`}
+                                            </p>
+                                            {unreadCounts[convo._id] > 0 && (
+                                                <div className="flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground shadow-sm">
+                                                    {unreadCounts[convo._id]}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <Trash2
+                                        onClick={(e) =>
+                                            handleDeleteClick(e, convo)
+                                        }
+                                        className="ml-2 text-foreground/35 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:scale-110 hover:text-red-500"
+                                        size={20}
+                                    />
+
+                                    <ArrowRight className="ml-1 text-foreground/35 transition-transform duration-200 group-hover:translate-x-1" />
                                 </div>
-
-                                <ArrowRight className="ml-auto opacity-70 text-foreground" />
-
-                                <Trash2
-                                    onClick={(e) =>
-                                        handleDeleteClick(e, convo)
-                                    }
-                                    className="ml-2 text-red-500 opacity-70 hover:opacity-100 hover:scale-110 transition-transform"
-                                    size={20}
-                                />
-                            </div>
-                        );
-                    })}
+                            );
+                        })
+                    ) : (
+                        <p className="chat-empty-state">No conversations found.</p>
+                    )}
+                    {allUserResults.length > 0 && (
+                        <>
+                            <p className="chat-list-meta px-1 pt-3">Other users</p>
+                            {allUserResults.map((user) => (
+                                <div
+                                    key={user._id}
+                                    onClick={() => handleNewUserClick(user)}
+                                    className="chat-other-user-card cursor-pointer"
+                                >
+                                    <Image
+                                        alt={user.name || "User"}
+                                        src={user.avatar || "/default-avatar.png"}
+                                        width={48}
+                                        height={48}
+                                        className="h-12 w-12 rounded-full object-cover ring-2 ring-background/70"
+                                    />
+                                    <div className="min-w-0">
+                                        <p className="truncate font-semibold text-foreground">{user.name}</p>
+                                        <p className="truncate text-sm surface-text-muted">@{user.username}</p>
+                                    </div>
+                                    <ArrowRight className="ml-auto opacity-60 text-foreground" />
+                                </div>
+                            ))}
+                        </>
+                    )}
+                </div>
                 </div>
             </div>
 

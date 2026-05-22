@@ -172,7 +172,7 @@
   }
 
   .auth-page {
-    @apply flex min-h-screen items-center justify-center px-4 py-10;
+    @apply flex max-h-screen items-center justify-center px-4 py-10 overflow-y-auto;
   }
 
   .glass-surface {
@@ -244,6 +244,21 @@
   .form-divider-text {
     @apply relative px-3 text-sm;
     color: var(--soft-text);
+  }
+
+  .google-login-shell {
+    background: transparent;
+  }
+
+  .google-login-shell > div,
+  .google-login-shell iframe {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .dark .google-login-shell {
+    background: var(--surface-strong);
   }
 
   .avatar-upload {
@@ -338,7 +353,7 @@
   }
 
   .chat-search-input {
-    @apply w-full rounded-xl px-3 py-2 text-foreground outline-none placeholder:text-muted-foreground;
+    @apply w-full rounded-2xl px-4 py-3 text-foreground outline-none placeholder:text-muted-foreground;
     background: color-mix(in srgb, var(--card) 88%, transparent);
     border: 1px solid var(--surface-border);
   }
@@ -346,7 +361,7 @@
   .chat-list-item {
     background: color-mix(in srgb, var(--surface) 92%, transparent);
     border: 1px solid var(--surface-border);
-    @apply flex items-center gap-3 rounded-xl p-4 text-foreground transition-all duration-200;
+    @apply flex items-center gap-4 rounded-[1.4rem] p-4 text-foreground transition-all duration-200;
   }
 
   .chat-list-item:hover {
@@ -354,19 +369,37 @@
     box-shadow: var(--surface-shadow);
   }
 
+  .chat-list-shell {
+    @apply px-4 pb-8 pt-4 md:px-6;
+  }
+
+  .chat-list-title {
+    @apply text-2xl font-semibold tracking-tight text-foreground;
+  }
+
+  .chat-list-subtitle {
+    color: var(--soft-text);
+    @apply mt-1 text-sm;
+  }
+
+  .chat-list-meta {
+    color: var(--soft-text);
+    @apply text-xs font-medium;
+  }
+
   .chat-bubble-self {
-    @apply relative max-w-[70%] rounded-2xl rounded-br-md px-4 py-2 text-white;
+    @apply relative max-w-[82%] rounded-[1.35rem] rounded-br-md px-4 py-3 text-white md:max-w-[72%];
     background: var(--primary);
   }
 
   .chat-bubble-other {
-    @apply relative max-w-[70%] rounded-2xl rounded-bl-md px-4 py-2 text-foreground;
+    @apply relative max-w-[82%] rounded-[1.35rem] rounded-bl-md px-4 py-3 text-foreground md:max-w-[72%];
     background: color-mix(in srgb, var(--card) 92%, transparent);
     border: 1px solid var(--surface-border);
   }
 
   .chat-date-pill {
-    @apply rounded-full px-3 py-1 text-xs;
+    @apply rounded-full px-3 py-1 text-[11px] font-medium;
     background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
     border: 1px solid var(--surface-border);
     color: var(--soft-text);
@@ -375,13 +408,45 @@
   .chat-composer {
     background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
     border-top: 1px solid var(--surface-border);
-    @apply flex gap-2 px-7 pb-6 pt-4 backdrop-blur-3xl;
+    @apply flex gap-3 px-4 pb-4 pt-4 backdrop-blur-3xl md:px-6 md:pb-5;
   }
 
   .chat-composer-input {
-    @apply flex-1 rounded-xl px-3 py-2 text-foreground outline-none placeholder:text-muted-foreground disabled:opacity-50;
+    @apply flex-1 rounded-2xl px-4 py-3 text-foreground outline-none placeholder:text-muted-foreground disabled:opacity-50;
     background: color-mix(in srgb, var(--card) 88%, transparent);
     border: 1px solid var(--surface-border);
+  }
+
+  .chat-primary-button {
+    background: var(--primary);
+    @apply rounded-2xl px-5 py-3 font-medium text-white transition-all duration-200;
+  }
+
+  .chat-primary-button:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .chat-primary-button:disabled {
+    @apply cursor-not-allowed opacity-60;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .chat-empty-state {
+    color: var(--soft-text);
+    @apply px-4 py-10 text-center;
+  }
+
+  .chat-other-user-card {
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    border: 1px solid var(--surface-border);
+    @apply flex items-center gap-3 rounded-[1.2rem] p-4 transition-all duration-200;
+  }
+
+  .chat-other-user-card:hover {
+    transform: none;
+    border-color: var(--surface-border);
   }
 
   .settings-field {
@@ -396,7 +461,7 @@
 
   .settings-field-disabled {
     background: color-mix(in srgb, var(--surface) 92%, transparent);
-    color: color-mix(in srgb, var(--foreground) 70%, transparent);
+    color: color-mix(in srgb, var(--foreground) 82%, transparent);
     @apply cursor-not-allowed backdrop-blur-3xl;
   }
 
@@ -408,6 +473,117 @@
 
   .notification-card-unread {
     background: color-mix(in srgb, var(--accent) 60%, var(--surface) 40%);
+  }
+
+  /* ── Notification filter tab bar ── */
+  .notif-tab-bar {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--surface-border);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    margin-bottom: 1.25rem;
+  }
+
+  .notif-tab-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .notif-tab {
+    position: relative;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--soft-text);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.2s ease;
+    border: none;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+  }
+
+  .notif-tab:hover {
+    color: var(--foreground);
+  }
+
+  .notif-tab.notif-tab-active {
+    color: var(--primary);
+    font-weight: 600;
+  }
+
+  .notif-tab.notif-tab-active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    background: var(--primary);
+    border-radius: 2px 2px 0 0;
+    animation: notif-tab-slide-in 0.18s ease forwards;
+  }
+
+  @keyframes notif-tab-slide-in {
+    from { transform: scaleX(0.4); opacity: 0; }
+    to   { transform: scaleX(1);   opacity: 1; }
+  }
+
+  .notif-tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    background: color-mix(in srgb, var(--muted) 80%, transparent);
+    color: var(--muted-foreground);
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  .notif-tab-active .notif-tab-badge {
+    background: color-mix(in srgb, var(--primary) 16%, transparent);
+    color: var(--primary);
+  }
+
+  .notif-tab-unread-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: oklch(0.577 0.245 27.325);
+    flex-shrink: 0;
+    animation: notif-dot-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes notif-dot-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  /* Per-category empty state */
+  .notif-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    gap: 0.75rem;
+    border-radius: 1rem;
+    border: 1px solid var(--surface-border);
+    background: color-mix(in srgb, var(--secondary) 30%, transparent);
+    animation: notif-fade-up 0.3s ease forwards;
+  }
+
+  @keyframes notif-fade-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 }
 
@@ -430,4 +606,40 @@
 
 ::-webkit-scrollbar-thumb {
   background-color: rgba(0, 0, 0, 0.3);
+}
+
+.all-caught-up {
+    animation: caught-up-fade 0.5s ease forwards;
+    color: var(--muted-foreground);
+}
+
+@keyframes caught-up-fade {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.checkmark-circle {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+}
+
+@keyframes pop-in {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.gradient-divider {
+    width: 120px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #6366f1, transparent);
+    opacity: 0.5;
+    margin-top: 4px;
 }

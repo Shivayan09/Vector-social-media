@@ -1,15 +1,17 @@
 "use client";
 
 import axios from "axios";
+import Image from "next/image";
 import {
-  Compass,
   ExternalLink,
+  Flame,
   Heart,
-  Lightbulb,
+  LayoutGrid,
   Search,
-  Shuffle,
-  Trophy,
   TrendingUp,
+  UserPlus,
+  UserCheck,
+  Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -22,6 +24,25 @@ type User = {
   name: string;
   username?: string;
   avatar?: string;
+};
+
+type SuggestedUser = {
+  _id: string;
+  name: string;
+  username?: string;
+  avatar?: string;
+  bio?: string;
+  isFollowedByCurrentUser: boolean;
+  isRequestedByCurrentUser: boolean;
+};
+
+type SearchPost = {
+  _id: string;
+  content: string;
+  intent: Intent;
+  author?: {
+    username?: string;
+  };
 };
 
 type TopPost = {
@@ -51,14 +72,25 @@ const intentImage: Record<Intent, string> = {
   reflect: "/kohli2.jpg",
 };
 
+/** Shared explore surfaces — semantic tokens only (no ad-hoc zinc palette). */
+const exploreCard =
+  "rounded-xl border border-border bg-card shadow-sm transition-all duration-200 hover:shadow-md hover:border-border/70";
+
+const exploreGridCard = `${exploreCard} cursor-pointer hover:-translate-y-0.5`;
+
+const ALL_INTENTS = ["ask", "build", "share", "discuss", "reflect"] as const;
+
 export default function Explore() {
   const [topPosts, setTopPosts] = useState<TopPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<User[]>([]);
+  const [postResults, setPostResults] = useState<SearchPost[]>([]);
   const [searching, setSearching] = useState(false);
   const [open, setOpen] = useState(false);
-  const [highlightedTopic, setHighlightedTopic] = useState<Intent | null>(null);
+  const [suggestedUsers, setSuggestedUsers] = useState<SuggestedUser[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(true);
+  const [followingState, setFollowingState] = useState<Record<string, "follow" | "requested" | "following">>({});
   const router = useRouter();
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -112,7 +144,7 @@ export default function Explore() {
         if (axios.isAxiosError(error)) {
           toast.error(
             error.response?.data?.message ||
-              "Failed to load explore data"
+            "Failed to load explore data"
           );
         } else {
           toast.error("Failed to load explore data");
@@ -128,9 +160,57 @@ export default function Explore() {
   }, [BACKEND_URL]);
 
   useEffect(() => {
+    const fetchSuggestedUsers = async () => {
+      try {
+        const { data } = await axios.get(
+          `${BACKEND_URL}/api/users/suggestions`,
+          { withCredentials: true }
+        );
+        const users: SuggestedUser[] = data.users || [];
+        setSuggestedUsers(users);
+        const initialState: Record<string, "follow" | "requested" | "following"> = {};
+        users.forEach((u) => {
+          if (u.isFollowedByCurrentUser) initialState[u._id] = "following";
+          else if (u.isRequestedByCurrentUser) initialState[u._id] = "requested";
+          else initialState[u._id] = "follow";
+        });
+        setFollowingState(initialState);
+      } catch {
+        // suggestions are non-critical, fail silently
+      } finally {
+        setSuggestionsLoading(false);
+      }
+    };
+
+    if (BACKEND_URL) {
+      fetchSuggestedUsers();
+    }
+  }, [BACKEND_URL]);
+
+  const handleToggleFollow = async (userId: string) => {
+    try {
+      await axios.post(
+        `${BACKEND_URL}/api/users/toggle-follow/${userId}`,
+        {},
+        { withCredentials: true }
+      );
+      setFollowingState((prev) => {
+        const current = prev[userId];
+        if (current === "follow") return { ...prev, [userId]: "requested" };
+        if (current === "requested") return { ...prev, [userId]: "follow" };
+        if (current === "following") return { ...prev, [userId]: "follow" };
+        return prev;
+      });
+    } catch {
+      toast.error("Failed to update follow status");
+    }
+  };
+
+  useEffect(() => {
     const delay = setTimeout(async () => {
       if (!query.trim()) {
         setResults([]);
+        setPostResults([]);
         setOpen(false);
         return;
       }
@@ -145,6 +225,7 @@ export default function Explore() {
         );
 
         setResults(res.data.users || []);
+        setPostResults(res.data.posts || []);
         setOpen(true);
       } catch (err) {
         console.error("Search failed:", err);
@@ -158,13 +239,6 @@ export default function Explore() {
 
   const handleClick = (post: TopPost) => {
     router.push(`/main/post/${post._id}`);
-  };
-
-  const handleRandomTopic = () => {
-    if (topicCards.length === 0) return;
-    const random =
-      topicCards[Math.floor(Math.random() * topicCards.length)];
-    setHighlightedTopic(random.intent);
   };
 
   useEffect(() => {
@@ -183,267 +257,429 @@ export default function Explore() {
   }, []);
 
   return (
-    <div className="w-full py-5 px-7">
-        <p className="page-title text-[1.6rem]">
-          Explore
-        </p>
+    <div className="w-full min-w-0 overflow-x-hidden py-5 px-4 sm:px-7">
+      <div className="space-y-8">
+        <header className="space-y-1">
+          <p className="page-title text-[1.6rem]">Explore</p>
+          <p className="page-subtitle">
+            Discover posts, people, and trends
+          </p>
+        </header>
 
-        <p className="page-subtitle">
-          Discover people, posts and ideas
-        </p>
+        {/* Single column: app layout already includes Sidebar — avoid a second column/aside. */}
+        <div className="min-w-0 space-y-8">
+          <section
+            className="space-y-3"
+            aria-labelledby="explore-search-heading"
+          >
+            <h2
+              id="explore-search-heading"
+              className="text-sm font-semibold text-foreground"
+            >
+              Search
+            </h2>
+            <div className="relative min-w-0" ref={wrapperRef}>
+                <div className="search-pill flex min-h-11 items-center gap-2 px-3 py-1">
+                  <Search
+                    className="h-5 shrink-0 text-muted-foreground"
+                    aria-hidden
+                  />
+                  <input
+                    type="text"
+                    placeholder="Search users and posts"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    className="min-h-10 min-w-0 flex-1 bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground"
+                  />
+                </div>
 
-        {/* SEARCH */}
-        <div className="relative mt-5" ref={wrapperRef}>
-          <div className="search-pill">
-            <Search className="h-5" />
-            <input
-              type="text"
-              placeholder="Search users"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="h-full w-full bg-transparent outline-0 placeholder:text-muted-foreground"
-            />
-          </div>
+                {open && (
+                  <div className="absolute z-50 mt-2 max-h-75 w-full min-w-0 max-w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
+                    {searching ? (
+                      <p className="p-4 text-sm text-muted-foreground">
+                        Searching...
+                      </p>
+                    ) : results.length === 0 && postResults.length === 0? (
+                      <div className="p-4 text-center">
+                        <p className="text-sm font-medium text-foreground">
+                          No users found for &quot;{query}&quot;
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Try searching something else or explore by intent
+                        </p>
+                        <div className="mt-3 flex flex-wrap justify-center gap-2">
+                          {ALL_INTENTS.map((intent) => (
+                            <button
+                              key={intent}
+                              type="button"
+                              onClick={() => {
+                                setQuery(intent);
+                              }}
+                              className="min-h-10 rounded-full border border-border bg-card px-3 text-xs capitalize text-foreground/80 transition-colors duration-200 hover:border-border/70 hover:bg-accent/50"
+                            >
+                              #{intent}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {results
+                          .filter((user) => user?._id)
+                          .map((user) => (
+                            <div
+                              key={user._id}
+                              className="flex min-h-11 cursor-pointer items-center gap-3 p-3 transition-colors duration-200 hover:bg-accent/40"
+                              onClick={() => {
+                                if (!user?.username) return;
+                                router.push(`/main/user/${user.username}`);
+                              }}
+                            >
+                              <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-muted">
+                                <Image
+                                  src={user.avatar || "/default-avatar.png"}
+                                  alt={user.name}
+                                  width={40}
+                                  height={40}
+                                  className="h-full w-full object-cover"
+                                />
+                              </div>
 
-          {open && (
-            <div className="absolute w-full mt-2 bg-white border rounded-xl shadow-lg max-h-75 overflow-y-auto z-50">
-              {searching ? (
-                <p className="p-4 text-sm opacity-50">
-                  Searching...
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium text-foreground">
+                                  {user.name}
+                                </p>
+                                <p className="truncate text-xs text-muted-foreground">
+                                  @{user?.username || "unknown"}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+
+                        {postResults.length > 0 && (
+                          <>
+                            <p className="border-t border-border px-3 pb-1 pt-3 text-xs font-semibold text-muted-foreground">
+                              Posts
+                            </p>
+
+                            {postResults.map((post) => (
+                              <div
+                                key={post._id}
+                                className="min-w-0 cursor-pointer border-t border-border p-3 transition-colors duration-200 hover:bg-accent/40"
+                                onClick={() => {
+                                  router.push(`/main/post/${post._id}`);
+                                }}
+                              >
+                                <p className="line-clamp-2 text-sm">
+                                  {post.content}
+                                </p>
+                                <p className="mt-1 text-xs text-blue-500">
+                                  #{post.intent}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  @{post.author?.username || "unknown"}
+                                </p>
+                              </div>
+                            ))}
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <section
+              className="panel-card space-y-4"
+              aria-labelledby="explore-suggestions-heading"
+            >
+              <h2
+                id="explore-suggestions-heading"
+                className="flex items-center gap-2 font-semibold text-foreground"
+              >
+                <Users className="h-5 shrink-0 text-blue-400" aria-hidden />
+                People you might know
+              </h2>
+
+              {suggestionsLoading ? (
+                <p className="text-sm text-muted-foreground">Loading suggestions...</p>
+              ) : suggestedUsers.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No suggestions right now</p>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {suggestedUsers.map((user) => {
+                    const state = followingState[user._id] ?? "follow";
+                    return (
+                      <div
+                        key={user._id}
+                        className={`${exploreCard} flex items-center gap-3 p-3`}
+                      >
+                        <div
+                          className="h-10 w-10 shrink-0 cursor-pointer overflow-hidden rounded-full bg-muted"
+                          onClick={() => user.username && router.push(`/main/user/${user.username}`)}
+                        >
+                          <Image
+                            src={user.avatar || "/default-avatar.png"}
+                            alt={user.name}
+                            width={40}
+                            height={40}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+
+                        <div
+                          className="min-w-0 flex-1 cursor-pointer"
+                          onClick={() => user.username && router.push(`/main/user/${user.username}`)}
+                        >
+                          <p className="truncate text-sm font-medium text-foreground">
+                            {user.name}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            @{user.username || "unknown"}
+                          </p>
+                          {user.bio && (
+                            <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                              {user.bio}
+                            </p>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleToggleFollow(user._id)}
+                          className={`flex shrink-0 items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-200 ${
+                            state === "following"
+                              ? "border-border bg-accent text-foreground hover:bg-accent/70"
+                              : state === "requested"
+                              ? "border-border bg-accent text-muted-foreground hover:bg-accent/70"
+                              : "border-blue-500 bg-blue-500 text-white hover:bg-blue-600"
+                          }`}
+                        >
+                          {state === "following" ? (
+                            <>
+                              <UserCheck className="h-3 w-3" aria-hidden />
+                              Following
+                            </>
+                          ) : state === "requested" ? (
+                            <>
+                              <UserCheck className="h-3 w-3" aria-hidden />
+                              Requested
+                            </>
+                          ) : (
+                            <>
+                              <UserPlus className="h-3 w-3" aria-hidden />
+                              Follow
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+
+            <section
+              className="panel-card space-y-3"
+              aria-labelledby="explore-intents-heading"
+            >
+              <h2
+                id="explore-intents-heading"
+                className="text-sm font-semibold text-foreground"
+              >
+                Browse by intent
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Prefill search with an intent hashtag
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {ALL_INTENTS.map((intent) => (
+                  <button
+                    key={intent}
+                    type="button"
+                    onClick={() => setQuery(intent)}
+                    className="min-h-10 rounded-full border border-border bg-card px-3 text-xs capitalize text-foreground/80 transition-colors duration-200 hover:border-border/70 hover:bg-accent/50"
+                  >
+                    #{intent}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section aria-labelledby="explore-domains-heading">
+              <h2
+                id="explore-domains-heading"
+                className="mb-3 flex items-center gap-2 font-semibold text-foreground"
+              >
+                <LayoutGrid className="h-5 shrink-0 text-blue-400" aria-hidden />
+                Trending domains
+              </h2>
+
+              {loading ? (
+                <p className="surface-text-muted text-sm">
+                  Loading domains...
                 </p>
-              ) : results.length === 0 ? (
-                <p className="p-4 text-sm opacity-50">
-                  No users found.
+              ) : topicCards.length === 0 ? (
+                <p className="surface-text-muted text-sm">
+                  No active domains yet
                 </p>
               ) : (
-                results
-                  .filter((user) => user?._id)
-                  .map((user) => (
+                <div className="grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                  {topicCards.map((topic) => (
                     <div
-                      key={user._id}
-                      className="flex items-center gap-3 p-3 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition"
-                      onClick={() => {
-                        if (!user?.username) return;
-                        router.push(`/main/user/${user.username}`);
-                      }}
+                      key={topic.intent}
+                      className={`${exploreGridCard} relative min-h-[10rem] overflow-hidden`}
                     >
-                      <div className="h-10 w-10 rounded-full overflow-hidden bg-black/5 dark:bg-white/5">
-                        <img
-                          src={
-                            user.avatar ||
-                            "/default-avatar.png"
-                          }
-                          alt={user.name}
+                      <p className="absolute bottom-0 left-0 z-20 flex w-full items-center justify-between bg-black/40 p-2 text-sm text-white">
+                        <span className="flex min-w-0 items-center gap-2">
+                          <ExternalLink className="h-4 shrink-0 text-blue-400" />
+                          <span className="truncate">{topic.label}</span>
+                        </span>
+                        <span className="shrink-0 pl-2">{topic.count} posts</span>
+                      </p>
+                      <Image
+                        src={intentImage[topic.intent]}
+                        alt={topic.label}
+                        width={400}
+                        height={240}
+                        className="h-full min-h-[10rem] w-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section
+              className="panel-card space-y-4"
+              aria-labelledby="explore-trending-topics-heading"
+            >
+              <h2
+                id="explore-trending-topics-heading"
+                className="flex items-center gap-2 font-semibold text-foreground"
+              >
+                <TrendingUp className="h-5 shrink-0 text-blue-400" aria-hidden />
+                Trending topics
+              </h2>
+
+              <div className="flex flex-col gap-3">
+                {loading ? (
+                  <p className="surface-text-muted text-sm">
+                    Loading trending topics...
+                  </p>
+                ) : trendingTopics.length === 0 ? (
+                  <p className="surface-text-muted text-sm">
+                    No trending topics this month
+                  </p>
+                ) : (
+                  trendingTopics.map((topic) => (
+                    <button
+                      type="button"
+                      key={topic.id}
+                      onClick={() => router.push(`/main/post/${topic.id}`)}
+                      className={`${exploreCard} flex w-full min-w-0 items-start gap-3 p-3 text-left md:hover:-translate-y-0.5`}
+                    >
+                      <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
+                        <Image
+                          src={intentImage[topic.intent]}
+                          alt={intentLabel[topic.intent]}
+                          width={44}
+                          height={44}
                           className="h-full w-full object-cover"
                         />
                       </div>
 
-                      <div>
-                        <p className="text-sm font-medium">
-                          {user.name}
-                        </p>
-
-                        <p className="text-xs opacity-50">
-                          @{user?.username || "unknown"}
+                      <div className="min-w-0 flex-1">
+                        <p className="line-clamp-2 text-sm">{topic.title}</p>
+                        <p className="mt-1 text-xs text-blue-500">
+                          #{intentLabel[topic.intent]}
                         </p>
                       </div>
-                    </div>
+
+                      <p className="surface-text-muted flex shrink-0 items-center gap-1 pt-1 text-xs">
+                        <Heart
+                          className="h-4 text-blue-400"
+                          fill="currentColor"
+                          aria-hidden
+                        />
+                        {topic.likes}
+                      </p>
+                    </button>
                   ))
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* TRENDING DOMAINS */}
-        <div className="mt-5">
-          <p className="font-semibold text-foreground">
-            Trending domains
-          </p>
-
-          {loading ? (
-            <p className="surface-text-muted mt-3">Loading domains...</p>
-          ) : topicCards.length === 0 ? (
-            <p className="surface-text-muted mt-3">No active domains yet</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 my-5">
-              {topicCards.map((topic) => (
-                <div
-                  key={topic.intent}
-                  className={`box h-35 rounded-md overflow-hidden relative border cursor-pointer transition ${
-                    highlightedTopic === topic.intent
-                      ? "border-blue-400 shadow-lg"
-                      : "border-white/20 hover:shadow-md"
-                  }`}
-                >
-                  <p className="absolute z-20 bottom-0 left-0 p-2 w-full flex items-center justify-between bg-black/40 text-white text-sm">
-                    <span className="flex items-center gap-2">
-                      <ExternalLink className="text-blue-400 h-4" />
-                      {topic.label}
-                    </span>
-                    <span>{topic.count} posts</span>
-                  </p>
-                  <img
-                    src={intentImage[topic.intent]}
-                    alt={topic.label}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* EXPLORE TOPICS */}
-        <div className="panel-card mt-5">
-          <p className="flex items-center gap-2 font-semibold">
-            <Compass className="h-5 text-blue-400" />
-            Explore topics
-          </p>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
-            {topicCards.slice(0, 2).map((topic) => (
-              <button
-                key={topic.intent}
-                type="button"
-                onClick={() => setHighlightedTopic(topic.intent)}
-                className="glass-surface flex h-20 items-center justify-center gap-2 rounded-md transition hover:bg-accent/70"
-              >
-                {topic.intent === "build" ? (
-                  <Trophy className="h-4" />
-                ) : (
-                  <Lightbulb className="h-4" />
                 )}
-                <span className="text-sm">{topic.label}</span>
-              </button>
-            ))}
+              </div>
+            </section>
 
-            <button
-              type="button"
-              onClick={handleRandomTopic}
-              className="glass-surface col-span-2 flex h-20 items-center justify-center gap-2 rounded-md transition hover:bg-accent/70 md:col-span-1"
-            >
-              <Shuffle className="h-4 opacity-80" />
-              <span className="text-sm">Random</span>
-            </button>
-          </div>
+            <section aria-labelledby="explore-top-posts-heading">
+              <h2
+                id="explore-top-posts-heading"
+                className="mb-3 flex items-center gap-2 font-semibold text-foreground"
+              >
+                <Flame className="h-5 shrink-0 text-blue-400" aria-hidden />
+                Top posts of the month
+              </h2>
 
-          {highlightedTopic && (
-            <p className="mt-3 text-sm text-blue-500">
-              Highlighted topic: {intentLabel[highlightedTopic]}
-            </p>
-          )}
-        </div>
-
-        {/* TRENDING TOPICS */}
-        <div className="panel-card mt-5">
-          <p className="flex items-center gap-2 font-semibold">
-            <TrendingUp className="h-5 text-blue-400" />
-            Trending topics
-          </p>
-
-          <div className="mt-4 space-y-3">
-            {loading ? (
-              <p className="surface-text-muted">Loading trending topics...</p>
-            ) : trendingTopics.length === 0 ? (
-              <p className="surface-text-muted">No trending topics this month</p>
-            ) : (
-              trendingTopics.map((topic) => (
-                <button
-                  type="button"
-                  key={topic.id}
-                  onClick={() =>
-                    router.push(`/main/post/${topic.id}`)
-                  }
-                  className="flex w-full items-start gap-3 rounded-md p-2 text-left transition hover:bg-accent/70"
-                >
-                  <div className="glass-surface h-11 w-11 shrink-0 overflow-hidden rounded-md">
-                    <img
-                      src={intentImage[topic.intent]}
-                      alt={intentLabel[topic.intent]}
-                      className="h-full w-full object-cover"
+              <div className="grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                {loading ? (
+                  <div className="col-span-full">
+                    <InlineLoader
+                      text="Loading top posts..."
+                      className="surface-text-muted"
                     />
                   </div>
-
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm line-clamp-2">{topic.title}</p>
-                    <p className="mt-1 text-xs text-blue-500">
-                      #{intentLabel[topic.intent]}
-                    </p>
-                  </div>
-
-                  <p className="surface-text-muted flex items-center gap-1 pt-1 text-xs">
-                    <Heart
-                      className="text-blue-400 h-4"
-                      fill="currentColor"
-                    />
-                    {topic.likes}
+                ) : topPosts.length === 0 ? (
+                  <p className="surface-text-muted col-span-full text-sm">
+                    No trending posts this month
                   </p>
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* TOP POSTS */}
-        <div className="mt-5">
-          <p className="font-semibold text-foreground">
-            Top posts of the month
-          </p>
-
-          <div className="flex flex-col gap-5 md:flex-row flex-wrap items-stretch mt-5">
-            {loading ? (
-              <InlineLoader text="Loading top posts..." className="surface-text-muted" />
-            ) : topPosts.length === 0 ? (
-              <p className="surface-text-muted">
-                No trending posts this month
-              </p>
-            ) : (
-              topPosts
-                .filter((post) => post?._id)
-                .map((post) => (
-                  <div
-                    onClick={() => handleClick(post)}
-                    key={post._id}
-                    className="content-card glass-hover box relative flex h-44 w-full cursor-pointer flex-col justify-between rounded-md md:w-[calc(33.333%-1rem)]"
-                  >
-                    <p className="text-blue-500">
-                      {post.likes?.length || 0} likes
-                    </p>
-
-                    <p className="absolute top-4 right-4 text-[0.9rem] text-blue-600">
-                      #{post.intent}
-                    </p>
-
-                    <p className="my-3 text-sm line-clamp-3 overflow-hidden">
-                      {post.content}
-                    </p>
-
-                    <div>
-                      <p
-                        className="text-[0.9rem] w-fit hover:text-blue-500"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!post?.author?.username)
-                            return;
-                          router.push(
-                            `/main/user/${post.author.username}`
-                          );
-                        }}
+                ) : (
+                  topPosts
+                    .filter((post) => post?._id)
+                    .map((post) => (
+                      <div
+                        onClick={() => handleClick(post)}
+                        key={post._id}
+                        className="content-card glass-hover relative flex min-h-44 w-full min-w-0 cursor-pointer flex-col justify-between transition-all duration-200 hover:shadow-md md:hover:-translate-y-0.5"
                       >
-                        @{post?.author?.username || "unknown"}
-                      </p>
+                        <p className="text-sm text-blue-500">
+                          {post.likes?.length || 0} likes
+                        </p>
 
-                      <p className="surface-text-muted text-[0.8rem]">
-                        {new Date(
-                          post.createdAt
-                        ).toLocaleDateString("en-GB")}
-                      </p>
-                    </div>
-                  </div>
-                ))
-            )}
-          </div>
+                        <p className="absolute right-4 top-4 text-sm text-blue-600">
+                          #{post.intent}
+                        </p>
+
+                        <p className="my-3 line-clamp-3 min-w-0 text-sm">
+                          {post.content}
+                        </p>
+
+                        <div className="min-w-0">
+                          <p
+                            className="w-fit max-w-full truncate text-sm hover:text-blue-500"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!post?.author?.username) return;
+                              router.push(
+                                `/main/user/${post.author.username}`
+                              );
+                            }}
+                          >
+                            @{post?.author?.username || "unknown"}
+                          </p>
+
+                          <p className="surface-text-muted text-xs">
+                            {new Date(post.createdAt).toLocaleDateString(
+                              "en-GB"
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                )}
+              </div>
+            </section>
         </div>
+      </div>
     </div>
   );
 }

@@ -10,6 +10,7 @@ import {
   ReactNode,
 } from "react";
 import type { Post } from "@/lib/types";
+import { socket } from "@/socket/socket";
 
 axios.defaults.withCredentials = true;
 
@@ -28,6 +29,9 @@ export type User = {
   signupStep?: number;
   followers?: string[];
   following?: string[];
+  isPrivate?: boolean;
+  followRequests?: string[];
+  blockedUsers?: string[];
 };
 
 type AppContextType = {
@@ -48,7 +52,7 @@ type AppContextType = {
   refreshAuth: () => Promise<void>;
 };
 
-const AppContext = createContext<AppContextType | undefined>(
+export const AppContext = createContext<AppContextType | undefined>(
   undefined
 );
 
@@ -60,7 +64,7 @@ export function AppContextProvider({
   const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [userData, setUserData] = useState<User | null>(null);
 
-  // 🔥 IMPORTANT: default false rakho (warna hamesha loader dikhega)
+
   const [loading, setLoading] = useState(false);
 
   const [posts, setPosts] = useState<Post[]>([]);
@@ -75,7 +79,7 @@ export function AppContextProvider({
     }
 
     try {
-      setLoading(true); // ✅ loader start
+      setLoading(true); 
 
       const { data } = await axios.get<{ user: User }>(
         `${BACKEND_URL}/api/auth/me`,
@@ -88,13 +92,24 @@ export function AppContextProvider({
       setIsLoggedIn(false);
       setUserData(null);
     } finally {
-      setLoading(false); // ✅ loader stop
+      setLoading(false); 
     }
   }, [BACKEND_URL]);
 
   useEffect(() => {
     refreshAuth();
   }, [refreshAuth]);
+
+  useEffect(() => {
+    if (!userData?.id) {
+      if (socket.connected) {
+        socket.disconnect();
+      }
+      return;
+    }
+    socket.connect();
+    socket.emit("register", userData.id);
+  }, [userData?.id]);
 
   return (
     <AppContext.Provider

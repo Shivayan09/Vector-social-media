@@ -13,7 +13,7 @@ const notificationSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["follow", "like", "comment", "message"],
+      enum: ["follow", "like", "comment", "message", "follow_request", "follow_request_accepted", "post_removed_reported"],
       required: true,
     },
     post: {
@@ -30,6 +30,14 @@ const notificationSchema = new mongoose.Schema(
     },
   },
   { timestamps: true }
+);
+
+notificationSchema.index(
+  { recipient: 1, sender: 1, type: 1, post: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { type: "like", post: { $exists: true } },
+  }
 );
 
 export default mongoose.model("Notification", notificationSchema);
