@@ -163,7 +163,7 @@ export default function ActivitySidebar() {
           Suggestions
         </p>
 
-        <div className="mt-5 flex flex-col gap-6 w-70 min-h-[60vh] max-h-[60vh] overflow-y-auto pr-1">
+        <div className="mt-5 flex flex-col gap-6 w-70 min-h-[60vh] max-h-[60vh] overflow-y-auto hide-scrollbar pr-1">
           {loading ? (
             <InlineLoader text="Loading users..." />
           ) : query.trim() ? (
