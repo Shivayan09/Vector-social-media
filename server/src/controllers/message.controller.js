@@ -104,17 +104,16 @@ export const sendMessage = async (req, res) => {
         conversation: conversationId,
       });
       const io = getIO();
-      const notificationSocket = onlineUsers.get(receiverId.toString());
-      if (notificationSocket) {
-        io.to(notificationSocket).emit("notification:new", {
-          notificationId: notification._id,
-          type: notification.type,
-        });
-      }
-      const receiverSocket = onlineUsers.get(receiverId.toString());
+      const receiverSockets = onlineUsers.get(receiverId.toString());
 
-      if (receiverSocket) {
-        io.to(receiverSocket).emit("receive_message", populated);
+      if (receiverSockets) {
+        for (const socketId of receiverSockets) {
+          io.to(socketId).emit("notification:new", {
+            notificationId: notification._id,
+            type: notification.type,
+          });
+          io.to(socketId).emit("receive_message", populated);
+        }
       }
 
     }
@@ -220,12 +219,14 @@ export const deleteMessage = async (req, res) => {
     const conversation = await Conversation.findById(message.conversation);
     if (conversation) {
       conversation.participants.forEach((participantId) => {
-        const socketId = onlineUsers.get(participantId.toString());
-        if (socketId) {
-          io.to(socketId).emit("message_deleted", {
-            messageId: message._id,
-            conversationId: message.conversation,
-          });
+        const participantSockets = onlineUsers.get(participantId.toString());
+        if (participantSockets) {
+          for (const socketId of participantSockets) {
+            io.to(socketId).emit("message_deleted", {
+              messageId: message._id,
+              conversationId: message.conversation,
+            });
+          }
         }
       });
     }

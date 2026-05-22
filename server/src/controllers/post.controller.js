@@ -3,6 +3,7 @@ import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
 import Comment from "../models/comment.model.js";
 import Notification from "../models/notification.model.js";
+import Report from "../models/report.model.js";
 import cloudinary from "../config/cloudinary.js";
 import { getIO, onlineUsers } from "../socket/socket.js";
 
@@ -17,6 +18,8 @@ export const removePostById = async (postId) => {
     }
 
     await Comment.deleteMany({ post: postId });
+    await Notification.deleteMany({ post: postId });
+    await Report.deleteMany({ targetType: "post", targetId: postId });
     await post.deleteOne();
     return post;
 };
@@ -270,6 +273,7 @@ export const toggleLike = async (req, res) => {
                 { _id: postId, likes: userId },
                 { $pull: { likes: userId } }
             );
+            await Notification.deleteOne({ recipient: post.author, sender: userId, type: "like", post: postId });
         }
 
         const updatedPost = await Post.findById(postId).select("likes");
@@ -293,12 +297,14 @@ export const toggleLike = async (req, res) => {
                 { upsert: true, new: true }
             );
 
-            const recipientSocket = onlineUsers.get(post.author.toString());
-            if (recipientSocket) {
-                getIO().to(recipientSocket).emit("notification:new", {
-                    notificationId: notification._id,
-                    type: notification.type,
-                });
+            const recipientSockets = onlineUsers.get(post.author.toString());
+            if (recipientSockets) {
+                for (const socketId of recipientSockets) {
+                    getIO().to(socketId).emit("notification:new", {
+                        notificationId: notification._id,
+                        type: notification.type,
+                    });
+                }
             }
         }
 

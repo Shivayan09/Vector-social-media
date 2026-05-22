@@ -181,16 +181,10 @@ export default function NotificationPanel({ search = "" }: Props) {
 
   const markAllAsRead = useCallback(async () => {
     try {
-      const unread = notifications.filter((n) => !n.isRead);
-
-      await Promise.all(
-        unread.map((n) =>
-          axios.put(
-            `${BACKEND_URL}/api/notifications/${n._id}/read`,
-            {},
-            { withCredentials: true }
-          )
-        )
+      await axios.put(
+        `${BACKEND_URL}/api/notifications/read-all`,
+        {},
+        { withCredentials: true }
       );
 
       setNotifications((prev) =>
@@ -199,7 +193,7 @@ export default function NotificationPanel({ search = "" }: Props) {
     } catch (err) {
       console.error(err);
     }
-  }, [BACKEND_URL, notifications]);
+  }, [BACKEND_URL]);
 
   const handleAcceptRequest = async (senderId: string) => {
     try {

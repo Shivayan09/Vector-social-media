@@ -263,12 +263,14 @@ export const toggleFollowUser = async (req, res) => {
                             sender: req.user._id,
                             type: "follow_request",
                         });
-                        const recipientSocket = onlineUsers.get(targetUser._id.toString());
-                        if (recipientSocket) {
-                            getIO().to(recipientSocket).emit("notification:new", {
-                                notificationId: notification._id,
-                                type: notification.type,
-                            });
+                        const recipientSockets = onlineUsers.get(targetUser._id.toString());
+                        if (recipientSockets) {
+                            for (const socketId of recipientSockets) {
+                                getIO().to(socketId).emit("notification:new", {
+                                    notificationId: notification._id,
+                                    type: notification.type,
+                                });
+                            }
                         }
                     }
                     return res.json({
@@ -293,12 +295,14 @@ export const toggleFollowUser = async (req, res) => {
                         sender: req.user._id,
                         type: "follow",
                     });
-                    const recipientSocket = onlineUsers.get(targetUser._id.toString());
-                    if (recipientSocket) {
-                        getIO().to(recipientSocket).emit("notification:new", {
-                            notificationId: notification._id,
-                            type: notification.type,
-                        });
+                    const recipientSockets = onlineUsers.get(targetUser._id.toString());
+                    if (recipientSockets) {
+                        for (const socketId of recipientSockets) {
+                            getIO().to(socketId).emit("notification:new", {
+                                notificationId: notification._id,
+                                type: notification.type,
+                            });
+                        }
                     }
                 }
                 return res.json({
@@ -382,12 +386,14 @@ export const acceptFollowRequest = async (req, res) => {
                 sender: currentUserId,
                 type: "follow_request_accepted",
             });
-            const recipientSocket = onlineUsers.get(requesterId.toString());
-            if (recipientSocket) {
-                getIO().to(recipientSocket).emit("notification:new", {
-                    notificationId: notification._id,
-                    type: notification.type,
-                });
+            const recipientSockets = onlineUsers.get(requesterId.toString());
+            if (recipientSockets) {
+                for (const socketId of recipientSockets) {
+                    getIO().to(socketId).emit("notification:new", {
+                        notificationId: notification._id,
+                        type: notification.type,
+                    });
+                }
             }
         }
 
