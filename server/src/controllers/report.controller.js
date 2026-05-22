@@ -91,12 +91,14 @@ export const createPostReport = async (req, res) => {
       });
 
       // Emit real-time notification if author is online
-      const authorSocketId = onlineUsers.get(authorId.toString());
-      if (authorSocketId) {
-        getIO().to(authorSocketId).emit("notification:new", {
-          notificationId: notification._id,
-          type: notification.type,
-        });
+      const authorSockets = onlineUsers.get(authorId.toString());
+      if (authorSockets) {
+        for (const socketId of authorSockets) {
+          getIO().to(socketId).emit("notification:new", {
+            notificationId: notification._id,
+            type: notification.type,
+          });
+        }
       }
 
       return res.status(200).json({

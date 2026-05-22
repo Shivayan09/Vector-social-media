@@ -11,7 +11,7 @@ import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import LogoutWarning from "../modals/LogoutWarning";
 import ThemeToggle from "@/app/theme-toggle";
-import type { Notification, Post } from "@/lib/types";
+import type { Post } from "@/lib/types";
 import { socket } from "@/socket/socket";
 
 interface SidebarItemProps {
@@ -56,12 +56,11 @@ export default function Sidebar() {
 
   const fetchUnreadCount = useCallback(async () => {
     try {
-      const { data } = await axios.get<Notification[]>(
-        `${BACKEND_URL}/api/notifications`,
+      const { data } = await axios.get<{ unreadCount: number }>(
+        `${BACKEND_URL}/api/notifications?countOnly=true`,
         { withCredentials: true }
       );
-      const unread = data.filter((n) => !n.isRead).length;
-      setUnreadCount(unread);
+      setUnreadCount(data.unreadCount ?? 0);
     } catch {
       console.error("Failed to fetch notifications");
     }

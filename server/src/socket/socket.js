@@ -47,13 +47,19 @@ export const initSocket = (server) => {
 
     socket.on("register", () => {
       if (socket.userId) {
-        onlineUsers.set(socket.userId, socket.id);
+        if (!onlineUsers.has(socket.userId)) {
+          onlineUsers.set(socket.userId, new Set());
+        }
+        onlineUsers.get(socket.userId).add(socket.id);
       }
     });
 
     socket.on("disconnect", () => {
-      if (socket.userId && onlineUsers.get(socket.userId) === socket.id) {
-        onlineUsers.delete(socket.userId);
+      if (socket.userId && onlineUsers.has(socket.userId)) {
+        onlineUsers.get(socket.userId).delete(socket.id);
+        if (onlineUsers.get(socket.userId).size === 0) {
+          onlineUsers.delete(socket.userId);
+        }
       }
     });
 

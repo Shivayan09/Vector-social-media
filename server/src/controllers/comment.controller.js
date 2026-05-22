@@ -43,12 +43,14 @@ export const addComment = async (req, res) => {
                 post: post._id,
             });
 
-            const recipientSocket = onlineUsers.get(post.author.toString());
-            if (recipientSocket) {
-                getIO().to(recipientSocket).emit("notification:new", {
-                    notificationId: notification._id,
-                    type: notification.type,
-                });
+            const recipientSockets = onlineUsers.get(post.author.toString());
+            if (recipientSockets) {
+                for (const socketId of recipientSockets) {
+                    getIO().to(socketId).emit("notification:new", {
+                        notificationId: notification._id,
+                        type: notification.type,
+                    });
+                }
             }
         }
         return res.status(201).json(populated);
