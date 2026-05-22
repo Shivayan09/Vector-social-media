@@ -46,7 +46,7 @@ const csrfProtection = (req, res, next) => {
       const sourceUrl = new URL(sourceString);
       const allowedUrl = new URL(allowed);
       return sourceUrl.origin === allowedUrl.origin;
-    } catch (err) {
+    } catch {
       return false;
     }
   });
