@@ -57,6 +57,32 @@ export const addComment = async (req, res) => {
 export const getPostComments = async (req, res) => {
     try {
         const { postId } = req.params;
+
+        const post = await Post.findById(postId).select("author");
+        if (!post) {
+            return res.status(404).json({ message: "Post not found" });
+        }
+
+        const postAuthor = await User.findById(post.author).select("blockedUsers followers isPrivate");
+
+        if (req.user) {
+            const currentUserId = req.user.id;
+            const isBlocked = req.user.blockedUsers?.some(id => id.toString() === post.author.toString()) ||
+                              postAuthor?.blockedUsers?.some(id => id.toString() === currentUserId);
+            if (isBlocked) {
+                return res.status(403).json({ message: "Action forbidden due to block status" });
+            }
+
+            if (postAuthor?.isPrivate && currentUserId !== post.author.toString()) {
+                const isFollower = postAuthor.followers?.some(id => id.toString() === currentUserId);
+                if (!isFollower) {
+                    return res.status(403).json({ message: "This post is from a private account. Follow them to see it." });
+                }
+            }
+        } else if (postAuthor?.isPrivate) {
+            return res.status(403).json({ message: "This post is from a private account. Follow them to see it." });
+        }
+
         const comments = await Comment.find({ post: postId }).populate("author", "username name avatar");
         res.json(comments);
     } catch (error) {

@@ -84,7 +84,15 @@ export const getPosts = async (req, res) => {
             const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
             const blockerIds = blockers.map(u => u._id);
             const blockedIds = req.user.blockedUsers || [];
-            const excludeUserIds = [...blockedIds, ...blockerIds];
+            let excludeUserIds = [...blockedIds, ...blockerIds];
+
+            const privateUsers = await User.find({
+                _id: { $nin: [...(req.user.following || []), currentUserId] },
+                isPrivate: true
+            }).select("_id");
+            const privateUserIds = privateUsers.map(u => u._id);
+            excludeUserIds = [...excludeUserIds, ...privateUserIds];
+
             if (excludeUserIds.length > 0) {
                 filter = { author: { $nin: excludeUserIds } };
             }
@@ -395,22 +403,28 @@ export const getSinglePost = async (req, res) => {
             return res.status(404).json({ message: "Post not found" });
         }
 
-        // Privacy check for single post
         const author = post.author;
+        const authorId = author._id;
+
+        // Fetch full author data for block/follower checks
+        const authorFull = await User.findById(authorId).select("blockedUsers followers");
 
         if (req.user) {
             const currentUserId = req.user.id;
-            const isBlocked = req.user.blockedUsers?.some(id => id.toString() === author._id.toString()) ||
-                              author.blockedUsers?.some(id => id.toString() === currentUserId);
+            const isBlocked = req.user.blockedUsers?.some(id => id.toString() === authorId.toString()) ||
+                              authorFull?.blockedUsers?.some(id => id.toString() === currentUserId);
             if (isBlocked) {
                 return res.status(403).json({ message: "Action forbidden due to block status" });
             }
-        }
 
-        const isSelf = req.user?.id === author._id.toString();
-        const isFollower = author.followers?.some(id => id.toString() === req.user?.id);
-
-        if (author.isPrivate && !isSelf && !isFollower) {
+            const isSelf = currentUserId === authorId.toString();
+            if (author.isPrivate && !isSelf) {
+                const isFollower = authorFull?.followers?.some(id => id.toString() === currentUserId);
+                if (!isFollower) {
+                    return res.status(403).json({ message: "This post is from a private account. Follow them to see it." });
+                }
+            }
+        } else if (author.isPrivate) {
             return res.status(403).json({ message: "This post is from a private account. Follow them to see it." });
         }
 
@@ -435,12 +449,28 @@ export const getTopPostsOfWeek = async (req, res) => {
             const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
             const blockerIds = blockers.map((user) => user._id);
             const blockedIds = req.user.blockedUsers || [];
-            const excludeUserIds = [...blockedIds, ...blockerIds];
+            let excludeUserIds = [...blockedIds, ...blockerIds];
+
+            const privateUsers = await User.find({
+                _id: { $nin: [...(req.user.following || []), currentUserId] },
+                isPrivate: true
+            }).select("_id");
+            const privateUserIds = privateUsers.map((user) => user._id);
+            excludeUserIds = [...excludeUserIds, ...privateUserIds];
 
             if (excludeUserIds.length > 0) {
                 filter = {
                     ...filter,
                     author: { $nin: excludeUserIds },
+                };
+            }
+        } else {
+            const privateUsers = await User.find({ isPrivate: true }).select("_id");
+            const privateUserIds = privateUsers.map((user) => user._id);
+            if (privateUserIds.length > 0) {
+                filter = {
+                    ...filter,
+                    author: { $nin: privateUserIds },
                 };
             }
         }
@@ -471,9 +501,21 @@ export const getTopPostsOfWeek = async (req, res) => {
             { $unwind: "$author" },
             {
                 $project: {
-                    engagementScore: 0,
-                    "author.password": 0,
-                    "author.email": 0,
+                    _id: 1,
+                    content: 1,
+                    image: 1,
+                    intent: 1,
+                    likes: 1,
+                    commentsCount: 1,
+                    sharesCount: 1,
+                    likesCount: 1,
+                    createdAt: 1,
+                    updatedAt: 1,
+                    "author._id": 1,
+                    "author.username": 1,
+                    "author.name": 1,
+                    "author.surname": 1,
+                    "author.avatar": 1,
                 },
             }
         ]);
@@ -501,12 +543,28 @@ export const getTopPostsOfMonth = async (req, res) => {
             const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
             const blockerIds = blockers.map((user) => user._id);
             const blockedIds = req.user.blockedUsers || [];
-            const excludeUserIds = [...blockedIds, ...blockerIds];
+            let excludeUserIds = [...blockedIds, ...blockerIds];
+
+            const privateUsers = await User.find({
+                _id: { $nin: [...(req.user.following || []), currentUserId] },
+                isPrivate: true
+            }).select("_id");
+            const privateUserIds = privateUsers.map((user) => user._id);
+            excludeUserIds = [...excludeUserIds, ...privateUserIds];
 
             if (excludeUserIds.length > 0) {
                 filter = {
                     ...filter,
                     author: { $nin: excludeUserIds },
+                };
+            }
+        } else {
+            const privateUsers = await User.find({ isPrivate: true }).select("_id");
+            const privateUserIds = privateUsers.map((user) => user._id);
+            if (privateUserIds.length > 0) {
+                filter = {
+                    ...filter,
+                    author: { $nin: privateUserIds },
                 };
             }
         }
@@ -537,9 +595,21 @@ export const getTopPostsOfMonth = async (req, res) => {
             { $unwind: "$author" },
             {
                 $project: {
-                    engagementScore: 0,
-                    "author.password": 0,
-                    "author.email": 0,
+                    _id: 1,
+                    content: 1,
+                    image: 1,
+                    intent: 1,
+                    likes: 1,
+                    commentsCount: 1,
+                    sharesCount: 1,
+                    likesCount: 1,
+                    createdAt: 1,
+                    updatedAt: 1,
+                    "author._id": 1,
+                    "author.username": 1,
+                    "author.name": 1,
+                    "author.surname": 1,
+                    "author.avatar": 1,
                 },
             },
         ]);
