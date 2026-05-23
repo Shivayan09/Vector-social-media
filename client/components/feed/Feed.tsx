@@ -26,23 +26,25 @@ function mergeUniquePosts(primaryPosts: Post[], secondaryPosts: Post[]): Post[] 
 
 export default function Feed() {
     const { posts, setPosts } = useAppContext();
-    const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(false);
     const observerTarget = useRef<HTMLDivElement>(null);
     const loadingRef = useRef(false);
     const hasMoreRef = useRef(true);
+    const cursorRef = useRef<string | null>(null);
 
-    const fetchPosts = useCallback(async (pageNum: number) => {
-        if (loadingRef.current || !hasMoreRef.current) return;
+    const fetchPosts = useCallback(async (isInitial: boolean) => {
+        if (loadingRef.current || (!isInitial && !hasMoreRef.current)) return;
         loadingRef.current = true;
         setLoading(true);
         try {
-            const feedRequest = axios.get(
-                `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/posts?page=${pageNum}&limit=10`,
-                { withCredentials: true }
-            );
+            let apiUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/posts?limit=10`;
+            if (!isInitial && cursorRef.current) {
+                apiUrl += `&cursor=${cursorRef.current}`;
+            }
 
-            if (pageNum === 1) {
+            const feedRequest = axios.get(apiUrl, { withCredentials: true });
+
+            if (isInitial) {
                 const [feedRes, topWeekRes] = await Promise.all([
                     feedRequest,
                     axios.get(
@@ -56,19 +58,17 @@ export default function Feed() {
 
                 setPosts(mergeUniquePosts(rankedTopPosts, feedPosts));
                 hasMoreRef.current = feedRes.data.hasMore;
+                cursorRef.current = feedRes.data.nextCursor || null;
                 return;
             }
 
             const res = await feedRequest;
-            if (pageNum === 1) {
-                setPosts(res.data.posts || []);
-            } else {
-                setPosts(prev => mergeUniquePosts(prev, res.data.posts || []));
-            }
+            setPosts(prev => mergeUniquePosts(prev, res.data.posts || []));
             hasMoreRef.current = res.data.hasMore;
+            cursorRef.current = res.data.nextCursor || null;
         } catch (error) {
             console.error("Failed to fetch posts", error);
-            if (pageNum === 1) setPosts([]);
+            if (isInitial) setPosts([]);
         } finally {
             loadingRef.current = false;
             setLoading(false);
@@ -76,25 +76,23 @@ export default function Feed() {
     }, [setPosts]);
 
     useEffect(() => {
-        fetchPosts(1);
+        hasMoreRef.current = true;
+        cursorRef.current = null;
+        fetchPosts(true);
     }, [fetchPosts]);
 
     useEffect(() => {
         const observer = new IntersectionObserver(
             entries => {
                 if (entries[0].isIntersecting && hasMoreRef.current && !loadingRef.current) {
-                    setPage(prev => prev + 1);
+                    fetchPosts(false);
                 }
             },
             { threshold: 0.1 }
         );
         if (observerTarget.current) observer.observe(observerTarget.current);
         return () => observer.disconnect();
-    }, []);
-
-    useEffect(() => {
-        if (page > 1) fetchPosts(page);
-    }, [page, fetchPosts]);
+    }, [fetchPosts]);
 
     const displayPosts = useMemo(() => posts, [posts]);
 
