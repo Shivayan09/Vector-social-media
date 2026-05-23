@@ -97,6 +97,12 @@ export const getPosts = async (req, res) => {
             if (excludeUserIds.length > 0) {
                 filter = { author: { $nin: excludeUserIds } };
             }
+        } else {
+            const privateUsers = await User.find({ isPrivate: true }).select("_id");
+            const privateUserIds = privateUsers.map(u => u._id);
+            if (privateUserIds.length > 0) {
+                filter = { author: { $nin: privateUserIds } };
+            }
         }
 
         if (cursor) {
