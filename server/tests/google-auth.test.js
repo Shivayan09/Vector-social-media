@@ -23,6 +23,13 @@ jest.unstable_mockModule("google-auth-library", () => ({
 const { default: app } = await import("../src/app.js");
 
 describe("Google Auth Endpoint", () => {
+  beforeAll(async () => {
+    // Ensure unique indexes are built before concurrency tests run.
+    // On some CI environments (notably Windows), index creation can lag and allow
+    // duplicate inserts unless we await it explicitly.
+    await User.init();
+  });
+
   beforeEach(() => {
     payloadByToken.clear();
   });
