@@ -2,11 +2,11 @@
 
 import axios from "axios";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import { Flag, MoreHorizontal, Trash2 } from "lucide-react";
+import { Flag, MoreHorizontal, Trash2, AlertCircle } from "lucide-react";
 import DeleteWarning from "@/components/modals/DeleteWarning";
 import InlineLoader from "../loaders/InlineLoader";
 import type { Comment } from "@/lib/types";
@@ -21,8 +21,11 @@ export default function CommentsSection({ postId }: { postId: string }) {
     const [comments, setComments] = useState<Comment[]>([]);
     const [text, setText] = useState("");
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const router = useRouter();
     const [buttonLoading, setButtonLoading] = useState(false);
+    const [loadMoreLoading, setLoadMoreLoading] = useState(false);
+    const [loadMoreError, setLoadMoreError] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
     const [selectedComment, setSelectedComment] = useState<Comment | null>(null);
@@ -48,22 +51,52 @@ export default function CommentsSection({ postId }: { postId: string }) {
 
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
-    useEffect(() => {
-        const fetchComments = async () => {
+    const fetchComments = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
             const { data } = await axios.get(`${BACKEND_URL}/api/comments/${postId}?page=1&limit=${LIMIT}`, { withCredentials: true });
             setComments(data);
             setHasMore(data.length === LIMIT);
+            setPage(1);
+        } catch (err: unknown) {
+            console.error("Error fetching comments:", err);
+            if (axios.isAxiosError(err)) {
+                setError(err.response?.data?.message || err.message || "Failed to load comments.");
+            } else if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError("Failed to load comments.");
+            }
+        } finally {
             setLoading(false);
-        };
-        fetchComments();
+        }
     }, [BACKEND_URL, postId]);
+
+    useEffect(() => {
+        fetchComments();
+    }, [fetchComments]);
 
     const loadMoreComments = async () => {
         const nextPage = page + 1;
-        const { data } = await axios.get(`${BACKEND_URL}/api/comments/${postId}?page=${nextPage}&limit=${LIMIT}`, { withCredentials: true });
-        setComments(prev => [...prev, ...data]);
-        setHasMore(data.length === LIMIT);
-        setPage(nextPage);
+        setLoadMoreLoading(true);
+        setLoadMoreError(false);
+        try {
+            const { data } = await axios.get(`${BACKEND_URL}/api/comments/${postId}?page=${nextPage}&limit=${LIMIT}`, { withCredentials: true });
+            setComments(prev => [...prev, ...data]);
+            setHasMore(data.length === LIMIT);
+            setPage(nextPage);
+        } catch (err: unknown) {
+            console.error("Error loading more comments:", err);
+            setLoadMoreError(true);
+            if (err instanceof Error) {
+                toast.error(`Failed to load more comments: ${err.message}`);
+            } else {
+                toast.error("Failed to load more comments.");
+            }
+        } finally {
+            setLoadMoreLoading(false);
+        }
     };
 
     const handlePost = async () => {
@@ -120,6 +153,23 @@ export default function CommentsSection({ postId }: { postId: string }) {
         return <div className="py-2"><InlineLoader text="Loading comments..." /></div>;
     }
 
+    if (error) {
+        return (
+            <div className="mt-3 flex flex-col items-center justify-center rounded-xl border border-dashed border-red-500/30 bg-red-500/5 py-8 px-4 text-center">
+                <AlertCircle className="mb-2 h-10 w-10 text-red-500 opacity-80" />
+                <p className="text-[0.9rem] font-medium text-red-500 mb-4">
+                    {error}
+                </p>
+                <button
+                    onClick={fetchComments}
+                    className="cursor-pointer px-4 py-2 bg-blue-500 hover:bg-blue-600 active:scale-95 transition-all text-white text-xs font-semibold rounded-md shadow-md hover:shadow-lg"
+                >
+                    Retry loading comments
+                </button>
+            </div>
+        );
+    }
+
     return (
         <div className="mt-3 rounded-b-xl px-3 pt-4 pb-5 md:px-5">
             <p className="text-[0.8rem] font-semibold uppercase tracking-wide surface-text-muted mb-4">
@@ -146,7 +196,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
 
                     return (
                         <div key={c._id} className="flex gap-3 py-3 px-2 rounded-lg border-b border-border/50 last:border-b-0">
-                            <Image alt={c.author?.name || "Comment author"} src={c.author?.avatar || "/default-avatar.png"} width={36} height={36} className="h-8 w-8 md:h-9 md:w-9 object-cover rounded-full shrink-0"/>
+                            <Image alt={c.author?.name || "Comment author"} src={c.author?.avatar || "/default-avatar.png"} width={36} height={36} className="h-8 w-8 md:h-9 md:w-9 object-cover rounded-full shrink-0" />
 
                             <div className="flex flex-col w-full">
 
@@ -221,12 +271,28 @@ export default function CommentsSection({ postId }: { postId: string }) {
                 })}
 
                 {hasMore && comments.length >= LIMIT && (
-                    <button
-                        onClick={loadMoreComments}
-                        className="mt-3 w-full text-sm text-blue-500 hover:text-blue-600 font-medium transition"
-                    >
-                        Load more comments
-                    </button>
+                    <div className="mt-3 text-center">
+                        {loadMoreLoading ? (
+                            <InlineLoader text="Loading more comments..." />
+                        ) : loadMoreError ? (
+                            <div className="flex flex-col items-center gap-1.5 py-2">
+                                <p className="text-sm text-red-500 font-medium">Failed to load more comments.</p>
+                                <button
+                                    onClick={loadMoreComments}
+                                    className="cursor-pointer text-xs text-blue-500 hover:underline font-semibold"
+                                >
+                                    Retry
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                onClick={loadMoreComments}
+                                className="w-full py-2 text-sm text-blue-500 hover:text-blue-600 hover:bg-black/3 dark:hover:bg-white/5 rounded-md font-medium transition cursor-pointer"
+                            >
+                                Load more comments
+                            </button>
+                        )}
+                    </div>
                 )}
             </div>
 
