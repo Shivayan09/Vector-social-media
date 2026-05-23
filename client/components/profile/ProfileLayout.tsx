@@ -79,7 +79,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
       <div className=" mx-auto mb-10 mt-5 max-w-336 md:mt-0 py-2">
         <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start sm:gap-8">
           <div className="relative shrink-0">
-            <img alt={user.name || "Profile avatar"} src={user.avatar || "/default-avatar.png"} className="h-30 w-30 rounded-full border object-cover md:h-34 md:w-34"/>
+            <img alt={user.name || "Profile avatar"} src={user.avatar || "/default-avatar.png"} className="h-30 w-30 rounded-full border object-cover md:h-34 md:w-34" />
             <span className="absolute bottom-5 right-2 h-5 w-5 rounded-full border-2 border-background bg-green-500" />
           </div>
 
@@ -153,6 +153,15 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
               <p className="text-sm text-slate-700 dark:text-slate-300">
                 {user.description}
               </p>
+              {user.createdAt && (
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Joined{" "}
+                  {new Date(user.createdAt).toLocaleString("default", {
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </p>
+              )}
             </div>
 
             <div className="flex flex-wrap justify-center gap-3 font-semibold text-foreground sm:justify-start">
@@ -179,11 +188,10 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
             onClick={() =>
               setActiveTab(tab as "posts" | "followers" | "following")
             }
-            className={`relative px-8 pb-4 font-semibold capitalize transition cursor-pointer whitespace-nowrap focus:outline-none ${
-              activeTab === tab
+            className={`relative px-8 pb-4 font-semibold capitalize transition cursor-pointer whitespace-nowrap focus:outline-none ${activeTab === tab
                 ? "text-blue-500 dark:text-blue-300"
                 : "text-slate-700 hover:text-foreground dark:text-slate-300"
-            }`}
+              }`}
           >
             {tab === "posts" ? `${tab} (${postsCount})` : tab}
 

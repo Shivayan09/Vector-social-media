@@ -20,6 +20,7 @@ export type UserSummary = {
   email?: string;
   phoneNumber?: string;
   username?: string;
+  createdAt?: string;
   bio?: string;
   description?: string;
   avatar?: string;

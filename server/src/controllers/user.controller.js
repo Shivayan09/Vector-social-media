@@ -416,7 +416,7 @@ export const getUserProfile = async (req, res) => {
 
         // Single query — include followRequests and blockedUsers so we don't need second fetches below
         const user = await User.findOne({ username })
-            .select("_id name surname username avatar bio description followersCount followingCount followers followRequests isPrivate blockedUsers")
+            .select("_id name surname username avatar bio description followersCount followingCount followers followRequests isPrivate blockedUsers createdAt")
             .lean();
 
         if (!user) {
