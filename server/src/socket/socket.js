@@ -25,15 +25,23 @@ export const initSocket = async (server) => {
     },
   });
 
-  const pubClient = createClient({ url: process.env.REDIS_URL || "redis://localhost:6379" });
-  const subClient = pubClient.duplicate();
+  if (process.env.REDIS_URL) {
+    try {
+      const pubClient = createClient({ url: process.env.REDIS_URL });
+      const subClient = pubClient.duplicate();
 
-  pubClient.on("error", (err) => console.error("Redis Pub Client Error", err));
-  subClient.on("error", (err) => console.error("Redis Sub Client Error", err));
+      pubClient.on("error", (err) => console.error("Redis Pub Client Error", err));
+      subClient.on("error", (err) => console.error("Redis Sub Client Error", err));
 
-  await Promise.all([pubClient.connect(), subClient.connect()]);
-
-  io.adapter(createAdapter(pubClient, subClient));
+      await Promise.all([pubClient.connect(), subClient.connect()]);
+      io.adapter(createAdapter(pubClient, subClient));
+      console.log("Redis adapter initialized successfully.");
+    } catch (err) {
+      console.warn("Failed to initialize Redis adapter, falling back to local adapter:", err.message);
+    }
+  } else {
+    console.log("REDIS_URL not set. Running with default local socket.io adapter.");
+  }
 
   io.use((socket, next) => {
     try {

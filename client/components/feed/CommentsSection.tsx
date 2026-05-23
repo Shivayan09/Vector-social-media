@@ -196,7 +196,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
 
                     return (
                         <div key={c._id} className="flex gap-3 py-3 px-2 rounded-lg border-b border-border/50 last:border-b-0">
-                            <Image alt={c.author?.name || "Comment author"} src={c.author?.avatar || "/default-avatar.png"} width={36} height={36} className="h-8 w-8 md:h-9 md:w-9 object-cover rounded-full shrink-0"/>
+                            <Image alt={c.author?.name || "Comment author"} src={c.author?.avatar || "/default-avatar.png"} width={36} height={36} className="h-8 w-8 md:h-9 md:w-9 object-cover rounded-full shrink-0" />
 
                             <div className="flex flex-col w-full">
 
