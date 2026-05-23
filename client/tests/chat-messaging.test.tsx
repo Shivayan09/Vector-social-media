@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom/vitest';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { Suspense } from 'react';
 import { render, screen, waitFor, fireEvent, act, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';

@@ -25,7 +25,7 @@ useEffect(() => {
       );
 
       setPendingFollowCount(data.length);
-    } catch (error) {
+    } catch {
       console.error("Failed to fetch pending follow requests");
     }
   };
