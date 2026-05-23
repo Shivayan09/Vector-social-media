@@ -34,8 +34,11 @@ export const getMessages = async (req, res) => {
       }
     }
 
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 0));
+    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+    const rawLimit = Number.parseInt(req.query.limit, 10);
+    const limit = Number.isFinite(rawLimit)
+      ? Math.min(100, Math.max(1, rawLimit))
+      : 0;
     const skip = (page - 1) * limit;
 
     let query = Message.find({ conversation: conversationId })
