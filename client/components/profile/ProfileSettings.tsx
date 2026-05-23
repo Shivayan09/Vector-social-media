@@ -7,21 +7,10 @@ import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import type { ProfileFormData } from "@/lib/types";
 
-type EditableMap = {
-  username: boolean;
-  name: boolean;
-  surname: boolean;
-  phoneNumber: boolean;
-  bio: boolean;
-  description: boolean;
-};
-
 type EditableFieldProps = {
   label: string;
   name: keyof ProfileFormData;
   value: string;
-  editable: boolean;
-  onEdit: () => void;
   onChange: (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => void;
@@ -49,15 +38,6 @@ export default function ProfileSettings() {
 
   const [avatar, setAvatar] =
     useState<string | null>(null);
-
-  const [editable, setEditable] = useState<EditableMap>({
-    username: false,
-    name: false,
-    surname: false,
-    phoneNumber: false,
-    bio: false,
-    description: false,
-  });
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
@@ -148,24 +128,6 @@ export default function ProfileSettings() {
     });
   };
 
-  const toggleEdit = (field: keyof EditableMap) => {
-    setEditable((prev) => ({
-      ...prev,
-      [field]: true,
-    }));
-  };
-
-  const resetEditable = () => {
-    setEditable({
-      username: false,
-      name: false,
-      surname: false,
-      phoneNumber: false,
-      bio: false,
-      description: false,
-    });
-  };
-
   const handleSave = async () => {
     try {
       setLoading(true);
@@ -182,7 +144,6 @@ export default function ProfileSettings() {
 
         toast.success(data.message);
 
-        resetEditable();
       } else {
         toast.warn(data.message);
       }
@@ -206,7 +167,6 @@ export default function ProfileSettings() {
   const handleCancel = () => {
     setFormData(initialData);
     handleAvatarDiscard();
-    resetEditable();
   };
 
   return (
@@ -287,8 +247,6 @@ export default function ProfileSettings() {
                 label="Username"
                 name="username"
                 value={formData.username}
-                editable={editable.username}
-                onEdit={() => toggleEdit("username")}
                 onChange={handleChange}
               />
 
@@ -296,8 +254,6 @@ export default function ProfileSettings() {
                 label="First name"
                 name="name"
                 value={formData.name}
-                editable={editable.name}
-                onEdit={() => toggleEdit("name")}
                 onChange={handleChange}
               />
 
@@ -305,8 +261,6 @@ export default function ProfileSettings() {
                 label="Last name"
                 name="surname"
                 value={formData.surname}
-                editable={editable.surname}
-                onEdit={() => toggleEdit("surname")}
                 onChange={handleChange}
               />
 
@@ -314,8 +268,6 @@ export default function ProfileSettings() {
                 label="Phone number"
                 name="phoneNumber"
                 value={formData.phoneNumber}
-                editable={editable.phoneNumber}
-                onEdit={() => toggleEdit("phoneNumber")}
                 onChange={handleChange}
               />
 
@@ -323,8 +275,6 @@ export default function ProfileSettings() {
                 label="Bio"
                 name="bio"
                 value={formData.bio}
-                editable={editable.bio}
-                onEdit={() => toggleEdit("bio")}
                 onChange={handleChange}
               />
 
@@ -332,8 +282,6 @@ export default function ProfileSettings() {
                 label="Description"
                 name="description"
                 value={formData.description}
-                editable={editable.description}
-                onEdit={() => toggleEdit("description")}
                 onChange={handleChange}
               />
 
@@ -409,80 +357,45 @@ function EditableInput({
   label,
   name,
   value,
-  editable,
-  onEdit,
   onChange,
 }: EditableFieldProps) {
   return (
     <div>
-      <div className="mb-1.5 flex items-center justify-between">
+      <div className="mb-1.5">
         <label className="text-sm font-medium text-foreground">
           {label}
         </label>
-
-        {!editable && (
-          <button
-            type="button"
-            onClick={onEdit}
-            className="cursor-pointer text-sm font-medium text-primary transition hover:opacity-80"
-          >
-            Edit
-          </button>
-        )}
       </div>
 
       <input
         name={name}
         value={value}
-        disabled={!editable}
         onChange={onChange}
-        className={`settings-field ${
-          editable
-            ? "settings-field-editable"
-            : "settings-field-disabled"
-        }`}
+        className="settings-field settings-field-editable"
       />
     </div>
   );
 }
-
 function EditableTextarea({
   label,
   name,
   value,
-  editable,
-  onEdit,
   onChange,
 }: EditableFieldProps) {
   return (
     <div className="md:col-span-2">
-      <div className="mb-1.5 flex items-center justify-between">
+      <div className="mb-1.5">
         <label className="text-sm font-medium text-foreground">
           {label}
         </label>
-
-        {!editable && (
-          <button
-            type="button"
-            onClick={onEdit}
-            className="cursor-pointer text-sm font-medium text-primary transition hover:opacity-80"
-          >
-            Edit
-          </button>
-        )}
       </div>
 
       <textarea
         name={name}
         value={value}
-        disabled={!editable}
         onChange={onChange}
         rows={3}
-        className={`settings-field resize-none ${
-          editable
-            ? "settings-field-editable"
-            : "settings-field-disabled"
-        }`}
+        className="settings-field settings-field-editable resize-none"
       />
     </div>
   );
