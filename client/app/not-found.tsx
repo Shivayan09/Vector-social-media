@@ -60,7 +60,7 @@ export default function NotFound() {
           </h3>
           <p className="text-muted-foreground mb-10 text-lg">
             Oops! It seems like the page you are looking for has drifted into the void. 
-            Let's get you back to familiar territory.
+            Let&apos;s get you back to familiar territory.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
