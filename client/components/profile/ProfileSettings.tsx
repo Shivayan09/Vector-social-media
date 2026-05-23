@@ -218,7 +218,7 @@ export default function ProfileSettings() {
 
         <div className="overflow-hidden rounded-3xl border border-border/60 bg-background/40 backdrop-blur-sm">
           {/* Subtle banner */}
-          <div className="h-24 bg-gradient-to-r from-blue-500/10 via-violet-500/10 to-cyan-500/10 sm:h-28" />
+          <div className="h-24 bg-linear-to-r from-blue-500/10 via-violet-500/10 to-cyan-500/10 sm:h-28" />
 
           <div className="px-5 pb-6 sm:px-7 md:px-8">
             {/* Avatar Section */}
