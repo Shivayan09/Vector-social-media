@@ -34,9 +34,33 @@ export const getMessages = async (req, res) => {
       }
     }
 
-    const messages = await Message.find({ conversation: conversationId })
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 0));
+
+    let query = Message.find({ conversation: conversationId })
       .populate("sender", "username name avatar")
       .sort({ createdAt: 1 });
+
+    if (limit > 0) {
+      const skip = (page - 1) * limit;
+      query = query.skip(skip).limit(limit);
+    }
+
+    let messages = await query;
+
+    // Strip content for soft-deleted messages (security: content should not be readable via API)
+    messages = messages.map(m => {
+      if (m.isDeleted) {
+        m.content = null;
+      }
+      return m;
+    });
+
+    if (limit > 0) {
+      const total = await Message.countDocuments({ conversation: conversationId });
+      const hasMore = skip + limit < total;
+      return res.json({ messages, page, limit, total, hasMore });
+    }
 
     res.json(messages);
 
@@ -143,6 +167,7 @@ export const getUnreadCount = async (req, res) => {
       conversation: conversationId,
       sender: { $ne: req.user._id },
       isRead: { $ne: true },
+      isDeleted: false,
     });
 
     res.json({ unreadCount });
@@ -170,6 +195,7 @@ export const markConversationAsRead = async (req, res) => {
         conversation: conversationId,
         sender: { $ne: req.user._id },
         isRead: { $ne: true },
+        isDeleted: false,
       },
       { $set: { isRead: true } }
     );

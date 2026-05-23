@@ -17,10 +17,11 @@ export const createConversation = async (req, res) => {
             return res.status(403).json({ message: "Action forbidden due to block status" });
         }
 
-        let convo = await Conversation.findOne({ participants: { $all: [senderId, receiverId] }, });
-        if (!convo) {
-            convo = await Conversation.create({ participants: [senderId, receiverId], });
-        }
+        let convo = await Conversation.findOneAndUpdate(
+            { participants: { $all: [senderId, receiverId] } },
+            { $setOnInsert: { participants: [senderId, receiverId] } },
+            { upsert: true, new: true }
+        );
         res.json(convo);
     } catch (err) {
         res.status(500).json({
@@ -70,13 +71,18 @@ export const getUserConversations = async (req, res) => {
       // Match conversations for current user
       { $match: { participants: userId } },
       
-      // Lookup latest message
+      // Lookup latest non-deleted message
       {
         $lookup: {
           from: "messages",
           let: { conversationId: "$_id" },
           pipeline: [
-            { $match: { $expr: { $eq: ["$conversation", "$$conversationId"] } } },
+            {
+              $match: {
+                $expr: { $eq: ["$conversation", "$$conversationId"] },
+                isDeleted: false
+              }
+            },
             { $sort: { createdAt: -1 } },
             { $limit: 1 }
           ],
@@ -91,7 +97,7 @@ export const getUserConversations = async (req, res) => {
         }
       },
       
-      // Count unread messages
+      // Count unread messages (only non-deleted)
       {
         $lookup: {
           from: "messages",
@@ -103,7 +109,8 @@ export const getUserConversations = async (req, res) => {
                   $and: [
                     { $eq: ["$conversation", "$$conversationId"] },
                     { $eq: ["$isRead", false] },
-                    { $ne: ["$sender", userId] }
+                    { $ne: ["$sender", userId] },
+                    { $eq: ["$isDeleted", false] }
                   ]
                 }
               }
@@ -130,12 +137,35 @@ export const getUserConversations = async (req, res) => {
         }
       },
       
-      // Project needed fields
+      // Populate sender for lastMessage via lookup (replaces N+1 loop)
+      {
+        $lookup: {
+          from: "users",
+          let: { senderId: "$lastMessage.sender" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$_id", "$$senderId"] } } },
+            { $project: { _id: 1, username: 1, name: 1, avatar: 1 } }
+          ],
+          as: "lastMessageSender"
+        }
+      },
+      {
+        $addFields: {
+          "lastMessage.sender": { $arrayElemAt: ["$lastMessageSender", 0] }
+        }
+      },
+      
+      // Project needed fields — strict allowlist
       {
         $project: {
           _id: 1,
-          participants: { _id: 1, username: 1, name: 1, avatar: 1 },
-          lastMessage: 1,
+          "participants._id": 1,
+          "participants.username": 1,
+          "participants.name": 1,
+          "participants.avatar": 1,
+          "lastMessage.content": 1,
+          "lastMessage.createdAt": 1,
+          "lastMessage.sender": 1,
           unreadCount: { $ifNull: ["$unreadCount", 0] },
           updatedAt: 1,
           createdAt: 1
@@ -145,17 +175,6 @@ export const getUserConversations = async (req, res) => {
       // Sort by latest
       { $sort: { updatedAt: -1 } }
     ]);
-
-    // Populate sender details in lastMessage
-    for (let convo of conversations) {
-      if (convo.lastMessage && convo.lastMessage.sender) {
-        const sender = await Message.findById(convo.lastMessage._id).populate(
-          "sender",
-          "username name avatar"
-        );
-        if (sender) convo.lastMessage.sender = sender.sender;
-      }
-    }
 
     // Filter out conversations where the other participant is blocked
     const myBlockedIds = (req.user.blockedUsers || []).map(id => id.toString());
