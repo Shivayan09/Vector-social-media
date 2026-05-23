@@ -12,9 +12,11 @@ export default function UserRow({ user }: { user: UserSummary }) {
     const router = useRouter();
     const { userData } = useAppContext();
     const isSelf = user._id === userData?.id;
-    const isFollowing = !!userData?.id && (
-      user.followers?.includes(userData.id) || userData.following?.includes(user._id) || false
-    );
+    const isFollowing =
+        !!userData?.following?.includes(user._id);
+
+    const followsYou =
+        !!userData?.followers?.includes(user._id);
 
     return (
         <div className="flex relative items-center justify-between px-3 py-2 rounded-lg bg-black/10 dark:bg-white/5 backdrop-blur-3xl cursor-pointer">
@@ -30,6 +32,7 @@ export default function UserRow({ user }: { user: UserSummary }) {
                 <FollowButton
                     userId={user._id}
                     isFollowing={isFollowing}
+                    isFollowBack={!isFollowing && followsYou}
                     onFollowChange={() => { }}
                 />
             )}

@@ -6,9 +6,10 @@ import axios from "axios";
 import { socket } from "@/socket/socket";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
-import { Trash2, ArrowLeft, MoreHorizontal } from "lucide-react";
+import { Trash2, ArrowLeft, MoreHorizontal, ChevronDown } from "lucide-react";
 import ConfirmModal from "@/components/modals/DeleteWarning";
 import SkeletonLoader from "@/components/loaders/SkeletonLoader";
+import { toast } from "react-toastify";
 import type { Conversation, Message, UserSummary } from "@/lib/types";
 
 type Params = {
@@ -30,10 +31,14 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
   const [isLoadingMessages, setIsLoadingMessages] = useState(true);
 
   const [warningOpen, setWarningOpen] = useState(false);
+  const [deleteChatConfirmOpen, setDeleteChatConfirmOpen] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  const chatContainerRef = useRef<HTMLDivElement | null>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
   const router = useRouter();
@@ -176,8 +181,56 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
 
   // AUTO SCROLL
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = chatContainerRef.current;
+
+    if (!container) return;
+
+    const threshold = 100;
+
+    const isNearBottom =
+      container.scrollHeight -
+        container.scrollTop -
+        container.clientHeight <
+      threshold;
+
+    if (isNearBottom) {
+      bottomRef.current?.scrollIntoView({
+        behavior: "smooth",
+      });
+    }
   }, [messages]);
+
+  useEffect(() => {
+    const container = chatContainerRef.current;
+
+    if (!container) return;
+
+    const handleScroll = () => {
+      const threshold = 100;
+
+      const isNearBottom =
+        container.scrollHeight -
+          container.scrollTop -
+          container.clientHeight <
+        threshold;
+
+      setShowScrollButton(!isNearBottom);
+    };
+
+    container.addEventListener("scroll", handleScroll);
+
+    handleScroll();
+
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  const scrollToBottom = () => {
+    bottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  };
 
   // SEND MESSAGE
   const sendMessage = async () => {
@@ -241,6 +294,23 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
     }
   };
 
+  // DELETE FULL CHAT
+  const deleteChat = async () => {
+    try {
+      await axios.delete(
+        `${BACKEND_URL}/api/conversation/${conversationId}`,
+        { withCredentials: true }
+      );
+      toast.success("Chat cleared successfully");
+      router.push("/main/chat");
+    } catch (err) {
+      console.error("Failed to clear chat", err);
+      toast.error("Failed to clear chat");
+    } finally {
+      setDeleteChatConfirmOpen(false);
+    }
+  };
+
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <div className="chat-header px-14 md:px-5">
@@ -258,7 +328,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
           onClick={() =>
             router.push(`/main/user/${otherUser?.username}`)
           }
-          className="ml-3 min-w-0 cursor-pointer"
+          className="ml-3 min-w-0 cursor-pointer flex-1"
         >
           <p className="truncate text-[1.05rem] font-semibold text-foreground">
             {otherUser?.name || "User"}
@@ -267,9 +337,17 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
             @{otherUser?.username || "vector"}
           </p>
         </div>
+
+        <button
+          onClick={() => setDeleteChatConfirmOpen(true)}
+          className="ml-auto rounded-full p-2 transition-colors text-red-500 hover:bg-accent/70"
+          title="Clear chat"
+        >
+          <Trash2 size={22} />
+        </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
+      <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
 
         {isLoadingMessages ? (
           <div className="flex flex-col gap-4 w-full mt-2 px-2">
@@ -412,6 +490,15 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
 
       </div>
 
+      {showScrollButton && (
+        <button
+          onClick={scrollToBottom}
+          className="fixed bottom-24 right-6 z-50 rounded-full bg-black p-3 text-white shadow-lg transition hover:scale-105"
+        >
+          <ChevronDown size={20} />
+        </button>
+      )}
+
       <ConfirmModal
         open={warningOpen}
         onClose={() => {
@@ -423,6 +510,15 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
         description="This message will be permanently deleted."
         confirmText="Delete"
         content={selectedMessage?.content}
+      />
+
+      <ConfirmModal
+        open={deleteChatConfirmOpen}
+        onClose={() => setDeleteChatConfirmOpen(false)}
+        onConfirm={deleteChat}
+        title="Clear this chat?"
+        description="Are you sure you want to clear this entire conversation? This action cannot be undone."
+        confirmText="Clear Chat"
       />
 
     </div>

@@ -10,10 +10,17 @@ export const getNotifications = async (req, res) => {
     const blockerIds = blockers.map(u => u._id);
     const blockedIds = req.user?.blockedUsers || [];
     const excludeIds = [...blockedIds, ...blockerIds];
-    const notifications = await Notification.find({ 
+    const filter = { 
         recipient: currentUserId,
         sender: { $nin: excludeIds } 
-    })
+    };
+
+    if (req.query.countOnly === "true") {
+        const unreadCount = await Notification.countDocuments({ ...filter, isRead: false });
+        return res.json({ unreadCount });
+    }
+
+    const notifications = await Notification.find(filter)
         .populate("sender", "name username avatar _id")
         .populate("post")
         .populate("conversation")
@@ -118,6 +125,19 @@ export const deleteMultipleNotifications = async (req, res) => {
             success: false,
             message: "Server error"
         });
+    }
+};
+
+export const markAllAsRead = async (req, res) => {
+    try {
+        const currentUserId = req.user?._id || req.user?.id;
+        await Notification.updateMany(
+            { recipient: currentUserId, isRead: false },
+            { $set: { isRead: true } }
+        );
+        return res.json({ success: true, message: "All notifications marked as read" });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
     }
 };
 

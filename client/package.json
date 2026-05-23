@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest"
+    "test": "vitest --configLoader runner"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

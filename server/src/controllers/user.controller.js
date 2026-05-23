@@ -1,8 +1,10 @@
 import cloudinary from "../config/cloudinary.js";
 import User from "../models/user.model.js";
+import Conversation from "../models/conversation.model.js";
+import Message from "../models/message.model.js";
 import Notification from "../models/notification.model.js";
 import Post from "../models/post.model.js";
-import { getIO, onlineUsers } from "../socket/socket.js";
+import { getIO } from "../socket/socket.js";
 
 export const uploadAvatar = async (req, res) => {
     try {
@@ -35,9 +37,6 @@ export const uploadAvatar = async (req, res) => {
                 message: "User not found",
             });
         }
-        if (user.avatarPublicId) {
-            await cloudinary.uploader.destroy(user.avatarPublicId);
-        }
         const uploadResult = await cloudinary.uploader.upload(req.file.path, {
             folder: "avatars",
             transformation: [
@@ -45,6 +44,9 @@ export const uploadAvatar = async (req, res) => {
                 { quality: "auto" },
             ],
         });
+        if (user.avatarPublicId) {
+            await cloudinary.uploader.destroy(user.avatarPublicId).catch(() => {});
+        }
         user.avatar = uploadResult.secure_url;
         user.avatarPublicId = uploadResult.public_id;
         await user.save();
@@ -159,6 +161,9 @@ export const updateProfile = async (req, res) => {
                     message: "isPrivate must be a boolean"
                 });
             }
+            if (isPrivate === false && user.isPrivate === true) {
+                user.followRequests = [];
+            }
             user.isPrivate = isPrivate;
         }
         await user.save();
@@ -258,13 +263,10 @@ export const toggleFollowUser = async (req, res) => {
                             sender: req.user._id,
                             type: "follow_request",
                         });
-                        const recipientSocket = onlineUsers.get(targetUser._id.toString());
-                        if (recipientSocket) {
-                            getIO().to(recipientSocket).emit("notification:new", {
-                                notificationId: notification._id,
-                                type: notification.type,
-                            });
-                        }
+                        getIO().to(targetUser._id.toString()).emit("notification:new", {
+                            notificationId: notification._id,
+                            type: notification.type,
+                        });
                     }
                     return res.json({
                         requested: true,
@@ -288,13 +290,10 @@ export const toggleFollowUser = async (req, res) => {
                         sender: req.user._id,
                         type: "follow",
                     });
-                    const recipientSocket = onlineUsers.get(targetUser._id.toString());
-                    if (recipientSocket) {
-                        getIO().to(recipientSocket).emit("notification:new", {
-                            notificationId: notification._id,
-                            type: notification.type,
-                        });
-                    }
+                    getIO().to(targetUser._id.toString()).emit("notification:new", {
+                        notificationId: notification._id,
+                        type: notification.type,
+                    });
                 }
                 return res.json({
                     followed: true
@@ -342,6 +341,19 @@ export const acceptFollowRequest = async (req, res) => {
             return res.status(400).json({ message: "No follow request from this user" });
         }
 
+        // Check bidirectional block status before accepting
+        if (user.blockedUsers?.some(id => id.toString() === requesterId)) {
+            return res.status(403).json({ message: "You have blocked this user" });
+        }
+
+        const requesterDoc = await User.findById(requesterId).select("blockedUsers");
+        if (!requesterDoc) {
+            return res.status(404).json({ message: "Requester not found" });
+        }
+        if (requesterDoc.blockedUsers?.some(id => id.toString() === currentUserId)) {
+            return res.status(403).json({ message: "This user has blocked you" });
+        }
+
         const result = await User.updateOne(
             { _id: currentUserId, followRequests: requesterId, followers: { $ne: requesterId } },
             {
@@ -364,13 +376,10 @@ export const acceptFollowRequest = async (req, res) => {
                 sender: currentUserId,
                 type: "follow_request_accepted",
             });
-            const recipientSocket = onlineUsers.get(requesterId.toString());
-            if (recipientSocket) {
-                getIO().to(recipientSocket).emit("notification:new", {
-                    notificationId: notification._id,
-                    type: notification.type,
-                });
-            }
+            getIO().to(requesterId.toString()).emit("notification:new", {
+                notificationId: notification._id,
+                type: notification.type,
+            });
         }
 
         res.json({ success: true, message: "Follow request accepted" });
@@ -392,6 +401,8 @@ export const rejectFollowRequest = async (req, res) => {
         await User.findByIdAndUpdate(currentUserId, {
             $pull: { followRequests: requesterId }
         });
+
+        await Notification.deleteOne({ recipient: currentUserId, sender: requesterId, type: "follow_request" });
 
         res.json({ success: true, message: "Follow request rejected" });
     } catch (err) {
@@ -487,9 +498,10 @@ export const getUserProfile = async (req, res) => {
             });
         }
 
-        // Strip internal arrays — never expose raw follower/request IDs to the client
+        // Strip internal arrays — never expose raw follower/request or block IDs to the client
         delete response.followers;
         delete response.followRequests;
+        delete response.blockedUsers;
 
         res.json(response);
     } catch (error) {
@@ -511,7 +523,7 @@ export const getFollowers = async (req, res) => {
             return res.status(403).json({ message: "This account is private. Follow to see their followers." });
         }
 
-        const userWithFollowers = await User.findById(req.params.id).populate("followers", "name username avatar followers");
+        const userWithFollowers = await User.findById(req.params.id).populate("followers", "name username avatar");
         res.status(200).json(userWithFollowers.followers);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -532,7 +544,7 @@ export const getFollowing = async (req, res) => {
             return res.status(403).json({ message: "This account is private. Follow to see who they follow." });
         }
 
-        const userWithFollowing = await User.findById(req.params.id).populate("following", "name username avatar followers");
+        const userWithFollowing = await User.findById(req.params.id).populate("following", "name username avatar");
         res.status(200).json(userWithFollowing.following);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -541,19 +553,21 @@ export const getFollowing = async (req, res) => {
 
 export const getAllUsers = async (req, res) => {
     try {
+        if (!req.user) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
         const page = Number(req.query.page) || 1;
         const limit = 10;
         const skip = (page - 1) * limit;
-        const users = await User.find({ _id: { $ne: req.user.id } }).select("-password").limit(limit).skip(skip);
+        const users = await User.find({ _id: { $ne: req.user.id } }).select("name username avatar bio description").limit(limit).skip(skip);
         res.status(200).json({
             success: true,
             users
         });
-    } catch (error) {
+    } catch {
         res.status(500).json({
             success: false,
-            message: "Failed to fetch users",
-            error: error.message
+            message: "Failed to fetch users"
         });
     }
 };
@@ -627,12 +641,7 @@ export const searchUsers = async (req, res) => {
 
         const users = await User.find({
             $and: [
-                {
-                    $or: [
-                        { name: { $regex: query, $options: "i" } },
-                        { username: { $regex: query, $options: "i" } }
-                    ]
-                },
+                { $text: { $search: query } },
                 { _id: { $nin: excludeIds } }
             ]
         })
@@ -661,12 +670,7 @@ export const searchUsers = async (req, res) => {
 
         const posts = await Post.find({
             $and: [
-                {
-                    $or: [
-                        { content: { $regex: query, $options: "i" } },
-                        { intent: { $regex: query, $options: "i" } }
-                    ]
-                },
+                { $text: { $search: query } },
                 { author: { $nin: postExcludeIds } }
             ]
         })
@@ -719,31 +723,23 @@ export const blockUser = async (req, res) => {
             { $addToSet: { blockedUsers: targetUserId } }
         );
 
-        // Remove follow relationships
-        const wasFollowingTarget = currentUser.following.some(id => id.toString() === targetUserId);
-        const wasFollowedByTarget = currentUser.followers.some(id => id.toString() === targetUserId);
-
-        if (wasFollowingTarget) {
-            await User.updateOne(
-                { _id: currentUserId },
-                { $pull: { following: targetUserId }, $inc: { followingCount: -1 } }
-            );
-            await User.updateOne(
-                { _id: targetUserId },
-                { $pull: { followers: currentUserId }, $inc: { followersCount: -1 } }
-            );
-        }
-
-        if (wasFollowedByTarget) {
-            await User.updateOne(
-                { _id: currentUserId },
-                { $pull: { followers: targetUserId }, $inc: { followersCount: -1 } }
-            );
-            await User.updateOne(
-                { _id: targetUserId },
-                { $pull: { following: currentUserId }, $inc: { followingCount: -1 } }
-            );
-        }
+        // Remove follow relationships with atomic guards — no pre-reads, no races
+        await User.updateOne(
+            { _id: currentUserId, following: targetUserId },
+            { $pull: { following: targetUserId }, $inc: { followingCount: -1 } }
+        );
+        await User.updateOne(
+            { _id: targetUserId, followers: currentUserId },
+            { $pull: { followers: currentUserId }, $inc: { followersCount: -1 } }
+        );
+        await User.updateOne(
+            { _id: currentUserId, followers: targetUserId },
+            { $pull: { followers: targetUserId }, $inc: { followersCount: -1 } }
+        );
+        await User.updateOne(
+            { _id: targetUserId, following: currentUserId },
+            { $pull: { following: currentUserId }, $inc: { followingCount: -1 } }
+        );
 
         // Remove follow requests in both directions
         await User.updateOne(
@@ -762,6 +758,22 @@ export const blockUser = async (req, res) => {
                 { recipient: targetUserId, sender: currentUserId }
             ]
         });
+
+        // Delete conversations and messages between the two users
+        const conversations = await Conversation.find({
+            participants: { $all: [currentUserId, targetUserId] }
+        });
+        const conversationIds = conversations.map(c => c._id);
+        if (conversationIds.length > 0) {
+            await Message.deleteMany({ conversation: { $in: conversationIds } });
+            await Conversation.deleteMany({ _id: { $in: conversationIds } });
+        }
+
+        // Remove the blocked user's likes from the blocker's posts
+        await Post.updateMany(
+            { author: currentUserId },
+            { $pull: { likes: targetUserId } }
+        );
 
         return res.json({
             success: true,
@@ -797,6 +809,25 @@ export const unblockUser = async (req, res) => {
         await User.updateOne(
             { _id: currentUserId },
             { $pull: { blockedUsers: targetUserId } }
+        );
+
+        // Clean up any stale follow relationships that accumulated during the block
+        // (due to race conditions in blockUser's original unconditional $inc)
+        await User.updateOne(
+            { _id: currentUserId, following: targetUserId },
+            { $pull: { following: targetUserId }, $inc: { followingCount: -1 } }
+        );
+        await User.updateOne(
+            { _id: currentUserId, followers: targetUserId },
+            { $pull: { followers: targetUserId }, $inc: { followersCount: -1 } }
+        );
+        await User.updateOne(
+            { _id: targetUserId, followers: currentUserId },
+            { $pull: { followers: currentUserId }, $inc: { followersCount: -1 } }
+        );
+        await User.updateOne(
+            { _id: targetUserId, following: currentUserId },
+            { $pull: { following: currentUserId }, $inc: { followingCount: -1 } }
         );
 
         return res.json({
