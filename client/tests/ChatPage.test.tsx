@@ -151,6 +151,9 @@ describe('ChatPage Component', () => {
     // It should render "Sending..." before postPromise resolves
     expect(screen.getByText('Sending...')).toBeInTheDocument();
     
+    // Explicitly assert the message is NOT in the DOM yet (proving it is a pessimistic update)
+    expect(screen.queryByText(/Optimistic Test Message/i)).not.toBeInTheDocument();
+    
     // Resolve the promise
     await act(async () => {
       resolvePost({ data: { _id: 'new-msg-123', content: 'Optimistic Test Message', sender: { _id: 'user-123', username: 'current_user' } } });
@@ -158,7 +161,7 @@ describe('ChatPage Component', () => {
 
     // NOW it should render the sent message
     await waitFor(() => {
-      expect(document.querySelectorAll('.chat-bubble-self').length).toBeGreaterThan(0);
+      expect(screen.getByText(/Optimistic Test Message/i)).toBeInTheDocument();
     });
     expect(input).toHaveValue(''); // Input should be cleared
   });
