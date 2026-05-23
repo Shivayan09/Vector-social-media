@@ -61,6 +61,16 @@ describe("Google Auth Endpoint", () => {
   });
 
   it("handles concurrent username collisions by retrying until unique", async () => {
+    await User.create({
+      name: "Occupier",
+      surname: "Seed",
+      email: "seed@test.com",
+      username: "john",
+      password: "password123",
+      bio: "",
+      description: "",
+    });
+
     payloadByToken.set("token_1", {
       sub: "google_sub_1",
       email: "john1@test.com",
@@ -96,5 +106,7 @@ describe("Google Auth Endpoint", () => {
     expect(users[0].username).toBeTruthy();
     expect(users[1].username).toBeTruthy();
     expect(users[0].username).not.toBe(users[1].username);
+    expect(users[0].username).not.toBe("john");
+    expect(users[1].username).not.toBe("john");
   });
 });
