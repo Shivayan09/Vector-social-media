@@ -37,7 +37,7 @@ export const getMessages = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 50;
 
-    const messages = await Message.find({ conversation: conversationId })
+    const messages = await Message.find({ conversation: conversationId, isDeleted: false })
       .populate("sender", "username name avatar")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)

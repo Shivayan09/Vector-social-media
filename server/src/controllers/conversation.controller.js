@@ -17,9 +17,33 @@ export const createConversation = async (req, res) => {
             return res.status(403).json({ message: "Action forbidden due to block status" });
         }
 
-        let convo = await Conversation.findOne({ participants: { $all: [senderId, receiverId] }, });
+        const participantsKey = [senderId.toString(), receiverId.toString()]
+            .sort()
+            .join(":");
+
+        let convo = await Conversation.findOne({ participantsKey });
+
+        // Backfill participantsKey for existing conversations (and return it)
         if (!convo) {
-            convo = await Conversation.create({ participants: [senderId, receiverId], });
+            convo = await Conversation.findOneAndUpdate(
+                { participants: { $all: [senderId, receiverId] }, participantsKey: { $exists: false } },
+                { $set: { participantsKey } },
+                { new: true }
+            );
+        }
+
+        // Create atomically; if the unique index races, fall back to the existing one
+        if (!convo) {
+            try {
+                convo = await Conversation.findOneAndUpdate(
+                    { participantsKey },
+                    { $setOnInsert: { participants: [senderId, receiverId], participantsKey } },
+                    { upsert: true, new: true }
+                );
+            } catch (err) {
+                if (err?.code !== 11000) throw err;
+                convo = await Conversation.findOne({ participantsKey });
+            }
         }
         res.json(convo);
     } catch (err) {
