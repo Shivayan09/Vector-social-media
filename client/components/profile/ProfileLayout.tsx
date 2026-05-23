@@ -12,6 +12,7 @@ import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
 import { toast } from "react-toastify";
 import type { UserSummary } from "@/lib/types";
+import SavedPostsFeed from "./SavedPostsFeed";
 
 type ProfileLayoutProps = {
   user: UserSummary;
@@ -20,12 +21,13 @@ type ProfileLayoutProps = {
 };
 
 export default function ProfileLayout({ user, isFollowing, isRequested }: ProfileLayoutProps) {
-  const [activeTab, setActiveTab] = useState<"posts" | "followers" | "following">("posts");
+  const [activeTab, setActiveTab] = useState<"posts" | "followers" | "following" | "saved">("posts");
 
   const router = useRouter();
   const { userData, setUserData } = useAppContext();
   const followsYou = !!userData?.followers?.includes(user._id);
   const isSelfProfile = userData?.id === user._id;
+  const tabs = isSelfProfile? ["posts", "followers", "following", "saved"]: ["posts", "followers", "following"];
   const [postsCount, setPostsCount] = useState<number>(0);
   const [following, setFollowing] = useState<boolean>(isFollowing ?? false);
   const [requested] = useState<boolean>(isRequested ?? false);
@@ -182,11 +184,11 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
       </div>
 
       <div className="mx-auto mb-8 flex max-w-336 justify-between border-b border-border/80 md:justify-around">
-        {["posts", "followers", "following"].map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab}
             onClick={() =>
-              setActiveTab(tab as "posts" | "followers" | "following")
+              setActiveTab(tab as "posts" | "followers" | "following" | "saved")
             }
             className={`relative px-8 pb-4 font-semibold capitalize transition cursor-pointer whitespace-nowrap focus:outline-none ${activeTab === tab
                 ? "text-blue-500 dark:text-blue-300"
@@ -255,6 +257,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
                 }
               />
             )}
+            {activeTab === "saved" && isSelfProfile && <SavedPostsFeed />}
           </>
         )}
       </div>

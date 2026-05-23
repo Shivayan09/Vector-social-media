@@ -50,6 +50,7 @@ export type Post = {
   commentsCount?: number;
   sharesCount?: number;
   createdAt: string;
+  isBookmarked?: boolean;
 };
 
 export type Comment = {

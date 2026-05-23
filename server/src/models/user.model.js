@@ -105,6 +105,7 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    bookmarks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }],
   },
   {
     timestamps: true,

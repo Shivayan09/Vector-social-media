@@ -20,6 +20,7 @@ export const removePostById = async (postId) => {
     await Comment.deleteMany({ post: postId });
     await Notification.deleteMany({ post: postId });
     await Report.deleteMany({ targetType: "post", targetId: postId });
+    await User.updateMany({ bookmarks: postId },{ $pull: { bookmarks: postId } });
     await post.deleteOne();
     return post;
 };
@@ -115,11 +116,18 @@ export const getPosts = async (req, res) => {
         const hasMore = posts.length === limit;
         const nextCursor = hasMore ? posts[posts.length - 1]._id : null;
 
+        const userBookmarkSet = req.user?.bookmarks
+            ? new Set(req.user.bookmarks.map(String))
+            : new Set();
+        const postsWithMeta = posts.map((p) => ({
+        ...p.toObject(),
+        isBookmarked: userBookmarkSet.has(p._id.toString()),
+        }));
         res.status(200).json({
-            posts,
+            posts: postsWithMeta,
             limit,
             hasMore,
-            nextCursor
+            nextCursor,
         });
     } catch (error) {
         res.status(500).json({
@@ -379,9 +387,16 @@ export const getPostsByUser = async (req, res) => {
         }
 
         const posts = await Post.find({ author: userId }).populate("author", "username name avatar").populate("likes", "username name avatar _id").sort({ createdAt: -1 });
+        const userBookmarkSet = req.user?.bookmarks
+        ? new Set(req.user.bookmarks.map(String))
+        : new Set();
+        const postsWithMeta = posts.map((p) => ({
+        ...p.toObject(),
+        isBookmarked: userBookmarkSet.has(p._id.toString()),
+        }));
         return res.status(200).json({
-            success: true,
-            posts,
+        success: true,
+        posts: postsWithMeta,
         });
     } catch (error) {
         return res.status(500).json({
@@ -427,8 +442,11 @@ export const getSinglePost = async (req, res) => {
         } else if (author.isPrivate) {
             return res.status(403).json({ message: "This post is from a private account. Follow them to see it." });
         }
-
-        res.json(post);
+        const postObj = post.toObject();
+        postObj.isBookmarked = req.user?.bookmarks
+            ? req.user.bookmarks.map(String).includes(post._id.toString())
+            : false;
+        res.json(postObj);
     } catch (error) {
         res.status(500).json({ message: "Server error: " + error.message });
     }
@@ -519,9 +537,16 @@ export const getTopPostsOfWeek = async (req, res) => {
                 },
             }
         ]);
+        const userBookmarkSet = req.user?.bookmarks
+            ? new Set(req.user.bookmarks.map(String))
+            : new Set();
+        const postsWithMeta = posts.map(p => ({
+        ...p,
+        isBookmarked: userBookmarkSet.has(p._id.toString()),
+        }));
         res.status(200).json({
-            success: true,
-            posts
+        success: true,
+        posts: postsWithMeta,
         });
     } catch (error) {
         res.status(500).json({
@@ -613,10 +638,16 @@ export const getTopPostsOfMonth = async (req, res) => {
                 },
             },
         ]);
-        
+        const userBookmarkSet = req.user?.bookmarks
+            ? new Set(req.user.bookmarks.map(String))
+            : new Set();
+        const postsWithMeta = posts.map(p => ({
+        ...p,
+        isBookmarked: userBookmarkSet.has(p._id.toString()),
+        }));
         res.status(200).json({
-            success: true,
-            posts
+        success: true,
+        posts: postsWithMeta,
         });
     } catch (error) {
         res.status(500).json({
@@ -649,4 +680,86 @@ export const incrementShare = async (req, res) => {
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
+};
+export const toggleBookmark = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id || req.user._id;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid post ID format" });
+    }
+    const post = await Post.findById(id);
+    if (!post) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Post not found" });
+    }
+    const user = await User.findById(userId);
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    const isBookmarked = user.bookmarks.includes(id);
+    if (isBookmarked) {
+      user.bookmarks.pull(id);
+    } else {
+      user.bookmarks.push(id);
+    }
+    await user.save({ validateBeforeSave: false });
+    res.status(200).json({
+      success: true,
+      bookmarked: !isBookmarked,
+      message: isBookmarked ? "Removed from bookmarks" : "Added to bookmarks",
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getBookmarks = async (req, res) => {
+  try {
+    const { cursor } = req.query;
+    const limit = 10;
+    const user = await User.findById(req.user.id).select("bookmarks");
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    let bookmarkIds = [...user.bookmarks].reverse();
+    if (cursor) {
+      if (!mongoose.Types.ObjectId.isValid(cursor)) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid cursor" });
+      }
+      const idx = bookmarkIds.findIndex((id) => id.toString() === cursor);
+      if (idx === -1)
+        return res
+          .status(400)
+          .json({ success: false, message: "Cursor not found" });
+      bookmarkIds = bookmarkIds.slice(idx + 1);
+    }
+    bookmarkIds = bookmarkIds.slice(0, limit);
+    const posts = await Post.find({ _id: { $in: bookmarkIds } })
+      .populate("author", "username name surname avatar")
+      .populate("likes", "username name avatar _id")
+      .lean();
+    const postMap = new Map(posts.map((p) => [p._id.toString(), p]));
+    const orderedPosts = bookmarkIds
+      .map((id) => postMap.get(id.toString()))
+      .filter(Boolean);
+    const postsWithMeta = orderedPosts.map((p) => ({
+      ...p,
+      isBookmarked: true,
+    }));
+    const nextCursor =
+      bookmarkIds.length === limit
+        ? bookmarkIds[bookmarkIds.length - 1].toString()
+        : null;
+    res.json({ posts: postsWithMeta, nextCursor });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
