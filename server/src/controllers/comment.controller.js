@@ -83,7 +83,14 @@ export const getPostComments = async (req, res) => {
             return res.status(403).json({ message: "This post is from a private account. Follow them to see it." });
         }
 
-        const comments = await Comment.find({ post: postId }).populate("author", "username name avatar");
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+
+        const comments = await Comment.find({ post: postId })
+            .sort({ createdAt: 1 })
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .populate("author", "username name avatar");
         res.json(comments);
     } catch (error) {
         res.status(500).json({ message: error.message });

@@ -27,7 +27,9 @@ export default function CommentsSection({ postId }: { postId: string }) {
     const [showReportModal, setShowReportModal] = useState(false);
     const [selectedComment, setSelectedComment] = useState<Comment | null>(null);
     const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
-    const [visibleCount, setVisibleCount] = useState(5);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const LIMIT = 20;
 
     function timeAgo(dateString: string) {
         const now = new Date().getTime();
@@ -48,12 +50,21 @@ export default function CommentsSection({ postId }: { postId: string }) {
 
     useEffect(() => {
         const fetchComments = async () => {
-            const { data } = await axios.get(`${BACKEND_URL}/api/comments/${postId}`, { withCredentials: true });
+            const { data } = await axios.get(`${BACKEND_URL}/api/comments/${postId}?page=1&limit=${LIMIT}`, { withCredentials: true });
             setComments(data);
+            setHasMore(data.length === LIMIT);
             setLoading(false);
         };
         fetchComments();
     }, [BACKEND_URL, postId]);
+
+    const loadMoreComments = async () => {
+        const nextPage = page + 1;
+        const { data } = await axios.get(`${BACKEND_URL}/api/comments/${postId}?page=${nextPage}&limit=${LIMIT}`, { withCredentials: true });
+        setComments(prev => [...prev, ...data]);
+        setHasMore(data.length === LIMIT);
+        setPage(nextPage);
+    };
 
     const handlePost = async () => {
         try {
@@ -129,7 +140,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
                     </p>
                 )}
 
-                {comments.slice(0, visibleCount).map((c) => {
+                {comments.map((c) => {
                     const isOwner =
                         String(c.author?._id) === String(userData?.id);
 
@@ -209,12 +220,12 @@ export default function CommentsSection({ postId }: { postId: string }) {
                     );
                 })}
 
-                {comments.length > visibleCount && (
+                {hasMore && comments.length >= LIMIT && (
                     <button
-                        onClick={() => setVisibleCount(prev => prev + 5)}
+                        onClick={loadMoreComments}
                         className="mt-3 w-full text-sm text-blue-500 hover:text-blue-600 font-medium transition"
                     >
-                        Load more comments ({comments.length - visibleCount} remaining)
+                        Load more comments
                     </button>
                 )}
             </div>

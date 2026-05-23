@@ -35,6 +35,11 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const LIMIT = 50;
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
@@ -150,11 +155,12 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
         }
 
         const msgRes = await axios.get<Message[]>(
-          `${BACKEND_URL}/api/messages/${conversationId}`,
+          `${BACKEND_URL}/api/messages/${conversationId}?page=1&limit=${LIMIT}`,
           { withCredentials: true }
         );
 
         setMessages(msgRes.data);
+        setHasMore(msgRes.data.length === LIMIT);
 
         // Mark all messages as read
         try {
@@ -178,6 +184,25 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
     }
 
   }, [BACKEND_URL, conversationId, userData]);
+
+  const loadMoreMessages = async () => {
+    if (!hasMore || isLoadingMore) return;
+    setIsLoadingMore(true);
+    try {
+      const nextPage = page + 1;
+      const { data } = await axios.get<Message[]>(
+        `${BACKEND_URL}/api/messages/${conversationId}?page=${nextPage}&limit=${LIMIT}`,
+        { withCredentials: true }
+      );
+      setMessages((prev) => [...data, ...prev]);
+      setHasMore(data.length === LIMIT);
+      setPage(nextPage);
+    } catch (error) {
+      console.error("Failed to load more messages", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   // AUTO SCROLL
   useEffect(() => {
@@ -376,7 +401,19 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
             <p className="mt-1 text-sm">Start the conversation with something thoughtful.</p>
           </div>
         ) : (
-          messages.map((m, index) => {
+          <>
+            {hasMore && (
+              <div className="flex justify-center my-2">
+                <button
+                  onClick={loadMoreMessages}
+                  disabled={isLoadingMore}
+                  className="text-xs text-blue-500 hover:underline cursor-pointer disabled:opacity-50"
+                >
+                  {isLoadingMore ? "Loading..." : "Load previous messages"}
+                </button>
+              </div>
+            )}
+            {messages.map((m, index) => {
 
             const isMe = m.sender._id === userData?.id;
             const showDateSeparator =
@@ -458,8 +495,9 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
                 </div>
               </div>
             );
-          }))
-        }
+          })}
+          </>
+        )}
 
         <div ref={bottomRef} />
       </div>
