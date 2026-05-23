@@ -9,7 +9,7 @@ export default function NotFound() {
     <div className="min-h-screen relative flex flex-col items-center justify-center bg-background text-foreground p-6 overflow-hidden">
       {/* Animated Background Elements */}
       <motion.div 
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30rem] h-[30rem] bg-primary/10 rounded-full blur-3xl pointer-events-none"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-120 h-120 bg-primary/10 rounded-full blur-3xl pointer-events-none"
         animate={{
           scale: [1, 1.2, 0.9, 1],
           opacity: [0.5, 0.8, 0.5]
@@ -21,7 +21,7 @@ export default function NotFound() {
         }}
       />
       <motion.div 
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] bg-primary/5 rounded-full blur-3xl pointer-events-none"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-160 h-160 bg-primary/5 rounded-full blur-3xl pointer-events-none"
         animate={{
           scale: [0.9, 1.1, 1, 0.9],
           opacity: [0.3, 0.6, 0.3]
@@ -52,7 +52,7 @@ export default function NotFound() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <h2 className="text-8xl md:text-9xl font-black text-foreground/80 mb-4 tracking-tighter">
+          <h2 className="text-6xl md:text-8xl font-black text-(--text) mb-4 tracking-tighter">
             404
           </h2>
           <h3 className="text-2xl md:text-3xl font-bold mb-6">
@@ -66,7 +66,7 @@ export default function NotFound() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link 
               href="/main" 
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-medium transition-colors duration-300"
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white hover:bg-primary/90 rounded-lg font-medium transition-colors duration-300"
             >
               <Home size={20} />
               Back to Home
