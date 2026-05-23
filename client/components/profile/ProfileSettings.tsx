@@ -371,7 +371,7 @@ function EditableInput({
         name={name}
         value={value}
         onChange={onChange}
-        className="settings-field settings-field-editable"
+        className="settings-field"
       />
     </div>
   );
@@ -395,7 +395,7 @@ function EditableTextarea({
         value={value}
         onChange={onChange}
         rows={3}
-        className="settings-field settings-field-editable resize-none"
+        className="settings-field resize-none"
       />
     </div>
   );
