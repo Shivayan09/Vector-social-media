@@ -652,6 +652,24 @@ export const searchUsers = async (req, res) => {
         const followingUserIds = new Set(
             (req.user.following || []).map((id) => id.toString())
         );
+
+        const privateNotFollowed = await User.find({
+            _id: {
+                $nin: [
+                    currentUserId,
+                    ...blockedIds,
+                    ...blockerIds,
+                    ...(req.user.following || []),
+                ],
+            },
+            isPrivate: true,
+        })
+            .select("_id")
+            .lean();
+
+        const privateNotFollowedIds = privateNotFollowed.map((u) => u._id);
+        const finalPostExcludeIds = [...postExcludeIds, ...privateNotFollowedIds];
+
         const searchedUserIds = users.map((user) => user._id);
         const requestedUsers = await User.find({
             _id: { $in: searchedUserIds },
@@ -671,7 +689,7 @@ export const searchUsers = async (req, res) => {
         const posts = await Post.find({
             $and: [
                 { $text: { $search: query } },
-                { author: { $nin: postExcludeIds } }
+                { author: { $nin: finalPostExcludeIds } }
             ]
         })
             .populate("author", "username")

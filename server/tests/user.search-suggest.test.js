@@ -103,6 +103,64 @@ describe('User Search and Suggestions Endpoints', () => {
       expect(response.body.posts.length).toBe(1);
       expect(response.body.posts[0].content).toContain("alice");
     });
+
+    it('should not return posts from private accounts the requester does not follow', async () => {
+      // Set user2 (bobjones) as private
+      await User.findByIdAndUpdate(user2._id, { isPrivate: true });
+
+      await Post.create({
+        content: "alice secret project plans",
+        intent: "share",
+        author: user2._id
+      });
+
+      const response = await request(app)
+        .get('/api/users/search?query=alice')
+        .set('Cookie', `token=${token1}`);
+
+      expect(response.status).toBe(200);
+      // user2 is private and user1 does not follow user2 -> posts should be hidden
+      expect(response.body.posts.length).toBe(0);
+    });
+
+    it('should return posts from private accounts the requester follows', async () => {
+      // User1 follows User2
+      await User.findByIdAndUpdate(user1._id, { $addToSet: { following: user2._id } });
+      // Set user2 as private
+      await User.findByIdAndUpdate(user2._id, { isPrivate: true });
+
+      await Post.create({
+        content: "alice visible private content",
+        intent: "share",
+        author: user2._id
+      });
+
+      const response = await request(app)
+        .get('/api/users/search?query=alice')
+        .set('Cookie', `token=${token1}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.posts.length).toBe(1);
+      expect(response.body.posts[0].content).toContain("visible private");
+    });
+
+    it('should not return posts from users who blocked the requester', async () => {
+      // User2 blocks User1
+      await User.findByIdAndUpdate(user2._id, { $addToSet: { blockedUsers: user1._id } });
+
+      await Post.create({
+        content: "alice blocked content",
+        intent: "share",
+        author: user2._id
+      });
+
+      const response = await request(app)
+        .get('/api/users/search?query=alice')
+        .set('Cookie', `token=${token1}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.posts.length).toBe(0);
+    });
   });
 
   describe('GET /api/users/suggestions', () => {
