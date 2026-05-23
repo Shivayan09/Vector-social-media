@@ -43,7 +43,6 @@ export const register = async (req, res) => {
         const validation = registerSchema.safeParse(req.body);
 
         if (!validation.success) {
-            console.log("Registration validation failed:", validation.error.format());
             return res.status(400).json({
                 success: false,
                 message: getValidationMessage(validation, "Invalid registration data"),
@@ -115,7 +114,6 @@ export const register = async (req, res) => {
             message: "Account created successfully",
         });
     } catch (error) {
-        console.error("Registration error details:", error);
         return res.status(500).json({
             success: false,
             message: error.message,
