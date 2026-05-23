@@ -34,11 +34,16 @@ export const getMessages = async (req, res) => {
       }
     }
 
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+
     const messages = await Message.find({ conversation: conversationId })
       .populate("sender", "username name avatar")
-      .sort({ createdAt: 1 });
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
 
-    res.json(messages);
+    res.json(messages.reverse());
 
   } catch (error) {
     res.status(500).json({ message: error.message });
