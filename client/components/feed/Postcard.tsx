@@ -3,7 +3,7 @@
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
 import Image from "next/image";
-import { Bookmark, Heart, MessageCircle, HelpCircle, Hammer, Share2, MessagesSquare, MoreHorizontal, Trash2, Flag, Forward, Pencil } from "lucide-react";
+import { Bookmark, BookmarkCheck , Heart, MessageCircle, HelpCircle, Hammer, Share2, MessagesSquare, MoreHorizontal, Trash2, Flag, Forward, Pencil } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
@@ -17,7 +17,7 @@ import SkeletonLoader from "@/components/loaders/SkeletonLoader";
 import Linkify from "../ui/Linkify";
 import Avatar from "../ui/Avatar";
 import EditPostModal from "../modals/EditPostModal";
-import Portal from "../ui/Portal";
+import Portal from "../ui/Portal"
 
 
 type PostCardProps = {
@@ -41,6 +41,8 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     const [showReportModal, setShowReportModal] = useState(false);
     const [showLikesModal, setShowLikesModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [bookmarked, setBookmarked] = useState(post.isBookmarked ?? false);
+    const [bookmarkLoading, setBookmarkLoading] = useState(false);
     type PostLike = Post["likes"][number];
     const currentUserLike =
         userData?.id
@@ -219,6 +221,9 @@ export default function PostCard({ post, setPost }: PostCardProps) {
 
         return () => clearTimeout(timeoutId);
     }, [post.image]);
+    useEffect(() => {
+        setBookmarked(post.isBookmarked ?? false);
+    }, [post.isBookmarked]);
 
     // prevent crash if author missing
     if (!post?.author) return null;
@@ -267,7 +272,46 @@ export default function PostCard({ post, setPost }: PostCardProps) {
         }
         setMenuOpen(false);
     };
+    const handleBookmark = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!userData?.id) {
+        toast.error("User not authenticated");
+        return;
+        }
+        if (bookmarkLoading) return;
 
+        setBookmarked((prev) => !prev); // optimistic
+        setBookmarkLoading(true);
+
+        try {
+        const res = await axios.post(
+            `${BACKEND_URL}/api/posts/${post._id}/bookmark`,
+            {},
+            { withCredentials: true },
+        );
+        setBookmarked(res.data.bookmarked);
+
+        if (setPost) {
+            setPost((prev) =>
+            prev ? { ...prev, isBookmarked: res.data.bookmarked } : prev,
+            );
+        } else {
+            setPosts((prev) =>
+            prev.map((p) =>
+                p._id === post._id
+                ? { ...p, isBookmarked: res.data.bookmarked }
+                : p,
+            ),
+            );
+        }
+        toast.success(res.data.bookmarked ? "Post saved" : "Removed from saved");
+        } catch {
+        setBookmarked((prev) => !prev); // revert
+        toast.error("Failed to update bookmark");
+        } finally {
+        setBookmarkLoading(false);
+        }
+    };
     return (
         <div className="content-card glass-hover relative overflow-clip cursor-pointer"
             onClick={openPost}>
@@ -420,6 +464,20 @@ Report post </button>
                         <button onClick={(e) => { e.stopPropagation(); setShowLikesModal(true) }} className="cursor-pointer text-sm hover:text-blue-500">
                             {likeCount} {likeCount === 1 ? 'Like' : 'Likes'}
                         </button>
+                    </div>
+                    <div className="flex flex-col text-center sm:flex-row gap-1 items-center md:w-[20%] justify-center">
+                        <button
+                            onClick={handleBookmark}
+                            disabled={bookmarkLoading}
+                            className={`p-0 hover:text-blue-500 transition-colors duration-200 ${bookmarkLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                            aria-label={bookmarked ? "Remove bookmark" : "Bookmark post"}
+                        >
+                            {bookmarked
+                            ? <BookmarkCheck className="h-4.5 md:h-5 text-blue-500" fill="currentColor" />
+                            : <Bookmark className="h-4.5 md:h-5" />
+                            }
+                        </button>
+                        <span className="text-sm">{bookmarked ? "Saved" : "Save"}</span>
                     </div>
                 </div>
 
