@@ -36,13 +36,13 @@ export const getMessages = async (req, res) => {
 
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 0));
+    const skip = (page - 1) * limit;
 
     let query = Message.find({ conversation: conversationId })
       .populate("sender", "username name avatar")
       .sort({ createdAt: 1 });
 
     if (limit > 0) {
-      const skip = (page - 1) * limit;
       query = query.skip(skip).limit(limit);
     }
 
