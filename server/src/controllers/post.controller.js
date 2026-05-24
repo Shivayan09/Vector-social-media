@@ -1,3 +1,4 @@
+import { unlink } from "fs";
 import mongoose from "mongoose";
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
@@ -6,6 +7,7 @@ import Notification from "../models/notification.model.js";
 import Report from "../models/report.model.js";
 import cloudinary from "../config/cloudinary.js";
 import { getIO } from "../socket/socket.js";
+import { uploadToCloudinary } from "../utils/uploadCleanup.js";
 
 export const removePostById = async (postId) => {
     const post = await Post.findById(postId);
@@ -47,7 +49,7 @@ export const createPost = async (req, res) => {
         let image = null;
 
         if (req.file) {
-            const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+            const uploadResult = await uploadToCloudinary(req.file, {
                 folder: "posts"
             });
             image = uploadResult.secure_url;
@@ -74,6 +76,10 @@ export const createPost = async (req, res) => {
             success: false,
             message: error.message
         })
+    } finally {
+        if (req.file?.path) {
+            unlink(req.file.path, () => {});
+        }
     }
 }
 
@@ -236,7 +242,7 @@ export const updatePost = async (req, res) => {
         }
 
         if (req.file) {
-            const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+            const uploadResult = await uploadToCloudinary(req.file, {
                 folder: "posts",
             });
             if (post.imagePublicId) {
@@ -268,6 +274,10 @@ export const updatePost = async (req, res) => {
             success: false,
             message: error.message,
         });
+    } finally {
+        if (req.file?.path) {
+            unlink(req.file.path, () => {});
+        }
     }
 };
 

@@ -1,3 +1,4 @@
+import { unlink } from "fs";
 import cloudinary from "../config/cloudinary.js";
 import User from "../models/user.model.js";
 import Conversation from "../models/conversation.model.js";
@@ -5,6 +6,7 @@ import Message from "../models/message.model.js";
 import Notification from "../models/notification.model.js";
 import Post from "../models/post.model.js";
 import { getIO } from "../socket/socket.js";
+import { uploadToCloudinary } from "../utils/uploadCleanup.js";
 
 export const uploadAvatar = async (req, res) => {
     try {
@@ -37,7 +39,7 @@ export const uploadAvatar = async (req, res) => {
                 message: "User not found",
             });
         }
-        const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+        const uploadResult = await uploadToCloudinary(req.file, {
             folder: "avatars",
             transformation: [
                 { width: 300, height: 300, crop: "fill" },
@@ -59,6 +61,10 @@ export const uploadAvatar = async (req, res) => {
             success: false,
             message: error.message,
         });
+    } finally {
+        if (req.file?.path) {
+            unlink(req.file.path, () => {});
+        }
     }
 };
 
