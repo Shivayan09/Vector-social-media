@@ -1,4 +1,3 @@
-import { unlink } from "fs";
 import mongoose from "mongoose";
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
@@ -76,10 +75,6 @@ export const createPost = async (req, res) => {
             success: false,
             message: error.message
         })
-    } finally {
-        if (req.file?.path) {
-            unlink(req.file.path, () => {});
-        }
     }
 }
 
@@ -274,10 +269,6 @@ export const updatePost = async (req, res) => {
             success: false,
             message: error.message,
         });
-    } finally {
-        if (req.file?.path) {
-            unlink(req.file.path, () => {});
-        }
     }
 };
 

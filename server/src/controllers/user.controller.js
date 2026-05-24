@@ -1,4 +1,3 @@
-import { unlink } from "fs";
 import cloudinary from "../config/cloudinary.js";
 import User from "../models/user.model.js";
 import Conversation from "../models/conversation.model.js";
@@ -61,10 +60,6 @@ export const uploadAvatar = async (req, res) => {
             success: false,
             message: error.message,
         });
-    } finally {
-        if (req.file?.path) {
-            unlink(req.file.path, () => {});
-        }
     }
 };
 
