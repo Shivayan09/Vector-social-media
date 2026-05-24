@@ -6,7 +6,15 @@ import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import { Trash2, MessageCircle, ArrowRight, Heart, MessageSquare, UserCheck, Bell } from "lucide-react";
+import {
+  ArrowRight,
+  Bell,
+  Heart,
+  MessageCircle,
+  MessageSquare,
+  Trash2,
+  UserCheck,
+} from "lucide-react";
 import ConfirmModal from "./modals/DeleteWarning";
 import FollowRequestsModal from "./modals/FollowRequestsModal";
 import FollowButton from "./ui/FollowButton";
@@ -25,20 +33,27 @@ export default function NotificationPanel({ search = "" }: Props) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
   const [warningOpen, setWarningOpen] = useState(false);
-  const [selectMode, setSelectMode] = useState(false);
-  const [selected, setSelected] = useState<string[]>([]);
-  const [followLoading, setFollowLoading] = useState<Record<string, boolean>>({});
+  const [followLoading, setFollowLoading] = useState<Record<string, boolean>>(
+    {}
+  );
   const [senderFollowState, setSenderFollowState] = useState<
     Record<string, { isFollowing: boolean; isRequested: boolean }>
   >({});
-  const [messageLoading, setMessageLoading] = useState<Record<string, boolean>>({});
-  const [deleteLoading, setDeleteLoading] = useState<Record<string, boolean>>({});
+  const [messageLoading, setMessageLoading] = useState<Record<string, boolean>>(
+    {}
+  );
+  const [deleteLoading, setDeleteLoading] = useState<Record<string, boolean>>(
+    {}
+  );
   const [modalOpen, setModalOpen] = useState(false);
   const [singleDeleteId, setSingleDeleteId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<"all" | "like" | "comment" | "follow" | "message">("all");
+  const [activeFilter, setActiveFilter] = useState<
+    "all" | "like" | "comment" | "follow" | "message"
+  >("all");
   const isFirstLoad = useRef(true);
+
   const getSenderName = (notification: Notification) =>
     notification.sender?.name || notification.sender?.username || "Someone";
   const getSenderUsername = (notification: Notification) =>
@@ -46,77 +61,74 @@ export default function NotificationPanel({ search = "" }: Props) {
   const getSenderAvatar = (notification: Notification) =>
     notification.sender?.avatar || "/default-avatar.png";
 
-  const fetchNotifications = useCallback(async (pageNum = 1) => {
-    try {
-      if (isFirstLoad.current && pageNum === 1) {
-        setLoading(true);
-        isFirstLoad.current = false;
-      }
-      const { data } = await axios.get<Notification[]>(
-        `${BACKEND_URL}/api/notifications?page=${pageNum}&limit=10`,
-        { withCredentials: true }
-      );
-      
-      if (data.length < 10) {
-        setHasMore(false);
-      } else {
-        setHasMore(true);
-      }
+  const fetchNotifications = useCallback(
+    async (pageNum = 1) => {
+      try {
+        if (isFirstLoad.current && pageNum === 1) {
+          setLoading(true);
+          isFirstLoad.current = false;
+        }
 
-      setNotifications((prev) => {
-        if (prev.length === 0 && pageNum === 1) return data;
+        const { data } = await axios.get<Notification[]>(
+          `${BACKEND_URL}/api/notifications?page=${pageNum}&limit=10`,
+          { withCredentials: true }
+        );
 
-        const existingIds = new Set(prev.map((n) => n._id));
-        const newNotifications = data.filter((n) => !existingIds.has(n._id));
+        setHasMore(data.length >= 10);
 
-        // Keep existing notifications, updating them with any new details if present in fetched data
-        const updatedPrev = prev.map((p) => {
-            const latest = data.find((d) => d._id === p._id);
-            return latest ? latest : p;
+        setNotifications((prev) => {
+          if (prev.length === 0 && pageNum === 1) return data;
+
+          const existingIds = new Set(prev.map((n) => n._id));
+          const newNotifications = data.filter((n) => !existingIds.has(n._id));
+
+          const updatedPrev = prev.map((prevNotification) => {
+            const latest = data.find((d) => d._id === prevNotification._id);
+            return latest ?? prevNotification;
           });
 
-        if (pageNum === 1) {
-          return [...newNotifications, ...updatedPrev];
-        } else {
-          return [...updatedPrev, ...newNotifications];
-        }
-      });
-      
-      setSenderFollowState((prev) => {
-        const followStates = { ...prev };
-        data.forEach(notification => {
-          if (notification.sender?._id) {
-            followStates[notification.sender._id] = {
-              isFollowing: notification.sender.isFollowedByCurrentUser ?? false,
-              isRequested: notification.sender.isRequestedByCurrentUser ?? false,
-            };
-          }
+          return pageNum === 1
+            ? [...newNotifications, ...updatedPrev]
+            : [...updatedPrev, ...newNotifications];
         });
-        return followStates;
-      });
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        toast.error(
-          err.response?.data?.message ||
-            "Failed to fetch notifications"
-        );
-      } else {
-        toast.error("Failed to fetch notifications");
+
+        setSenderFollowState((prev) => {
+          const followStates = { ...prev };
+          data.forEach((notification) => {
+            if (notification.sender?._id) {
+              followStates[notification.sender._id] = {
+                isFollowing:
+                  notification.sender.isFollowedByCurrentUser ?? false,
+                isRequested:
+                  notification.sender.isRequestedByCurrentUser ?? false,
+              };
+            }
+          });
+          return followStates;
+        });
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err)) {
+          toast.error(
+            err.response?.data?.message || "Failed to fetch notifications"
+          );
+        } else {
+          toast.error("Failed to fetch notifications");
+        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [BACKEND_URL]);
+    },
+    [BACKEND_URL]
+  );
 
   const deleteSingle = async (id: string) => {
     if (deleteLoading[id]) return;
 
     setDeleteLoading((prev) => ({ ...prev, [id]: true }));
     try {
-      await axios.delete(
-        `${BACKEND_URL}/api/notifications/${id}`,
-        { withCredentials: true }
-      );
+      await axios.delete(`${BACKEND_URL}/api/notifications/${id}`, {
+        withCredentials: true,
+      });
       setNotifications((prev) => prev.filter((n) => n._id !== id));
       toast.success("Notification deleted");
     } catch (err: unknown) {
@@ -130,49 +142,16 @@ export default function NotificationPanel({ search = "" }: Props) {
     }
   };
 
-  const deleteSelected = async () => {
-    if (selected.length === 0) return;
-    try {
-      await axios.post(
-        `${BACKEND_URL}/api/notifications/bulk-delete`,
-        { ids: selected },
-        { withCredentials: true }
-      );
-
-      setNotifications((prev) =>
-        prev.filter((n) => !selected.includes(n._id))
-      );
-
-      setSelected([]);
-      setSelectMode(false);
-
-      toast.success("Selected notifications deleted");
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        toast.error(
-          err.response?.data?.message || "Bulk delete failed"
-        );
-      } else {
-        toast.error("Bulk delete failed");
-      }
-    }
-  };
-
   const deleteAll = async () => {
     try {
-      await axios.delete(
-        `${BACKEND_URL}/api/notifications/all`,
-        { withCredentials: true }
-      );
+      await axios.delete(`${BACKEND_URL}/api/notifications/all`, {
+        withCredentials: true,
+      });
       setNotifications([]);
-      setSelected([]);
-      setSelectMode(false);
       toast.success("All notifications cleared");
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        toast.error(
-          err.response?.data?.message || "Delete all failed"
-        );
+        toast.error(err.response?.data?.message || "Delete all failed");
       } else {
         toast.error("Delete all failed");
       }
@@ -187,9 +166,7 @@ export default function NotificationPanel({ search = "" }: Props) {
         { withCredentials: true }
       );
 
-      setNotifications((prev) =>
-        prev.map((n) => ({ ...n, isRead: true }))
-      );
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     } catch (err) {
       console.error(err);
     }
@@ -204,12 +181,13 @@ export default function NotificationPanel({ search = "" }: Props) {
         { withCredentials: true }
       );
       toast.success("Follow request accepted");
-      // Update local state to remove the request notification or change its type
-      setNotifications(prev => prev.map(n => 
-        (n.sender?._id === senderId && n.type === "follow_request") 
-        ? { ...n, type: "follow" as const } 
-        : n
-      ));
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.sender?._id === senderId && n.type === "follow_request"
+            ? { ...n, type: "follow" as const }
+            : n
+        )
+      );
       setSenderFollowState((prev) => ({
         ...prev,
         [senderId]: prev[senderId] || {
@@ -235,7 +213,11 @@ export default function NotificationPanel({ search = "" }: Props) {
         { withCredentials: true }
       );
       toast.success("Follow request rejected");
-      setNotifications(prev => prev.filter(n => !(n.sender?._id === senderId && n.type === "follow_request")));
+      setNotifications((prev) =>
+        prev.filter(
+          (n) => !(n.sender?._id === senderId && n.type === "follow_request")
+        )
+      );
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         toast.error(err.response?.data?.message || "Action failed");
@@ -245,7 +227,11 @@ export default function NotificationPanel({ search = "" }: Props) {
     }
   };
 
-  const handleReplyToMessage = async (notificationId: string, senderId: string, conversationId?: string) => {
+  const handleReplyToMessage = async (
+    notificationId: string,
+    senderId: string,
+    conversationId?: string
+  ) => {
     try {
       setMessageLoading((prev) => ({ ...prev, [notificationId]: true }));
 
@@ -273,23 +259,27 @@ export default function NotificationPanel({ search = "" }: Props) {
 
   useEffect(() => {
     if (!userData) return;
+
     const timeoutId = window.setTimeout(() => {
       void fetchNotifications();
     }, 0);
-    const interval = window.setInterval(() => {
+    const intervalId = window.setInterval(() => {
       void fetchNotifications();
     }, 10000);
+
     return () => {
       window.clearTimeout(timeoutId);
-      window.clearInterval(interval);
+      window.clearInterval(intervalId);
     };
   }, [fetchNotifications, userData]);
 
   useEffect(() => {
     if (!userData) return;
+
     const handleNotification = () => {
       void fetchNotifications();
     };
+
     socket.on("notification:new", handleNotification);
     return () => {
       socket.off("notification:new", handleNotification);
@@ -298,9 +288,11 @@ export default function NotificationPanel({ search = "" }: Props) {
 
   useEffect(() => {
     if (!notifications.some((n) => !n.isRead)) return;
+
     const timeoutId = window.setTimeout(() => {
       void markAllAsRead();
     }, 0);
+
     return () => window.clearTimeout(timeoutId);
   }, [markAllAsRead, notifications]);
 
@@ -316,16 +308,29 @@ export default function NotificationPanel({ search = "" }: Props) {
     post_removed_reported: "post removed reported",
   };
 
-  // Filter tab definitions
   const FILTER_TABS = [
-    { id: "all" as const,     label: "All",      Icon: Bell,           types: null },
-    { id: "like" as const,    label: "Likes",    Icon: Heart,          types: ["like"] },
-    { id: "comment" as const, label: "Comments", Icon: MessageSquare,  types: ["comment"] },
-    { id: "follow" as const,  label: "Follows",  Icon: UserCheck,      types: ["follow", "follow_request_accepted"] },
-    { id: "message" as const, label: "Messages", Icon: MessageCircle,  types: ["message"] },
+    { id: "all" as const, label: "All", Icon: Bell, types: null },
+    { id: "like" as const, label: "Likes", Icon: Heart, types: ["like"] },
+    {
+      id: "comment" as const,
+      label: "Comments",
+      Icon: MessageSquare,
+      types: ["comment"],
+    },
+    {
+      id: "follow" as const,
+      label: "Follows",
+      Icon: UserCheck,
+      types: ["follow", "follow_request_accepted"],
+    },
+    {
+      id: "message" as const,
+      label: "Messages",
+      Icon: MessageCircle,
+      types: ["message"],
+    },
   ];
 
-  // Count helpers — exclude follow_request (those are managed in the separate modal)
   const getTabCount = (types: string[] | null) =>
     notifications.filter((n) => {
       if (n.type === "follow_request") return false;
@@ -339,27 +344,33 @@ export default function NotificationPanel({ search = "" }: Props) {
       return typeMatch && !n.isRead;
     }).length;
 
-  // Empty state config per category
-  const emptyStateConfig: Record<string, { icon: React.ElementType; message: string }> = {
-    all:     { icon: Bell,           message: "You're all caught up!" },
-    like:    { icon: Heart,          message: "No likes yet. Share something great!" },
-    comment: { icon: MessageSquare,  message: "No comments on your posts yet." },
-    follow:  { icon: UserCheck,      message: "No new follower notifications." },
-    message: { icon: MessageCircle,  message: "No message notifications." },
+  const emptyStateConfig: Record<
+    string,
+    { icon: React.ElementType; message: string }
+  > = {
+    all: { icon: Bell, message: "You're all caught up!" },
+    like: { icon: Heart, message: "No likes yet. Share something great!" },
+    comment: {
+      icon: MessageSquare,
+      message: "No comments on your posts yet.",
+    },
+    follow: { icon: UserCheck, message: "No new follower notifications." },
+    message: {
+      icon: MessageCircle,
+      message: "No message notifications.",
+    },
   };
 
-  // Combined filter: active tab AND text search
   const filteredNotifications = notifications.filter((n) => {
     if (n.type === "follow_request") return false;
 
-    // Tab filter
     const activeTab = FILTER_TABS.find((t) => t.id === activeFilter);
     if (activeTab?.types && !activeTab.types.includes(n.type)) return false;
 
-    // Text search filter
     const query = search.toLowerCase();
     if (query) {
-      const searchable = `${getSenderName(n)} ${getSenderUsername(n)} ${typeText[n.type]}`.toLowerCase();
+      const searchable =
+        `${getSenderName(n)} ${getSenderUsername(n)} ${typeText[n.type]}`.toLowerCase();
       if (!searchable.includes(query)) return false;
     }
 
@@ -368,46 +379,33 @@ export default function NotificationPanel({ search = "" }: Props) {
 
   return (
     <div className="w-full mt-5">
-
       <div className="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-3 md:gap-0">
-        <p className="text-lg font-semibold text-foreground">
-          Notifications
-        </p>
+        <p className="text-lg font-semibold text-foreground">Notifications</p>
 
         <div className="flex gap-2">
-          {selectMode && selected.length > 0 && (
-            <button onClick={deleteSelected} className="h-9 text-sm w-35 cursor-pointer bg-blue-600 text-white rounded-md">
-              Delete Selected
-            </button>
-          )}
-
-          {notifications.length > 0 && (
-            <button onClick={() => setWarningOpen(true)} className="h-9 text-sm cursor-pointer w-[50%] md:w-25 py-1 bg-blue-600 text-white rounded-md">
-              Clear All
-            </button>
-          )}
-
           {notifications.length > 0 && (
             <button
-              onClick={() => {
-                setSelectMode((prev) => !prev);
-                setSelected([]);
-              }}
-              className="h-9 text-sm cursor-pointer w-[50%] md:w-25 rounded-md bg-blue-600 text-white">
-              {selectMode ? "Cancel" : "Select"}
+              onClick={() => setWarningOpen(true)}
+              className="h-9 text-sm cursor-pointer w-[50%] md:w-25 py-1 bg-blue-600 text-white rounded-md"
+            >
+              Clear All
             </button>
           )}
         </div>
       </div>
 
-      {userData?.isPrivate && (userData?.followRequests?.length || 0) > 0 && (
-        <div 
-          onClick={() => setModalOpen(true)} 
+      {userData?.isPrivate && (userData.followRequests?.length || 0) > 0 && (
+        <div
+          onClick={() => setModalOpen(true)}
           className="mb-4 p-3 rounded-lg border border-border/50 bg-secondary/50 cursor-pointer flex justify-between items-center transition hover:bg-secondary"
         >
           <div>
-            <p className="font-medium text-foreground text-sm">Pending follow requests</p>
-            <p className="text-xs text-muted-foreground">{userData.followRequests?.length} requests waiting for approval</p>
+            <p className="font-medium text-foreground text-sm">
+              Pending follow requests
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {userData.followRequests?.length} requests waiting for approval
+            </p>
           </div>
           <ArrowRight className="h-4 w-4 text-muted-foreground" />
         </div>
@@ -415,12 +413,12 @@ export default function NotificationPanel({ search = "" }: Props) {
 
       <FollowRequestsModal open={modalOpen} onClose={() => setModalOpen(false)} />
 
-      {/* ── Filter Tab Bar ── */}
       <div className="notif-tab-bar">
         {FILTER_TABS.map((tab) => {
           const count = getTabCount(tab.types);
           const unread = getTabUnreadCount(tab.types);
           const isActive = activeFilter === tab.id;
+
           return (
             <button
               key={tab.id}
@@ -429,239 +427,220 @@ export default function NotificationPanel({ search = "" }: Props) {
             >
               <tab.Icon className="h-3.5 w-3.5" />
               {tab.label}
-              {count > 0 && (
-                <span className="notif-tab-badge">{count}</span>
-              )}
-              {unread > 0 && (
-                <span className="notif-tab-unread-dot" />
-              )}
+              {count > 0 && <span className="notif-tab-badge">{count}</span>}
+              {unread > 0 && <span className="notif-tab-unread-dot" />}
             </button>
           );
         })}
       </div>
 
       {loading ? (
-        <p className="surface-text-muted text-sm">
-          Loading notifications...
-        </p>
+        <p className="surface-text-muted text-sm">Loading notifications...</p>
       ) : filteredNotifications.length === 0 ? (
         (() => {
           const cfg = emptyStateConfig[activeFilter];
           const EmptyIcon = cfg.icon;
+
           return (
             <div className="notif-empty-state">
               <EmptyIcon className="h-8 w-8 text-muted-foreground" />
-              <p className="text-sm surface-text-muted text-center">{cfg.message}</p>
+              <p className="text-sm surface-text-muted text-center">
+                {cfg.message}
+              </p>
             </div>
           );
         })()
       ) : (
         <div className="flex flex-col gap-2">
-          {filteredNotifications.map((n) => (
-            <div key={n._id}
-              className={`notification-card ${!n.isRead ? "notification-card-unread" : ""
-                }`}>
-              {selectMode && (
-                <input type="checkbox" className="h-4 w-4 cursor-pointer"
-                  checked={selected.includes(n._id)}
-                  onChange={() =>
-                    setSelected((prev) =>
-                      prev.includes(n._id)
-                        ? prev.filter((id) => id !== n._id)
-                        : [...prev, n._id]
-                    )
-                  }
-                />
-              )}
+          {filteredNotifications.map((n) => {
+            const senderId = n.sender?._id;
 
+            return (
+            <div
+              key={n._id}
+              className={`notification-card ${!n.isRead ? "notification-card-unread" : ""}`}
+            >
               <div
                 onClick={() => {
-                  if (!selectMode) {
-                    if (n.type === "post_removed_reported") return;
-                    if (n.post?._id) {
-                      router.push(`/main/post/${n.post._id}`);
-                    } else if (n.type === "message") {
-                      if (n.sender?._id) {
-                        void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
-                      }
-                    } else {
-                      if (n.sender?.username) {
-                        router.push(`/main/user/${n.sender.username}`);
-                      }
+                  if (n.type === "post_removed_reported") return;
+
+                  if (n.post?._id) {
+                    router.push(`/main/post/${n.post._id}`);
+                  } else if (n.type === "message") {
+                    if (senderId) {
+                      void handleReplyToMessage(
+                        n._id,
+                        senderId,
+                        n.conversation?._id
+                      );
                     }
+                  } else if (n.sender?.username) {
+                    router.push(`/main/user/${n.sender.username}`);
                   }
                 }}
-                className="flex gap-3 flex-1 cursor-pointer p-2 rounded-lg">
+                className="flex gap-3 flex-1 cursor-pointer p-2 rounded-lg"
+              >
                 {n.type === "post_removed_reported" ? (
                   <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
-                    <span className="text-red-500 text-lg">⚠</span>
+                    <span className="text-red-500 text-lg">!</span>
                   </div>
                 ) : (
-                  <Image alt={getSenderName(n)} src={getSenderAvatar(n)} width={40} height={40} className="h-10 w-10 rounded-full object-cover" />
+                  <Image
+                    alt={getSenderName(n)}
+                    src={getSenderAvatar(n)}
+                    width={40}
+                    height={40}
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
                 )}
 
                 <div>
                   <p className="text-foreground">
                     {n.type === "post_removed_reported" ? (
-                      <span className="text-red-500 font-semibold">Post removed</span>
+                      <span className="text-red-500 font-semibold">
+                        Post removed
+                      </span>
                     ) : (
                       <span className="font-semibold">{getSenderName(n)}</span>
                     )}{" "}
                     {n.type === "follow" && "followed you"}
                     {n.type === "follow_request" && "wants to follow you"}
-                    {n.type === "follow_request_accepted" && "accepted your follow request"}
+                    {n.type === "follow_request_accepted" &&
+                      "accepted your follow request"}
                     {n.type === "like" && "liked your post"}
                     {n.type === "comment" && "commented on your post"}
                     {n.type === "message" && "messaged you"}
-                    {n.type === "post_removed_reported" && "Your post was removed after receiving too many reports"}
+                    {n.type === "post_removed_reported" &&
+                      "Your post was removed after receiving too many reports"}
                   </p>
+
                   <p className="surface-text-muted mt-1 text-xs">
                     {new Date(n.createdAt).toLocaleString()}
                   </p>
                 </div>
 
-                {!selectMode && (
-                  <div className="flex items-center gap-2 ml-auto">
-                    {n.type === "message" && (
+                <div className="flex items-center gap-2 ml-auto">
+                  {n.type === "message" && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (senderId) {
+                          void handleReplyToMessage(
+                            n._id,
+                            senderId,
+                            n.conversation?._id
+                          );
+                        }
+                      }}
+                      disabled={messageLoading[n._id] || !senderId}
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:opacity-70 text-white rounded-md transition"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      {messageLoading[n._id] ? "Loading..." : "Reply"}
+                    </button>
+                  )}
+
+                  {n.type === "follow_request_accepted" && senderId && (
+                    <div onClick={(e) => e.stopPropagation()}>
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (n.sender?._id) {
-                            void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
-                          }
+                        onClick={() => {
+                          void handleReplyToMessage(
+                            n._id,
+                            senderId,
+                            n.conversation?._id
+                          );
                         }}
-                        disabled={messageLoading[n._id] || !n.sender?._id}
-                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:opacity-70 text-white rounded-md transition"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
                       >
                         <MessageCircle className="h-4 w-4" />
-                        {messageLoading[n._id] ? "Loading..." : "Reply"}
+                        Message
                       </button>
-                    )}
-                    {n.type === "follow_request" && (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (n.sender?._id) {
-                              handleAcceptRequest(n.sender._id);
-                            }
-                          }}
-                          disabled={!n.sender?._id || followLoading[n.sender?._id || ""]}
-                          className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
-                        >
-                          {followLoading[n.sender?._id || ""] ? "..." : "Accept"}
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (n.sender?._id) {
-                              handleRejectRequest(n.sender._id);
-                            }
-                          }}
-                          disabled={!n.sender?._id || followLoading[n.sender?._id || ""]}
-                          className="px-3 py-1.5 text-sm bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-foreground rounded-md transition"
-                        >
-                          {followLoading[n.sender?._id || ""] ? "..." : "Reject"}
-                        </button>
-                      </div>
-                    )}
-                    {/* Someone accepted YOUR follow request → you already follow them → just Message */}
-                    {n.type === "follow_request_accepted" && n.sender?._id && (
-                      <div onClick={(e) => e.stopPropagation()}>
+                    </div>
+                  )}
+
+                  {n.type === "follow" && senderId && (
+                    <div onClick={(e) => e.stopPropagation()}>
+                      {senderFollowState[senderId]?.isFollowing ? (
                         <button
                           onClick={() => {
-                            if (n.sender?._id) {
-                              void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
-                            }
+                            void handleReplyToMessage(
+                              n._id,
+                              senderId,
+                              n.conversation?._id
+                            );
                           }}
                           className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
                         >
                           <MessageCircle className="h-4 w-4" />
                           Message
                         </button>
-                      </div>
-                    )}
+                      ) : (
+                        <FollowButton
+                          userId={senderId}
+                          isFollowing={false}
+                          isRequested={
+                            senderFollowState[senderId]?.isRequested ?? false
+                          }
+                          isFollowBack={true}
+                          onFollowChange={(next) =>
+                            setSenderFollowState((prev) => ({
+                              ...prev,
+                              [senderId]: {
+                                isFollowing: next,
+                                isRequested: false,
+                              },
+                            }))
+                          }
+                        />
+                      )}
+                    </div>
+                  )}
 
-                    {/* Someone followed YOU → Follow Back if not following, Message if already following */}
-                    {n.type === "follow" && n.sender?._id && (
-                      <div onClick={(e) => e.stopPropagation()}>
-                        {senderFollowState[n.sender._id]?.isFollowing ? (
-                          <button
-                            onClick={() => {
-                              if (n.sender?._id) {
-                                void handleReplyToMessage(n._id, n.sender._id, n.conversation?._id);
-                              }
-                            }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                            Message
-                          </button>
-                        ) : (
-                          <FollowButton
-                            userId={n.sender._id}
-                            isFollowing={false}
-                            isRequested={senderFollowState[n.sender._id]?.isRequested ?? false}
-                            isFollowBack={true}
-                            onFollowChange={(next) =>
-                              setSenderFollowState((prev) => ({
-                                ...prev,
-                                [n.sender!._id]: {
-                                  isFollowing: next,
-                                  isRequested: false,
-                                },
-                              }))
-                            }
-                          />
-                        )}
-                      </div>
-                    )}
-
-
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (deleteLoading[n._id]) return;
-                        setSingleDeleteId(n._id);
-                      }}
-                      disabled={deleteLoading[n._id]}
-                      className="p-1 text-foreground transition hover:text-red-400 disabled:pointer-events-none disabled:opacity-50"
-                    >
-                      <Trash2 className="h-5 cursor-pointer" />
-                    </button>
-                  </div>
-                )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (deleteLoading[n._id]) return;
+                      setSingleDeleteId(n._id);
+                    }}
+                    disabled={deleteLoading[n._id]}
+                    className="p-1 text-foreground transition hover:text-red-400 disabled:pointer-events-none disabled:opacity-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </div>
-          ))}
+          )})}
         </div>
       )}
+
       {hasMore && filteredNotifications.length > 0 && !loading && (
         <div className="flex justify-center mt-4 mb-2">
-          <button 
+          <button
             onClick={() => {
               const nextPage = page + 1;
               setPage(nextPage);
               void fetchNotifications(nextPage);
-            }} 
+            }}
             className="text-sm px-4 py-2 bg-secondary text-foreground rounded-md hover:bg-secondary/80 transition"
           >
             Load More
           </button>
         </div>
       )}
+
       <ConfirmModal
         open={warningOpen}
         onClose={() => setWarningOpen(false)}
         onConfirm={() => {
-          deleteAll();
+          void deleteAll();
           setWarningOpen(false);
         }}
         title="Clear all notifications?"
         description="This will permanently delete all your notifications."
         confirmText="Clear All"
       />
+
       <ConfirmModal
         open={!!singleDeleteId}
         onClose={() => setSingleDeleteId(null)}
