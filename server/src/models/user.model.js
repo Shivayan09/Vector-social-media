@@ -105,11 +105,14 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    bookmarks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }],
   },
   {
     timestamps: true,
   }
 );
+
+userSchema.index({ name: "text", username: "text" });
 
 const User = mongoose.model("User", userSchema);
 

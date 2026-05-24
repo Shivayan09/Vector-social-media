@@ -6,7 +6,6 @@ jest.unstable_mockModule('../src/socket/socket.js', () => ({
     to: () => ({ emit: () => {} }),
     emit: () => {},
   }),
-  onlineUsers: new Map(),
 }));
 
 // ─── Imports AFTER mock ───────────────────────────────────────────────────────

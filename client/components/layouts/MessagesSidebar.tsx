@@ -1,6 +1,7 @@
 "use client";
 
 import { Search, Send, UserPlus, X } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
@@ -148,7 +149,7 @@ export default function MessagesSidebar() {
                                 return (
                                     <div key={user._id} className="flex items-center gap-2">
                                         <div className="h-12 w-12 rounded-full overflow-hidden">
-                                            <img src={user.avatar || "/default-avatar.png"} alt={user.name} className="h-full w-full object-cover" />
+                                            <Image src={user.avatar || "/default-avatar.png"} alt={user.name} width={48} height={48} className="h-full w-full object-cover" />
                                         </div>
                                         <div className="flex flex-col w-30">
                                             <p className="text-[0.9rem] truncate">{user.name}</p>
@@ -167,7 +168,7 @@ export default function MessagesSidebar() {
                             return (
                                 <div onClick={() => startChat(suggestedUser._id)} key={suggestedUser._id} className="flex items-center gap-2 hover:bg-black/10 cursor-pointer p-3 rounded-md">
                                     <div className="h-10 w-10 rounded-full overflow-hidden">
-                                        <img src={suggestedUser.avatar || "/default-avatar.png"} alt={suggestedUser.name} className="h-full w-full object-cover" />
+                                        <Image src={suggestedUser.avatar || "/default-avatar.png"} alt={suggestedUser.name} width={40} height={40} className="h-full w-full object-cover" />
                                     </div>
 
                                     <div className="flex flex-col w-30">

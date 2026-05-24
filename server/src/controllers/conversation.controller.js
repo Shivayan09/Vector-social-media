@@ -17,9 +17,33 @@ export const createConversation = async (req, res) => {
             return res.status(403).json({ message: "Action forbidden due to block status" });
         }
 
-        let convo = await Conversation.findOne({ participants: { $all: [senderId, receiverId] }, });
+        const participantsKey = [senderId.toString(), receiverId.toString()]
+            .sort()
+            .join(":");
+
+        let convo = await Conversation.findOne({ participantsKey });
+
+        // Backfill participantsKey for existing conversations (and return it)
         if (!convo) {
-            convo = await Conversation.create({ participants: [senderId, receiverId], });
+            convo = await Conversation.findOneAndUpdate(
+                { participants: { $all: [senderId, receiverId] }, participantsKey: { $exists: false } },
+                { $set: { participantsKey } },
+                { new: true }
+            );
+        }
+
+        // Create atomically; if the unique index races, fall back to the existing one
+        if (!convo) {
+            try {
+                convo = await Conversation.findOneAndUpdate(
+                    { participantsKey },
+                    { $setOnInsert: { participants: [senderId, receiverId], participantsKey } },
+                    { upsert: true, new: true }
+                );
+            } catch (err) {
+                if (err?.code !== 11000) throw err;
+                convo = await Conversation.findOne({ participantsKey });
+            }
         }
         res.json(convo);
     } catch (err) {
@@ -31,7 +55,29 @@ export const createConversation = async (req, res) => {
 
 export const getConversation = async (req, res) => {
     try {
-        const convo = await Conversation.findById(req.params.conversationId).populate("participants", "username name avatar");
+        const convo = await Conversation.findOne({
+            _id: req.params.conversationId,
+            participants: req.user._id,
+        }).populate("participants", "username name avatar");
+        if (!convo) {
+            return res.status(403).json({ message: "Conversation not found or unauthorized" });
+        }
+
+        const otherParticipant = convo.participants.find(
+            p => p._id.toString() !== req.user._id.toString()
+        );
+        if (otherParticipant) {
+            const otherUser = await User.findById(otherParticipant._id).select("blockedUsers");
+            const isBlocked = req.user.blockedUsers?.some(
+                id => id.toString() === otherParticipant._id.toString()
+            ) || otherUser?.blockedUsers?.some(
+                id => id.toString() === req.user._id.toString()
+            );
+            if (isBlocked) {
+                return res.status(403).json({ message: "Action forbidden due to block status" });
+            }
+        }
+
         res.json(convo);
     } catch (error) {
         res.status(500).json({
@@ -44,7 +90,7 @@ export const getUserConversations = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const conversations = await Conversation.aggregate([
+    let conversations = await Conversation.aggregate([
       // Match conversations for current user
       { $match: { participants: userId } },
       
@@ -135,6 +181,22 @@ export const getUserConversations = async (req, res) => {
       }
     }
 
+    // Filter out conversations where the other participant is blocked
+    const myBlockedIds = (req.user.blockedUsers || []).map(id => id.toString());
+    const otherIds = conversations.map(convo => {
+      const other = convo.participants.find(p => p._id.toString() !== userId.toString());
+      return other?._id.toString();
+    }).filter(Boolean);
+    const usersWhoBlockedMe = await User.find({ _id: { $in: otherIds }, blockedUsers: userId }).select("_id");
+    const blockedByIds = new Set(usersWhoBlockedMe.map(u => u._id.toString()));
+
+    conversations = conversations.filter(convo => {
+      const other = convo.participants.find(p => p._id.toString() !== userId.toString());
+      if (!other) return false;
+      const otherId = other._id.toString();
+      return !myBlockedIds.includes(otherId) && !blockedByIds.has(otherId);
+    });
+
     res.json(conversations);
 
   } catch (error) {
@@ -154,6 +216,8 @@ export const deleteConversation = async (req, res) => {
         if (!convo) {
             return res.status(404).json({ message: "Conversation not found or unauthorized" });
         }
+
+        await Message.deleteMany({ conversation: req.params.conversationId });
 
         res.json({ message: "Conversation deleted successfully" });
     } catch (error) {

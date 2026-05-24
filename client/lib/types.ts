@@ -5,6 +5,13 @@ export type Intent =
   | "discuss"
   | "reflect";
 
+export type MutualFollower = {
+  _id: string;
+  name: string;
+  username: string;
+  avatar?: string;
+};
+
 export type UserSummary = {
   _id: string;
   id: string;
@@ -13,6 +20,7 @@ export type UserSummary = {
   email?: string;
   phoneNumber?: string;
   username?: string;
+  createdAt?: string;
   bio?: string;
   description?: string;
   avatar?: string;
@@ -26,6 +34,8 @@ export type UserSummary = {
   followRequests?: string[] | UserSummary[];
   isFollowedByCurrentUser?: boolean;
   isRequestedByCurrentUser?: boolean;
+  mutualFollowers?: MutualFollower[];
+  mutualFollowersCount?: number;
   isBlockedByCurrentUser?: boolean;
   isBlockedByTarget?: boolean;
 };
@@ -40,6 +50,7 @@ export type Post = {
   commentsCount?: number;
   sharesCount?: number;
   createdAt: string;
+  isBookmarked?: boolean;
 };
 
 export type Comment = {
@@ -72,7 +83,7 @@ export type Message = {
 
 export type Notification = {
   _id: string;
-  type: "follow" | "like" | "comment" | "message" | "follow_request" | "follow_request_accepted";
+  type: "follow" | "like" | "comment" | "message" | "follow_request" | "follow_request_accepted" | "post_removed_reported";
   sender: UserSummary | null;
   post?: {
     _id: string;

@@ -2,7 +2,8 @@
 
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
-import { Bookmark, Heart, MessageCircle, HelpCircle, Hammer, Share2, MessagesSquare, MoreHorizontal, Trash2, Flag, Forward, Pencil } from "lucide-react";
+import Image from "next/image";
+import { Bookmark, BookmarkCheck , Heart, MessageCircle, HelpCircle, Hammer, Share2, MessagesSquare, MoreHorizontal, Trash2, Flag, Forward, Pencil } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
@@ -16,7 +17,7 @@ import SkeletonLoader from "@/components/loaders/SkeletonLoader";
 import Linkify from "../ui/Linkify";
 import Avatar from "../ui/Avatar";
 import EditPostModal from "../modals/EditPostModal";
-import Portal from "../ui/Portal";
+import Portal from "../ui/Portal"
 
 
 type PostCardProps = {
@@ -40,7 +41,20 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     const [showReportModal, setShowReportModal] = useState(false);
     const [showLikesModal, setShowLikesModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [bookmarked, setBookmarked] = useState(post.isBookmarked ?? false);
+    const [bookmarkLoading, setBookmarkLoading] = useState(false);
     type PostLike = Post["likes"][number];
+    const currentUserLike =
+        userData?.id
+            ? {
+                _id: userData.id,
+                id: userData.id,
+                name: userData.name,
+                surname: userData.surname,
+                username: userData.username,
+                avatar: userData.avatar,
+            }
+            : null;
     const getLikeUserId = (like: PostLike) => {
         if (!like) return "";
         return typeof like === "string" ? like : like._id;
@@ -63,7 +77,15 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
     const [likeAnimating, setLikeAnimating] = useState(false);
-    const [imageLoaded, setImageLoaded] = useState(false);
+    const [imageState, setImageState] = useState<{
+        src: string | null;
+        loaded: boolean;
+        failed: boolean;
+    }>({
+        src: post.image || null,
+        loaded: false,
+        failed: false,
+    });
 
     function timeAgo(dateString: string) {
         const now = new Date().getTime();
@@ -103,7 +125,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
 
             const updatedLikes = isLiked
                 ? uniqueLikes.filter((like) => getLikeUserId(like) !== userData.id)
-                : getUniqueLikes([...uniqueLikes, userData.id]);
+                : getUniqueLikes([...uniqueLikes, currentUserLike ?? userData.id]);
 
             // ✅ update local state safely
             if (setPost) {
@@ -177,8 +199,39 @@ export default function PostCard({ post, setPost }: PostCardProps) {
         };
     }, [menuOpen]);
 
+    useEffect(() => {
+        if (!post.image) {
+            return;
+        }
+
+        const timeoutId = setTimeout(() => {
+            setImageState((prev) => {
+                const currentSrc = post.image || null;
+                if (prev.src === currentSrc && (prev.loaded || prev.failed)) {
+                    return prev;
+                }
+
+                return {
+                    src: currentSrc,
+                    loaded: true,
+                    failed: true,
+                };
+            });
+        }, 8000);
+
+        return () => clearTimeout(timeoutId);
+    }, [post.image]);
+    useEffect(() => {
+        setBookmarked(post.isBookmarked ?? false);
+    }, [post.isBookmarked]);
+
     // prevent crash if author missing
     if (!post?.author) return null;
+
+    const isCurrentImageLoaded =
+        imageState.src === (post.image || null) && imageState.loaded;
+    const isCurrentImageFailed =
+        imageState.src === (post.image || null) && imageState.failed;
 
     const handleShare = async (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -219,7 +272,46 @@ export default function PostCard({ post, setPost }: PostCardProps) {
         }
         setMenuOpen(false);
     };
+    const handleBookmark = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!userData?.id) {
+        toast.error("User not authenticated");
+        return;
+        }
+        if (bookmarkLoading) return;
 
+        setBookmarked((prev) => !prev); // optimistic
+        setBookmarkLoading(true);
+
+        try {
+        const res = await axios.post(
+            `${BACKEND_URL}/api/posts/${post._id}/bookmark`,
+            {},
+            { withCredentials: true },
+        );
+        setBookmarked(res.data.bookmarked);
+
+        if (setPost) {
+            setPost((prev) =>
+            prev ? { ...prev, isBookmarked: res.data.bookmarked } : prev,
+            );
+        } else {
+            setPosts((prev) =>
+            prev.map((p) =>
+                p._id === post._id
+                ? { ...p, isBookmarked: res.data.bookmarked }
+                : p,
+            ),
+            );
+        }
+        toast.success(res.data.bookmarked ? "Post saved" : "Removed from saved");
+        } catch {
+        setBookmarked((prev) => !prev); // revert
+        toast.error("Failed to update bookmark");
+        } finally {
+        setBookmarkLoading(false);
+        }
+    };
     return (
         <div className="content-card glass-hover relative overflow-clip cursor-pointer"
             onClick={openPost}>
@@ -312,22 +404,46 @@ Report post </button>
             )}
 
             {post.image && (
-                <div className="w-full mb-4 rounded-xl overflow-hidden border border-white/10 max-h-125">
-                    {!imageLoaded && (
-                        <SkeletonLoader
-                            count={1}
-                            height="h-[500px]"
-                            className="w-full"
-                        />
+                <div className="relative w-full mb-4 rounded-xl overflow-hidden border border-white/10 max-h-125">
+                    {!isCurrentImageLoaded && !isCurrentImageFailed && (
+                        <div className="absolute inset-0 z-10">
+                            <SkeletonLoader
+                                count={1}
+                                height="h-[500px]"
+                                className="w-full"
+                            />
+                        </div>
                     )}
 
-                    <img
-                        src={post.image}
-                        alt="Post attachment"
-                        onLoad={() => setImageLoaded(true)}
-                        className={`w-full h-full object-cover ${imageLoaded ? "block" : "hidden"
-                            }`}           
-                    />
+                    {!isCurrentImageFailed ? (
+                        <Image
+                            key={post.image}
+                            src={post.image}
+                            alt="Post attachment"
+                            width={1200}
+                            height={800}
+                            onLoad={() =>
+                                setImageState({
+                                    src: post.image || null,
+                                    loaded: true,
+                                    failed: false,
+                                })
+                            }
+                            onError={() => {
+                                setImageState({
+                                    src: post.image || null,
+                                    loaded: true,
+                                    failed: true,
+                                });
+                            }}
+                            className={`w-full h-full object-cover transition-opacity duration-200 ${isCurrentImageLoaded ? "opacity-100" : "opacity-0"
+                                }`}
+                        />
+                    ) : (
+                        <div className="flex h-60 items-center justify-center bg-black/5 px-4 text-center text-sm text-muted-foreground dark:bg-white/5">
+                            Failed to load image
+                        </div>
+                    )}
                 </div>
             )}
             <div className="flex w-full gap-x-2 border-t border-border/80 pt-3 text-foreground sm:justify-between">
@@ -348,6 +464,20 @@ Report post </button>
                         <button onClick={(e) => { e.stopPropagation(); setShowLikesModal(true) }} className="cursor-pointer text-sm hover:text-blue-500">
                             {likeCount} {likeCount === 1 ? 'Like' : 'Likes'}
                         </button>
+                    </div>
+                    <div className="flex flex-col text-center sm:flex-row gap-1 items-center md:w-[20%] justify-center">
+                        <button
+                            onClick={handleBookmark}
+                            disabled={bookmarkLoading}
+                            className={`p-0 hover:text-blue-500 transition-colors duration-200 ${bookmarkLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                            aria-label={bookmarked ? "Remove bookmark" : "Bookmark post"}
+                        >
+                            {bookmarked
+                            ? <BookmarkCheck className="h-4.5 md:h-5 text-blue-500" fill="currentColor" />
+                            : <Bookmark className="h-4.5 md:h-5" />
+                            }
+                        </button>
+                        <span className="text-sm">{bookmarked ? "Saved" : "Save"}</span>
                     </div>
                 </div>
 
@@ -375,6 +505,7 @@ Report post </button>
                 open={showLikesModal}
                 onClose={() => setShowLikesModal(false)}
                 likers={uniqueLikes}
+                postId={post._id}
             />
 
             {showEditModal && (

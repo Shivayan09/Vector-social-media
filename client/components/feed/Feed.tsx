@@ -6,34 +6,69 @@ import PostList from "./PostList";
 import { useAppContext } from "@/context/AppContext";
 import CreatePostPopup from "./CreatePostPopup";
 import SkeletonLoader from "../loaders/SkeletonLoader";
-import { getTrendingPosts } from "@/lib/trending";
+import type { Post } from "@/lib/types";
+
+function mergeUniquePosts(primaryPosts: Post[], secondaryPosts: Post[]): Post[] {
+    const seenIds = new Set<string>();
+    const mergedPosts: Post[] = [];
+
+    for (const post of [...primaryPosts, ...secondaryPosts]) {
+        if (!post?._id || seenIds.has(post._id)) {
+            continue;
+        }
+
+        seenIds.add(post._id);
+        mergedPosts.push(post);
+    }
+
+    return mergedPosts;
+}
 
 export default function Feed() {
     const { posts, setPosts } = useAppContext();
-    const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(false);
     const observerTarget = useRef<HTMLDivElement>(null);
     const loadingRef = useRef(false);
     const hasMoreRef = useRef(true);
+    const cursorRef = useRef<string | null>(null);
 
-    const fetchPosts = useCallback(async (pageNum: number) => {
-        if (loadingRef.current || !hasMoreRef.current) return;
+    const fetchPosts = useCallback(async (isInitial: boolean) => {
+        if (loadingRef.current || (!isInitial && !hasMoreRef.current)) return;
         loadingRef.current = true;
         setLoading(true);
         try {
-            const res = await axios.get(
-                `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/posts?page=${pageNum}&limit=10`,
-                { withCredentials: true }
-            );
-            if (pageNum === 1) {
-                setPosts(res.data.posts || []);
-            } else {
-                setPosts(prev => [...prev, ...(res.data.posts || [])]);
+            let apiUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/posts?limit=10`;
+            if (!isInitial && cursorRef.current) {
+                apiUrl += `&cursor=${cursorRef.current}`;
             }
+
+            const feedRequest = axios.get(apiUrl, { withCredentials: true });
+
+            if (isInitial) {
+                const [feedRes, topWeekRes] = await Promise.all([
+                    feedRequest,
+                    axios.get(
+                        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/posts/top-week?limit=3`,
+                        { withCredentials: true }
+                    ),
+                ]);
+
+                const rankedTopPosts = topWeekRes.data.posts || [];
+                const feedPosts = feedRes.data.posts || [];
+
+                setPosts(mergeUniquePosts(rankedTopPosts, feedPosts));
+                hasMoreRef.current = feedRes.data.hasMore;
+                cursorRef.current = feedRes.data.nextCursor || null;
+                return;
+            }
+
+            const res = await feedRequest;
+            setPosts(prev => mergeUniquePosts(prev, res.data.posts || []));
             hasMoreRef.current = res.data.hasMore;
+            cursorRef.current = res.data.nextCursor || null;
         } catch (error) {
             console.error("Failed to fetch posts", error);
-            if (pageNum === 1) setPosts([]);
+            if (isInitial) setPosts([]);
         } finally {
             loadingRef.current = false;
             setLoading(false);
@@ -41,29 +76,25 @@ export default function Feed() {
     }, [setPosts]);
 
     useEffect(() => {
-        fetchPosts(1);
+        hasMoreRef.current = true;
+        cursorRef.current = null;
+        fetchPosts(true);
     }, [fetchPosts]);
 
     useEffect(() => {
         const observer = new IntersectionObserver(
             entries => {
                 if (entries[0].isIntersecting && hasMoreRef.current && !loadingRef.current) {
-                    setPage(prev => prev + 1);
+                    fetchPosts(false);
                 }
             },
             { threshold: 0.1 }
         );
         if (observerTarget.current) observer.observe(observerTarget.current);
         return () => observer.disconnect();
-    }, []);
+    }, [fetchPosts]);
 
-    useEffect(() => {
-        if (page > 1) fetchPosts(page);
-    }, [page, fetchPosts]);
-
-    const displayPosts = useMemo(() => {
-        return getTrendingPosts(posts);
-    }, [posts]);
+    const displayPosts = useMemo(() => posts, [posts]);
 
     return (
         <div className="hide-scrollbar w-full px-5 md:px-10 pb-10">

@@ -2,18 +2,48 @@ import Message from "../models/message.model.js";
 import Conversation from "../models/conversation.model.js";
 import Notification from "../models/notification.model.js";
 import User from "../models/user.model.js";
-import { getIO, onlineUsers } from "../socket/socket.js";
+import { getIO } from "../socket/socket.js";
 
 export const getMessages = async (req, res) => {
   try {
+    const { conversationId } = req.params;
 
-    const messages = await Message.find({
-      conversation: req.params.conversationId,
-    })
+    // Verify the requesting user is a participant in this conversation
+    const conversation = await Conversation.findOne({
+      _id: conversationId,
+      participants: req.user._id,
+    });
+
+    if (!conversation) {
+      return res.status(403).json({ message: "Not a participant in this conversation" });
+    }
+
+    // Re-verify block status
+    const otherParticipant = conversation.participants.find(
+      p => p.toString() !== req.user._id.toString()
+    );
+    if (otherParticipant) {
+      const otherUser = await User.findById(otherParticipant).select("blockedUsers");
+      const isBlocked = req.user.blockedUsers?.some(
+        id => id.toString() === otherParticipant.toString()
+      ) || otherUser?.blockedUsers?.some(
+        id => id.toString() === req.user._id.toString()
+      );
+      if (isBlocked) {
+        return res.status(403).json({ message: "Action forbidden due to block status" });
+      }
+    }
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+
+    const messages = await Message.find({ conversation: conversationId, isDeleted: false })
       .populate("sender", "username name avatar")
-      .sort({ createdAt: 1 });
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
 
-    res.json(messages);
+    res.json(messages.reverse());
 
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -33,6 +63,13 @@ export const sendMessage = async (req, res) => {
 
     if (!conversation) {
       return res.status(404).json({ message: "Conversation not found" });
+    }
+
+    const isSenderParticipant = conversation.participants.some(
+      (id) => id.toString() === req.user._id.toString()
+    );
+    if (!isSenderParticipant) {
+      return res.status(403).json({ message: "Not a participant in this conversation" });
     }
 
     const receiverId = conversation.participants.find(
@@ -72,18 +109,12 @@ export const sendMessage = async (req, res) => {
         conversation: conversationId,
       });
       const io = getIO();
-      const notificationSocket = onlineUsers.get(receiverId.toString());
-      if (notificationSocket) {
-        io.to(notificationSocket).emit("notification:new", {
-          notificationId: notification._id,
-          type: notification.type,
-        });
-      }
-      const receiverSocket = onlineUsers.get(receiverId.toString());
-
-      if (receiverSocket) {
-        io.to(receiverSocket).emit("receive_message", populated);
-      }
+      io.to(receiverId.toString()).emit("notification:new", {
+        notificationId: notification._id,
+        type: notification.type,
+      });
+      
+      io.to(receiverId.toString()).emit("receive_message", populated);
 
     }
 
@@ -184,10 +215,16 @@ export const deleteMessage = async (req, res) => {
 
     const io = getIO();
 
-    io.emit("message_deleted", {
-      messageId: message._id,
-      conversationId: message.conversation,
-    });
+    // Emit only to participants of this conversation, not every connected client
+    const conversation = await Conversation.findById(message.conversation);
+    if (conversation) {
+      conversation.participants.forEach((participantId) => {
+        io.to(participantId.toString()).emit("message_deleted", {
+          messageId: message._id,
+          conversationId: message.conversation,
+        });
+      });
+    }
 
     res.json({
       success: true,

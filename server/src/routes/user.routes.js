@@ -33,7 +33,7 @@ userRouter.get("/follow-requests", authMiddleware, getFollowRequests);
 userRouter.get("/follow-requests/sent", authMiddleware, getSentFollowRequests);
 userRouter.put("/:id/accept-request", authMiddleware, acceptFollowRequest);
 userRouter.put("/:id/reject-request", authMiddleware, rejectFollowRequest);
-userRouter.get("/all", getAllUsers);
+userRouter.get("/all", authMiddleware, getAllUsers);
 userRouter.get("/search", authMiddleware, searchUsers);
 userRouter.get("/:username", optionalAuth, getUserProfile);
 userRouter.get("/:id/followers", authMiddleware, getFollowers);

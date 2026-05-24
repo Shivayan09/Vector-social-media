@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState, useRef, use } from "react";
+import Image from "next/image";
 import axios from "axios";
 import { socket } from "@/socket/socket";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
-import { Trash2, ArrowLeft, MoreHorizontal } from "lucide-react";
+import { Trash2, ArrowLeft, MoreHorizontal, ChevronDown } from "lucide-react";
 import ConfirmModal from "@/components/modals/DeleteWarning";
+import SkeletonLoader from "@/components/loaders/SkeletonLoader";
+import { toast } from "react-toastify";
 import type { Conversation, Message, UserSummary } from "@/lib/types";
 
 type Params = {
@@ -25,12 +28,22 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
   const [receiverId, setReceiverId] = useState<string | null>(null);
   const [otherUser, setOtherUser] = useState<UserSummary | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(true);
 
   const [warningOpen, setWarningOpen] = useState(false);
+  const [deleteChatConfirmOpen, setDeleteChatConfirmOpen] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const LIMIT = 50;
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
   const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  const chatContainerRef = useRef<HTMLDivElement | null>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
   const router = useRouter();
@@ -123,38 +136,46 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
 
     const fetchChat = async () => {
 
-      const convoRes = await axios.get<Conversation>(
-        `${BACKEND_URL}/api/conversation/${conversationId}`,
-        { withCredentials: true }
-      );
-
-      const participants = convoRes.data.participants;
-
-      const other = participants.find(
-        (p: UserSummary) => p._id !== userData?.id
-      );
-
-      if (other) {
-        setReceiverId(other._id);
-        setOtherUser(other);
-      }
-
-      const msgRes = await axios.get<Message[]>(
-        `${BACKEND_URL}/api/messages/${conversationId}`,
-        { withCredentials: true }
-      );
-
-      setMessages(msgRes.data);
-
-      // Mark all messages as read
+      setIsLoadingMessages(true);
       try {
-        await axios.patch(
-          `${BACKEND_URL}/api/messages/${conversationId}/read-all`,
-          {},
+        const convoRes = await axios.get<Conversation>(
+          `${BACKEND_URL}/api/conversation/${conversationId}`,
           { withCredentials: true }
         );
-      } catch {
-        // Silently handle error to not interrupt chat load
+
+        const participants = convoRes.data.participants;
+
+        const other = participants.find(
+          (p: UserSummary) => p._id !== userData?.id
+        );
+
+        if (other) {
+          setReceiverId(other._id);
+          setOtherUser(other);
+        }
+
+        const msgRes = await axios.get<Message[]>(
+          `${BACKEND_URL}/api/messages/${conversationId}?page=1&limit=${LIMIT}`,
+          { withCredentials: true }
+        );
+
+        setMessages(msgRes.data);
+        setHasMore(msgRes.data.length === LIMIT);
+
+        // Mark all messages as read
+        try {
+          await axios.patch(
+            `${BACKEND_URL}/api/messages/${conversationId}/read-all`,
+            {},
+            { withCredentials: true }
+          );
+        } catch {
+          // Silently handle error to not interrupt chat load
+        }
+      } catch (error) {
+        console.error("Failed to fetch chat:", error);
+      } finally {
+        setIsLoadingMessages(false);
       }
     };
 
@@ -164,10 +185,77 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
 
   }, [BACKEND_URL, conversationId, userData]);
 
+  const loadMoreMessages = async () => {
+    if (!hasMore || isLoadingMore) return;
+    setIsLoadingMore(true);
+    try {
+      const nextPage = page + 1;
+      const { data } = await axios.get<Message[]>(
+        `${BACKEND_URL}/api/messages/${conversationId}?page=${nextPage}&limit=${LIMIT}`,
+        { withCredentials: true }
+      );
+      setMessages((prev) => [...data, ...prev]);
+      setHasMore(data.length === LIMIT);
+      setPage(nextPage);
+    } catch (error) {
+      console.error("Failed to load more messages", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
   // AUTO SCROLL
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = chatContainerRef.current;
+
+    if (!container) return;
+
+    const threshold = 100;
+
+    const isNearBottom =
+      container.scrollHeight -
+        container.scrollTop -
+        container.clientHeight <
+      threshold;
+
+    if (isNearBottom) {
+      bottomRef.current?.scrollIntoView({
+        behavior: "smooth",
+      });
+    }
   }, [messages]);
+
+  useEffect(() => {
+    const container = chatContainerRef.current;
+
+    if (!container) return;
+
+    const handleScroll = () => {
+      const threshold = 100;
+
+      const isNearBottom =
+        container.scrollHeight -
+          container.scrollTop -
+          container.clientHeight <
+        threshold;
+
+      setShowScrollButton(!isNearBottom);
+    };
+
+    container.addEventListener("scroll", handleScroll);
+
+    handleScroll();
+
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  const scrollToBottom = () => {
+    bottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  };
 
   // SEND MESSAGE
   const sendMessage = async () => {
@@ -231,9 +319,25 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
     }
   };
 
-  return (
-    <div className="flex flex-col h-screen">
+  // DELETE FULL CHAT
+  const deleteChat = async () => {
+    try {
+      await axios.delete(
+        `${BACKEND_URL}/api/conversation/${conversationId}`,
+        { withCredentials: true }
+      );
+      toast.success("Chat cleared successfully");
+      router.push("/main/chat");
+    } catch (err) {
+      console.error("Failed to clear chat", err);
+      toast.error("Failed to clear chat");
+    } finally {
+      setDeleteChatConfirmOpen(false);
+    }
+  };
 
+  return (
+    <div className="flex h-screen flex-col overflow-hidden">
       <div className="chat-header px-14 md:px-5">
         <button
           onClick={() => router.push("/main/chat")}
@@ -243,25 +347,73 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
           <ArrowLeft size={24} className="text-foreground" />
         </button>
 
-        <img alt={otherUser?.name || "User avatar"} src={otherUser?.avatar || "/default-avatar.png"} className="h-12 w-12 rounded-full object-cover border ml-3" />
+        <Image alt={otherUser?.name || "User avatar"} src={otherUser?.avatar || "/default-avatar.png"} width={48} height={48} className="h-12 w-12 rounded-full object-cover border ml-3" />
 
-        <p
+        <div
           onClick={() =>
             router.push(`/main/user/${otherUser?.username}`)
           }
-          className="ml-3 cursor-pointer text-[1.1rem] font-semibold text-foreground">
-          {otherUser?.name || "User"}
-        </p>
+          className="ml-3 min-w-0 cursor-pointer flex-1"
+        >
+          <p className="truncate text-[1.05rem] font-semibold text-foreground">
+            {otherUser?.name || "User"}
+          </p>
+          <p className="truncate text-sm surface-text-muted">
+            @{otherUser?.username || "vector"}
+          </p>
+        </div>
+
+        <button
+          onClick={() => setDeleteChatConfirmOpen(true)}
+          className="ml-auto rounded-full p-2 transition-colors text-red-500 hover:bg-accent/70"
+          title="Clear chat"
+        >
+          <Trash2 size={22} />
+        </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
+      <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
 
-        {messages.length === 0 ? (
-          <p className="surface-text-muted mt-4 text-center">
-            No messages
-          </p>
+        {isLoadingMessages ? (
+          <div className="flex flex-col gap-4 w-full mt-2 px-2">
+            <div className="flex justify-start">
+              <SkeletonLoader count={1} height="h-10" className="w-3/4 max-w-[220px] [&>div]:!rounded-2xl [&>div]:!rounded-bl-md" />
+            </div>
+            <div className="flex justify-start">
+              <SkeletonLoader count={1} height="h-16" className="w-4/5 max-w-[280px] [&>div]:!rounded-2xl [&>div]:!rounded-bl-md" />
+            </div>
+            <div className="flex justify-end">
+              <SkeletonLoader count={1} height="h-10" className="w-2/3 max-w-[240px] [&>div]:!rounded-2xl [&>div]:!rounded-br-md" />
+            </div>
+            <div className="flex justify-start">
+              <SkeletonLoader count={1} height="h-10" className="w-1/2 max-w-[160px] [&>div]:!rounded-2xl [&>div]:!rounded-bl-md" />
+            </div>
+            <div className="flex justify-end">
+              <SkeletonLoader count={1} height="h-12" className="w-3/4 max-w-[260px] [&>div]:!rounded-2xl [&>div]:!rounded-br-md" />
+            </div>
+            <div className="flex justify-end">
+              <SkeletonLoader count={1} height="h-10" className="w-1/3 max-w-[140px] [&>div]:!rounded-2xl [&>div]:!rounded-br-md" />
+            </div>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="chat-empty-state">
+            <p className="text-base font-medium text-foreground">No messages yet</p>
+            <p className="mt-1 text-sm">Start the conversation with something thoughtful.</p>
+          </div>
         ) : (
-          messages.map((m, index) => {
+          <>
+            {hasMore && (
+              <div className="flex justify-center my-2">
+                <button
+                  onClick={loadMoreMessages}
+                  disabled={isLoadingMore}
+                  className="text-xs text-blue-500 hover:underline cursor-pointer disabled:opacity-50"
+                >
+                  {isLoadingMore ? "Loading..." : "Load previous messages"}
+                </button>
+              </div>
+            )}
+            {messages.map((m, index) => {
 
             const isMe = m.sender._id === userData?.id;
             const showDateSeparator =
@@ -322,7 +474,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
                     )}
 
                     <p
-                      className={`whitespace-pre-wrap wrap-break-word ${isMe && !m.isDeleted ? "pr-6" : ""
+                      className={`whitespace-pre-wrap break-words leading-relaxed ${isMe && !m.isDeleted ? "pr-6" : ""
                         }`}
                     >
                       {m.isDeleted ? (
@@ -343,8 +495,9 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
                 </div>
               </div>
             );
-          }))
-        }
+          })}
+          </>
+        )}
 
         <div ref={bottomRef} />
       </div>
@@ -368,15 +521,21 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
         <button
           onClick={sendMessage}
           disabled={isSending}
-          className={`text-white px-5 rounded-md transition-all ${isSending
-            ? "bg-blue-400 cursor-not-allowed opacity-60"
-            : "bg-blue-500 cursor-pointer hover:bg-blue-600"
-            }`}
+          className="chat-primary-button"
         >
           {isSending ? "Sending..." : "Send"}
         </button>
 
       </div>
+
+      {showScrollButton && (
+        <button
+          onClick={scrollToBottom}
+          className="fixed bottom-24 right-6 z-50 rounded-full bg-black p-3 text-white shadow-lg transition hover:scale-105"
+        >
+          <ChevronDown size={20} />
+        </button>
+      )}
 
       <ConfirmModal
         open={warningOpen}
@@ -389,6 +548,15 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
         description="This message will be permanently deleted."
         confirmText="Delete"
         content={selectedMessage?.content}
+      />
+
+      <ConfirmModal
+        open={deleteChatConfirmOpen}
+        onClose={() => setDeleteChatConfirmOpen(false)}
+        onConfirm={deleteChat}
+        title="Clear this chat?"
+        description="Are you sure you want to clear this entire conversation? This action cannot be undone."
+        confirmText="Clear Chat"
       />
 
     </div>

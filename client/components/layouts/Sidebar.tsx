@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { Home, Search, Bell, User, Plus, Menu, X, Settings, LogOut, Send } from "lucide-react";
 import CreateModal from "../modals/CreatePostModal";
@@ -10,7 +11,7 @@ import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import LogoutWarning from "../modals/LogoutWarning";
 import ThemeToggle from "@/app/theme-toggle";
-import type { Notification, Post } from "@/lib/types";
+import type { Post } from "@/lib/types";
 import { socket } from "@/socket/socket";
 
 interface SidebarItemProps {
@@ -33,6 +34,7 @@ export default function Sidebar() {
 
   const { isLoggedIn, setIsLoggedIn, setUserData, userData, setPosts } = useAppContext();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
 
   const handleLogout = async () => {
     try {
@@ -54,14 +56,29 @@ export default function Sidebar() {
 
   const fetchUnreadCount = useCallback(async () => {
     try {
-      const { data } = await axios.get<Notification[]>(
-        `${BACKEND_URL}/api/notifications`,
+      const { data } = await axios.get<{ unreadCount: number }>(
+        `${BACKEND_URL}/api/notifications?countOnly=true`,
         { withCredentials: true }
       );
-      const unread = data.filter((n) => !n.isRead).length;
-      setUnreadCount(unread);
+      setUnreadCount(data.unreadCount ?? 0);
     } catch {
       console.error("Failed to fetch notifications");
+    }
+  }, [BACKEND_URL]);
+
+  const fetchUnreadMessageCount = useCallback(async () => {
+    try {
+      const response = await axios.get<
+        { unreadCount: number }[]
+      >(`${BACKEND_URL}/api/conversation`, 
+        { withCredentials: true, });
+      const conversations = Array.isArray(response.data) ? response.data : [];
+      const unreadMessages = conversations.filter(
+        (conversation) => (conversation.unreadCount ?? 0) > 0
+      ).length;
+      setUnreadMessageCount(unreadMessages);
+    } catch (error) {
+      console.error("Failed to fetch unread message count:", error);
     }
   }, [BACKEND_URL]);
 
@@ -82,6 +99,34 @@ export default function Sidebar() {
       socket.off("notification:new", handleNotification);
     };
   }, [fetchUnreadCount]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchAndUpdate = async () => {
+      if (isMounted) {
+        await fetchUnreadMessageCount();
+      }
+    };
+
+    void fetchAndUpdate();
+
+    const messageInterval = window.setInterval(() => {
+      if (isMounted) void fetchUnreadMessageCount();
+    }, 10000);
+
+    const handleNotification = () => {
+      if (isMounted) void fetchUnreadMessageCount();
+    };
+
+    socket.on("notification:new", handleNotification);
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(messageInterval);
+      socket.off("notification:new", handleNotification);
+    };
+  }, [fetchUnreadMessageCount]);
 
   const isMain = pathname === "/main";
 
@@ -106,9 +151,11 @@ export default function Sidebar() {
   transform transition-all duration-300 ${open ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex w-full">
           <div className="flex justify-center ml-3">
-            <img
+            <Image
               alt={userData?.name || "User avatar"}
               src={userData?.avatar || "/default-avatar.png"}
+              width={48}
+              height={48}
               className="h-12 w-12 rounded-full object-cover border shrink-0"
             />
 
@@ -154,6 +201,7 @@ export default function Sidebar() {
             label="Messages"
             href="/main/chat"
             active={pathname === "/main/chat"}
+            unreadCount={unreadMessageCount}
           />
 
           <SidebarItem
@@ -173,7 +221,7 @@ export default function Sidebar() {
 
         <div className="mt-auto flex items-center justify-between w-full pr-2 pt-4 border-t border-border/50">
           <p
-            className="flex mr-auto pl-2 md:pl-5 gap-2 transition-all duration-300 hover:bg-black/10 w-auto h-10 rounded-lg items-center cursor-pointer text-slate-700 hover:text-slate-900 dark:text-white dark:hover:text-white/70"
+            className="flex items-center justify-center gap-2 h-10 px-4 rounded-lg cursor-pointer transition-all duration-300 hover:bg-black/10 text-slate-700 hover:text-slate-900 dark:text-white dark:hover:text-white/70"
             onClick={() => setLogoutOpen(true)}
           >
             <LogOut className="opacity-60" />

@@ -1,6 +1,7 @@
 "use client";
 
-import { X, Image as ImageIcon, Send, Trash2 } from "lucide-react";
+import { X, Image as ImageIcon, Send, Trash2, HelpCircle } from "lucide-react";
+import Image from "next/image";
 import { useRef, useState } from "react";
 import { Button } from "../ui/button";
 import { toast } from "react-toastify";
@@ -23,13 +24,13 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
     const [loading, setLoading] = useState(false);
     const [isDragActive, setIsDragActive] = useState(false);
     const [dragCounter, setDragCounter] = useState(0);
+    const [showGuidelines, setShowGuidelines] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const router = useRouter();
 
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
     const MAX_CHARS = 500;
-    const charsLeft = MAX_CHARS - content.length;
 
     const handleClose = () => {
         setVisible(false);
@@ -142,9 +143,18 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                 "glass-surface-strong rounded-3xl shadow-2xl p-0 overflow-hidden transition-all duration-300 ease-out border-t border-white/20",
                 visible ? "opacity-100 scale-100 translate-y-[-50%]" : "opacity-0 scale-95 translate-y-[-48%]"
             )}>
-                {/* Header */}
                 <div className="flex justify-between items-center px-6 pt-5 border-b border-white/10">
-                    <h2 className="text-xl font-bold text-foreground">Create New Post</h2>
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-xl font-bold text-foreground">Create New Post</h2>
+                        <button
+                            aria-expanded={showGuidelines}
+                            onClick={() => setShowGuidelines((s) => !s)}
+                            title="Post guidelines"
+                            className="p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-foreground/60"
+                        >
+                            <HelpCircle size={16} />
+                        </button>
+                    </div>
                     <button 
                         onClick={handleClose} 
                         className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-foreground/70 hover:text-foreground"
@@ -153,7 +163,19 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                     </button>
                 </div>
 
-                <div className="p-6 max-h-[70vh] overflow-y-auto">
+                <div className="p-6 max-h-[90vh] overflow-y-auto">
+                    {showGuidelines && (
+                        <div className="mb-6 p-4 rounded-xl border border-white/10 bg-black/5 dark:bg-white/5 text-sm text-foreground/70">
+                            <strong className="block mb-2 text-foreground">Posting Guidelines</strong>
+                            <ul className="list-disc pl-4 space-y-1">
+                                <li>Be respectful and constructive.</li>
+                                <li>No harassment, hate, or violence.</li>
+                                <li>Avoid spam, self-promotion, and misinformation.</li>
+                                <li>Don&apos;t share private or illegal content.</li>
+                                <li>Give context and cite sources when possible.</li>
+                            </ul>
+                        </div>
+                    )}
                     {/* Intent Selector */}
                     <div className="mb-6">
                         <label className="text-sm font-semibold text-foreground/80 mb-3 block">
@@ -267,7 +289,7 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                     {imagePreview && (
                         <div className="relative mt-4 group">
                             <div className="w-full max-h-48 rounded-2xl overflow-hidden border border-white/10 shadow-lg">
-                                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                                <Image src={imagePreview} alt="Preview" width={800} height={400} unoptimized className="w-full h-full object-cover" />
                             </div>
                             <button 
                                 onClick={() => { setImageFile(null); setImagePreview(null); }} 
