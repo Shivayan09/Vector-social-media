@@ -18,7 +18,7 @@ export const registerSchema = z.object({
         message: "Please enter a valid phone number!",
       })
   ),
-  password: z.string({ required_error: "Password must be at least 6 characters!" }).min(6, { message: "Password must be at least 6 characters!" }),
+  password: z.string({ required_error: "Password must be at least 6 characters!" }).min(6, { message: "Password must be at least 6 characters!" }).regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/, {message:"Password must contain at least one uppercase letter, one lowercase letter, and one number!",}),
   username: z.string({ required_error: "Please enter a username!" }).trim().min(1, { message: "Please enter a username!" }),
   bio: z.string({ required_error: "Please enter a bio!" }).trim().min(1, { message: "Please enter a bio!" }),
   description: z.string({ required_error: "Please enter a description!" }).trim().min(1, { message: "Please enter a description!" }),
@@ -36,6 +36,6 @@ export const forgotPasswordSchema = z.object({
 
 export const resetPasswordSchema = z.object({
   resetToken: z.string({ required_error: "Token is required!" }).min(1, { message: "Token is required!" }),
-  newPassword: z.string({ required_error: "New password must be at least 6 characters!" }).min(6, { message: "New password must be at least 6 characters!" }),
+  newPassword: z.string({ required_error: "New password must be at least 6 characters!",}).min(6, { message: "New password must be at least 6 characters!",}).regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/, { message: "Password must contain at least one uppercase letter, one lowercase letter, and one number!"}),
 });
 
