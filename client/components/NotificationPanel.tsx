@@ -458,7 +458,10 @@ export default function NotificationPanel({ search = "" }: Props) {
         })()
       ) : (
         <div className="flex flex-col gap-2">
-          {filteredNotifications.map((n) => (
+          {filteredNotifications.map((n) => {
+            const senderId = n.sender?._id;
+
+            return (
             <div
               key={n._id}
               className={`notification-card ${!n.isRead ? "notification-card-unread" : ""}`}
@@ -470,10 +473,10 @@ export default function NotificationPanel({ search = "" }: Props) {
                   if (n.post?._id) {
                     router.push(`/main/post/${n.post._id}`);
                   } else if (n.type === "message") {
-                    if (n.sender?._id) {
+                    if (senderId) {
                       void handleReplyToMessage(
                         n._id,
-                        n.sender._id,
+                        senderId,
                         n.conversation?._id
                       );
                     }
@@ -527,15 +530,15 @@ export default function NotificationPanel({ search = "" }: Props) {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (n.sender?._id) {
+                        if (senderId) {
                           void handleReplyToMessage(
                             n._id,
-                            n.sender._id,
+                            senderId,
                             n.conversation?._id
                           );
                         }
                       }}
-                      disabled={messageLoading[n._id] || !n.sender?._id}
+                      disabled={messageLoading[n._id] || !senderId}
                       className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:opacity-70 text-white rounded-md transition"
                     >
                       <MessageCircle className="h-4 w-4" />
@@ -543,13 +546,13 @@ export default function NotificationPanel({ search = "" }: Props) {
                     </button>
                   )}
 
-                  {n.type === "follow_request_accepted" && n.sender?._id && (
+                  {n.type === "follow_request_accepted" && senderId && (
                     <div onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => {
                           void handleReplyToMessage(
                             n._id,
-                            n.sender._id,
+                            senderId,
                             n.conversation?._id
                           );
                         }}
@@ -561,14 +564,14 @@ export default function NotificationPanel({ search = "" }: Props) {
                     </div>
                   )}
 
-                  {n.type === "follow" && n.sender?._id && (
+                  {n.type === "follow" && senderId && (
                     <div onClick={(e) => e.stopPropagation()}>
-                      {senderFollowState[n.sender._id]?.isFollowing ? (
+                      {senderFollowState[senderId]?.isFollowing ? (
                         <button
                           onClick={() => {
                             void handleReplyToMessage(
                               n._id,
-                              n.sender._id,
+                              senderId,
                               n.conversation?._id
                             );
                           }}
@@ -579,16 +582,16 @@ export default function NotificationPanel({ search = "" }: Props) {
                         </button>
                       ) : (
                         <FollowButton
-                          userId={n.sender._id}
+                          userId={senderId}
                           isFollowing={false}
                           isRequested={
-                            senderFollowState[n.sender._id]?.isRequested ?? false
+                            senderFollowState[senderId]?.isRequested ?? false
                           }
                           isFollowBack={true}
                           onFollowChange={(next) =>
                             setSenderFollowState((prev) => ({
                               ...prev,
-                              [n.sender._id]: {
+                              [senderId]: {
                                 isFollowing: next,
                                 isRequested: false,
                               },
@@ -613,7 +616,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                 </div>
               </div>
             </div>
-          ))}
+          )})}
         </div>
       )}
 
