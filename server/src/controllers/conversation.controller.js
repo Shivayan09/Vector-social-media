@@ -32,6 +32,19 @@ export const createConversation = async (req, res) => {
             );
         }
 
+        // Re-verify block status right before creating
+        if (!convo) {
+            const [freshReceiver, freshSender] = await Promise.all([
+                User.findById(receiverId).select("blockedUsers"),
+                User.findById(senderId).select("blockedUsers"),
+            ]);
+            const stillBlocked = freshSender?.blockedUsers?.some(id => id.toString() === receiverId.toString()) ||
+                                freshReceiver?.blockedUsers?.some(id => id.toString() === senderId.toString());
+            if (stillBlocked) {
+                return res.status(403).json({ message: "Action forbidden due to block status" });
+            }
+        }
+
         // Create atomically; if the unique index races, fall back to the existing one
         if (!convo) {
             try {

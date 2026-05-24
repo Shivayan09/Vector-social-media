@@ -26,6 +26,18 @@ export const addComment = async (req, res) => {
                 return res.status(403).json({ message: "Action forbidden due to block status" });
             }
         }
+        // Re-verify block status right before create
+        if (req.user) {
+            const [freshAuthor, freshCurrent] = await Promise.all([
+                User.findById(post.author).select("blockedUsers"),
+                User.findById(req.user.id).select("blockedUsers"),
+            ]);
+            const stillBlocked = freshCurrent?.blockedUsers?.some(id => id.toString() === post.author.toString()) ||
+                                freshAuthor?.blockedUsers?.some(id => id.toString() === req.user.id);
+            if (stillBlocked) {
+                return res.status(403).json({ message: "Action forbidden due to block status" });
+            }
+        }
         const comment = await Comment.create({
             post: postId,
             author: req.user.id,

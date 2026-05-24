@@ -284,8 +284,11 @@ export const toggleLike = async (req, res) => {
 
         // Check block status between the requester and the post author
         if (post.author.toString() !== userId) {
-            const authorUser = await User.findById(post.author).select("blockedUsers");
-            const isBlocked = req.user.blockedUsers?.some(
+            const [authorUser, currentUser] = await Promise.all([
+                User.findById(post.author).select("blockedUsers"),
+                User.findById(userId).select("blockedUsers"),
+            ]);
+            const isBlocked = currentUser?.blockedUsers?.some(
                 id => id.toString() === post.author.toString()
             ) || authorUser?.blockedUsers?.some(
                 id => id.toString() === userId
@@ -301,7 +304,7 @@ export const toggleLike = async (req, res) => {
             { $addToSet: { likes: userId } }
         );
 
-        const liked = addResult.modifiedCount > 0;
+        let liked = addResult.modifiedCount > 0;
 
         if (!liked) {
             await Post.updateOne(
@@ -309,6 +312,20 @@ export const toggleLike = async (req, res) => {
                 { $pull: { likes: userId } }
             );
             await Notification.deleteOne({ recipient: post.author, sender: userId, type: "like", post: postId });
+        }
+
+        // Re-verify block status — either side may have blocked since the pre-check
+        if (liked && post.author.toString() !== userId) {
+            const [currentAuthor, freshCurrent] = await Promise.all([
+                User.findById(post.author).select("blockedUsers"),
+                User.findById(userId).select("blockedUsers"),
+            ]);
+            const stillBlocked = freshCurrent?.blockedUsers?.some(id => id.toString() === post.author.toString()) ||
+                                currentAuthor?.blockedUsers?.some(id => id.toString() === userId);
+            if (stillBlocked) {
+                await Post.updateOne({ _id: postId }, { $pull: { likes: userId } });
+                liked = false;
+            }
         }
 
         const updatedPost = await Post.findById(postId).select("likes");

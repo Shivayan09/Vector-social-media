@@ -108,7 +108,58 @@ export function AppContextProvider({
       return;
     }
     socket.connect();
+
+    const onConnect = () => {
+      socket.emit("register", userData.id);
+    };
+
+    const onBlocked = (data: { blockedUserId: string; blockerId: string }) => {
+      setUserData((prev) => {
+        if (!prev) return prev;
+        const blocked = data.blockedUserId;
+        const iInitiated = data.blockerId === prev._id;
+        return {
+          ...prev,
+          blockedUsers: iInitiated
+            ? prev.blockedUsers
+              ? [...prev.blockedUsers, blocked]
+              : [blocked]
+            : prev.blockedUsers ?? [],
+          following: prev.following
+            ? prev.following.filter((id) => id !== blocked)
+            : [],
+          followers: prev.followers
+            ? prev.followers.filter((id) => id !== blocked)
+            : [],
+        };
+      });
+    };
+
+    const onUnblocked = (data: { unblockedUserId: string; blockerId: string }) => {
+      setUserData((prev) => {
+        if (!prev) return prev;
+        if (data.blockerId !== prev._id) return prev;
+        return {
+          ...prev,
+          blockedUsers: prev.blockedUsers
+            ? prev.blockedUsers.filter((id) => id !== data.unblockedUserId)
+            : [],
+        };
+      });
+    };
+
+    socket.on("connect", onConnect);
+    socket.on("user:blocked", onBlocked);
+    socket.on("user:unblocked", onUnblocked);
+
     socket.emit("register", userData.id);
+
+    return () => {
+      socket.off("connect", onConnect);
+      socket.off("user:blocked", onBlocked);
+      socket.off("user:unblocked", onUnblocked);
+      socket.disconnect();
+    };
   }, [userData?.id]);
 
   return (
