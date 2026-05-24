@@ -95,8 +95,12 @@ export default function LoginForm() {
             toast.success("Logged in successfully!");
             await refreshAuth();
             router.push("/main");
-        } catch {
-            toast.error("Google login failed");
+        } catch (err: unknown) {
+            const message =
+                axios.isAxiosError(err)
+                    ? (err.response?.data as { message?: string } | undefined)?.message
+                    : undefined;
+            toast.error(message || "Google login failed");
         }
     };
 
