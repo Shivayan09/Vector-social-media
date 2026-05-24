@@ -8,7 +8,7 @@ describe('Auth Endpoints', () => {
     surname: "User",
     phoneNumber: "1234567890",
     email: "test@example.com",
-    password: "password123",
+    password: "Password123",
     username: "testuser",
     bio: "Test bio",
     description: "Test description"
@@ -21,7 +21,7 @@ describe('Auth Endpoints', () => {
       const response = await request(app)
         .post('/api/auth/register')
         .send(userWithoutName);
-      
+        
       expect(response.body.success).toBe(false);
       expect(response.body.message).toBe("Please enter your name!");
     });
@@ -30,7 +30,7 @@ describe('Auth Endpoints', () => {
       const response = await request(app)
         .post('/api/auth/register')
         .send({ ...validUser, email: "not-an-email" });
-      
+
       expect(response.body.success).toBe(false);
       expect(response.body.message).toBe("Please enter a valid email!");
     });
@@ -39,11 +39,11 @@ describe('Auth Endpoints', () => {
       const response = await request(app)
         .post('/api/auth/register')
         .send(validUser);
-      
+
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.message).toBe("Account created successfully");
-      
+
       const user = await User.findOne({ email: validUser.email });
       expect(user).toBeDefined();
       expect(user.username).toBe(validUser.username);
@@ -62,7 +62,7 @@ describe('Auth Endpoints', () => {
           username: validUser.username,
           password: validUser.password
         });
-      
+
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.message).toBe("Logged In successfully");
@@ -76,7 +76,7 @@ describe('Auth Endpoints', () => {
           username: validUser.username,
           password: "wrongpassword"
         });
-      
+
       expect(response.body.success).toBe(false);
       expect(response.body.message).toBe("Invalid username or password.");
     });
