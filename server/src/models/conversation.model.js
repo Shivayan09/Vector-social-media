@@ -11,7 +11,6 @@ const conversationSchema = new mongoose.Schema(
   ],
   participantsKey: {
     type: String,
-    index: true,
   },
 },
 { timestamps: true }
