@@ -22,7 +22,7 @@ describe('User Follow Request Flows', () => {
       name: "User One",
       username: "userone",
       email: "userone@example.com",
-      password: "password123",
+      password: "Password123",
       isPrivate: false
     });
 
@@ -30,7 +30,7 @@ describe('User Follow Request Flows', () => {
       name: "User Two",
       username: "usertwo",
       email: "usertwo@example.com",
-      password: "password123",
+      password: "Password123",
       isPrivate: true
     });
 
@@ -38,7 +38,7 @@ describe('User Follow Request Flows', () => {
       name: "User Three",
       username: "userthree",
       email: "userthree@example.com",
-      password: "password123",
+      password: "Password123",
       isPrivate: false
     });
 

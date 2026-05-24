@@ -22,7 +22,7 @@ describe('User Search and Suggestions Endpoints', () => {
       surname: "Smith",
       username: "alicesmith",
       email: "alice@example.com",
-      password: "password123",
+      password: "Password123",
       bio: "Hello world"
     });
 
@@ -31,7 +31,7 @@ describe('User Search and Suggestions Endpoints', () => {
       surname: "Jones",
       username: "bobjones",
       email: "bob@example.com",
-      password: "password123",
+      password: "Password123",
     });
 
     user3 = await User.create({
@@ -39,7 +39,7 @@ describe('User Search and Suggestions Endpoints', () => {
       surname: "Brown",
       username: "charlieb",
       email: "charlie@example.com",
-      password: "password123",
+      password: "Password123",
     });
 
     user4 = await User.create({
@@ -47,7 +47,7 @@ describe('User Search and Suggestions Endpoints', () => {
       surname: "Wonderland",
       username: "alicew",
       email: "alicew@example.com",
-      password: "password123",
+      password: "Password123",
     });
 
     token1 = jwt.sign({ id: user1._id }, process.env.JWT_SECRET);

@@ -9,7 +9,7 @@ describe("Invalid Post ID handling", () => {
     surname: "Tester",
     phoneNumber: "0987654322",
     email: "invalid@test.com",
-    password: "password123",
+    password: "Password123",
     username: "invalidtester",
     bio: "Bio",
     description: "Desc",

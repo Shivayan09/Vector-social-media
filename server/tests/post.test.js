@@ -31,7 +31,7 @@ describe('Post and Comment Flows', () => {
     surname: "Tester",
     phoneNumber: "0987654321",
     email: "post@test.com",
-    password: "password123",
+    password: "Password123",
     username: "posttester",
     bio: "Bio",
     description: "Desc"
@@ -193,7 +193,7 @@ describe('Post and Comment Flows', () => {
         surname: "Tester",
         phoneNumber: "1112223333",
         email: "other@test.com",
-        password: "password123",
+        password: "Password123",
         username: "othertester",
         bio: "Bio",
         description: "Desc"
