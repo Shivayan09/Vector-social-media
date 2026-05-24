@@ -90,8 +90,11 @@ export const sendMessage = async (req, res) => {
 
     // Re-verify block status right before create
     if (receiverId) {
-      const freshReceiver = await User.findById(receiverId).select("blockedUsers");
-      const stillBlocked = req.user.blockedUsers?.some(id => id.toString() === receiverId.toString()) ||
+      const [freshReceiver, freshSender] = await Promise.all([
+        User.findById(receiverId).select("blockedUsers"),
+        User.findById(req.user._id).select("blockedUsers"),
+      ]);
+      const stillBlocked = freshSender?.blockedUsers?.some(id => id.toString() === receiverId.toString()) ||
                           freshReceiver?.blockedUsers?.some(id => id.toString() === req.user._id.toString());
       if (stillBlocked) {
         return res.status(403).json({ message: "Action forbidden due to block status" });

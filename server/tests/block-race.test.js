@@ -112,11 +112,30 @@ describe("Block System Integrity", () => {
       await User.updateOne({ _id: bob._id }, { $addToSet: { blockedUsers: alice._id } });
 
       await request(app)
-        .put(`/api/posts/like/${post._id}`)
+        .post(`/api/posts/like/${post._id}`)
         .set("Cookie", cookieFor(alice));
 
       const updatedPost = await Post.findById(post._id);
       expect(updatedPost.likes.map((id) => id.toString())).not.toContain(alice._id.toString());
+    });
+
+    it("should reject a like if the liker has blocked the author", async () => {
+      const alice = await User.create({
+        name: "Alice", surname: "A", email: "alice_lk2@test.com", username: "alice_lk2", password: "pwd123", bio: "", description: "",
+      });
+      const bob = await User.create({
+        name: "Bob", surname: "B", email: "bob_lk2@test.com", username: "bob_lk2", password: "pwd123", bio: "", description: "",
+      });
+
+      const post = await Post.create({ author: bob._id, content: "Test post", intent: "share" });
+
+      await User.updateOne({ _id: alice._id }, { $addToSet: { blockedUsers: bob._id } });
+
+      const res = await request(app)
+        .post(`/api/posts/like/${post._id}`)
+        .set("Cookie", cookieFor(alice));
+
+      expect(res.status).toBe(403);
     });
   });
 
@@ -140,6 +159,64 @@ describe("Block System Integrity", () => {
 
       expect(res.status).toBe(403);
     });
+
+    it("should reject a comment if the commenter has blocked the author", async () => {
+      const alice = await User.create({
+        name: "Alice", surname: "A", email: "alice_cm2@test.com", username: "alice_cm2", password: "pwd123", bio: "", description: "",
+      });
+      const bob = await User.create({
+        name: "Bob", surname: "B", email: "bob_cm2@test.com", username: "bob_cm2", password: "pwd123", bio: "", description: "",
+      });
+
+      const post = await Post.create({ author: bob._id, content: "Test post", intent: "discuss" });
+
+      await User.updateOne({ _id: alice._id }, { $addToSet: { blockedUsers: bob._id } });
+
+      const res = await request(app)
+        .post(`/api/comments/${post._id}`)
+        .send({ content: "Nice post!" })
+        .set("Cookie", cookieFor(alice));
+
+      expect(res.status).toBe(403);
+    });
+  });
+
+  describe("TOCTOU conversation bypass — re-verify before create", () => {
+    it("should reject a conversation if the receiver blocked the sender", async () => {
+      const alice = await User.create({
+        name: "Alice", surname: "A", email: "alice_cv1@test.com", username: "alice_cv1", password: "pwd123", bio: "", description: "",
+      });
+      const bob = await User.create({
+        name: "Bob", surname: "B", email: "bob_cv1@test.com", username: "bob_cv1", password: "pwd123", bio: "", description: "",
+      });
+
+      await User.updateOne({ _id: bob._id }, { $addToSet: { blockedUsers: alice._id } });
+
+      const res = await request(app)
+        .post("/api/conversation")
+        .send({ receiverId: bob._id })
+        .set("Cookie", cookieFor(alice));
+
+      expect(res.status).toBe(403);
+    });
+
+    it("should reject a conversation if the sender has blocked the receiver", async () => {
+      const alice = await User.create({
+        name: "Alice", surname: "A", email: "alice_cv2@test.com", username: "alice_cv2", password: "pwd123", bio: "", description: "",
+      });
+      const bob = await User.create({
+        name: "Bob", surname: "B", email: "bob_cv2@test.com", username: "bob_cv2", password: "pwd123", bio: "", description: "",
+      });
+
+      await User.updateOne({ _id: alice._id }, { $addToSet: { blockedUsers: bob._id } });
+
+      const res = await request(app)
+        .post("/api/conversation")
+        .send({ receiverId: bob._id })
+        .set("Cookie", cookieFor(alice));
+
+      expect(res.status).toBe(403);
+    });
   });
 
   describe("TOCTOU message bypass — re-verify before create", () => {
@@ -158,6 +235,30 @@ describe("Block System Integrity", () => {
       const conversationId = convoRes.body._id;
 
       await User.updateOne({ _id: bob._id }, { $addToSet: { blockedUsers: alice._id } });
+
+      const res = await request(app)
+        .post("/api/messages")
+        .send({ conversationId, content: "Hello" })
+        .set("Cookie", cookieFor(alice));
+
+      expect(res.status).toBe(403);
+    });
+
+    it("should reject a message if the sender has blocked the receiver", async () => {
+      const alice = await User.create({
+        name: "Alice", surname: "A", email: "alice_ms2@test.com", username: "alice_ms2", password: "pwd123", bio: "", description: "",
+      });
+      const bob = await User.create({
+        name: "Bob", surname: "B", email: "bob_ms2@test.com", username: "bob_ms2", password: "pwd123", bio: "", description: "",
+      });
+
+      const convoRes = await request(app)
+        .post("/api/conversation")
+        .send({ receiverId: bob._id })
+        .set("Cookie", cookieFor(alice));
+      const conversationId = convoRes.body._id;
+
+      await User.updateOne({ _id: alice._id }, { $addToSet: { blockedUsers: bob._id } });
 
       const res = await request(app)
         .post("/api/messages")

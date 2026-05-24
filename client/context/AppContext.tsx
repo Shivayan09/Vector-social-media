@@ -113,15 +113,18 @@ export function AppContextProvider({
       socket.emit("register", userData.id);
     };
 
-    const onBlocked = (data: { blockedUserId: string }) => {
+    const onBlocked = (data: { blockedUserId: string; blockerId: string }) => {
       setUserData((prev) => {
         if (!prev) return prev;
         const blocked = data.blockedUserId;
+        const iInitiated = data.blockerId === prev._id;
         return {
           ...prev,
-          blockedUsers: prev.blockedUsers
-            ? [...prev.blockedUsers, blocked]
-            : [blocked],
+          blockedUsers: iInitiated
+            ? prev.blockedUsers
+              ? [...prev.blockedUsers, blocked]
+              : [blocked]
+            : prev.blockedUsers ?? [],
           following: prev.following
             ? prev.following.filter((id) => id !== blocked)
             : [],
@@ -132,9 +135,10 @@ export function AppContextProvider({
       });
     };
 
-    const onUnblocked = (data: { unblockedUserId: string }) => {
+    const onUnblocked = (data: { unblockedUserId: string; blockerId: string }) => {
       setUserData((prev) => {
         if (!prev) return prev;
+        if (data.blockerId !== prev._id) return prev;
         return {
           ...prev,
           blockedUsers: prev.blockedUsers

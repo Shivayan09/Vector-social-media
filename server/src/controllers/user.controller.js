@@ -810,8 +810,8 @@ export const blockUser = async (req, res) => {
         );
 
         const io = getIO();
-        io.to(currentUserId).emit("user:blocked", { blockedUserId: targetUserId });
-        io.to(targetUserId).emit("user:blocked", { blockedUserId: currentUserId });
+        io.to(currentUserId).emit("user:blocked", { blockedUserId: targetUserId, blockerId: currentUserId });
+        io.to(targetUserId).emit("user:blocked", { blockedUserId: currentUserId, blockerId: currentUserId });
 
         return res.json({
             success: true,
@@ -869,8 +869,8 @@ export const unblockUser = async (req, res) => {
         );
 
         const io = getIO();
-        io.to(currentUserId).emit("user:unblocked", { unblockedUserId: targetUserId });
-        io.to(targetUserId).emit("user:unblocked", { unblockedUserId: currentUserId });
+        io.to(currentUserId).emit("user:unblocked", { unblockedUserId: targetUserId, blockerId: currentUserId });
+        io.to(targetUserId).emit("user:unblocked", { unblockedUserId: currentUserId, blockerId: currentUserId });
 
         return res.json({
             success: true,
