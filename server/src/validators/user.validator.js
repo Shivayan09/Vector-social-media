@@ -35,7 +35,7 @@ export const forgotPasswordSchema = z.object({
 });
 
 export const resetPasswordSchema = z.object({
-  resetToken: z.string({ required_error: "Token is required!" }).min(1, { message: "Token is required!" }),
+  resetToken: z.string({ required_error: "Token is required" }).min(1, { message: "Token is required" }),
   newPassword: z.string({ required_error: "New password must be at least 6 characters!",}).min(6, { message: "New password must be at least 6 characters!",}).regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/, { message: "Password must contain at least one uppercase letter, one lowercase letter, and one number!"}),
 });
 
