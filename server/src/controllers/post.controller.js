@@ -26,6 +26,7 @@ export const removePostById = async (postId) => {
 };
 
 export const createPost = async (req, res) => {
+    let imagePublicId = null;
     try {
         const { content, intent } = req.body;
         if (!intent || (!content && !req.file)) {
@@ -44,7 +45,6 @@ export const createPost = async (req, res) => {
         }
         
         let image = null;
-        let imagePublicId = null;
 
         if (req.file) {
             const uploadResult = await cloudinary.uploader.upload(req.file.path, {
@@ -67,6 +67,9 @@ export const createPost = async (req, res) => {
             post: populatedPost
         });
     } catch (error) {
+        if (imagePublicId) {
+            await cloudinary.uploader.destroy(imagePublicId).catch(() => {});
+        }
         return res.status(500).json({
             success: false,
             message: error.message

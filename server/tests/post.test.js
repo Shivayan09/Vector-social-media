@@ -1,14 +1,15 @@
 import { jest } from '@jest/globals';
 
-// Mock Cloudinary config BEFORE importing app
+export const mockDestroy = jest.fn().mockResolvedValue({ result: 'ok' });
+
 jest.unstable_mockModule('../src/config/cloudinary.js', () => ({
   default: {
     uploader: {
-      upload: () => Promise.resolve({
+      upload: jest.fn().mockResolvedValue({
         secure_url: 'https://res.cloudinary.com/dummy-cloud/image/upload/v12345/posts/dummy_image.png',
         public_id: 'posts/dummy_image_public_id'
       }),
-      destroy: () => Promise.resolve({ result: 'ok' })
+      destroy: mockDestroy
     }
   }
 }));
@@ -132,6 +133,27 @@ describe('Post and Comment Flows', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(false);
       expect(res.body.message).toContain('either content or image are required');
+    });
+
+    it('should rollback Cloudinary upload if Post.create fails', async () => {
+      const createSpy = jest.spyOn(Post, 'create').mockRejectedValueOnce(new Error('Forced DB Error'));
+      mockDestroy.mockClear();
+
+      const res = await request(app)
+        .post('/api/posts')
+        .set('Cookie', cookie)
+        .field('intent', 'share')
+        .field('content', 'This post will fail to save')
+        .attach('image', Buffer.from('dummy data'), 'fail.png');
+
+      expect(res.status).toBe(500);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Forced DB Error');
+      
+      expect(createSpy).toHaveBeenCalled();
+      expect(mockDestroy).toHaveBeenCalledWith('posts/dummy_image_public_id');
+
+      createSpy.mockRestore();
     });
   });
 
