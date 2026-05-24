@@ -40,4 +40,7 @@ notificationSchema.index(
   }
 );
 
+// Index for efficient notification inbox queries (filtering by recipient and sorting by newest)
+notificationSchema.index({ recipient: 1, createdAt: -1 });
+
 export default mongoose.model("Notification", notificationSchema);
