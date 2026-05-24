@@ -7,9 +7,10 @@ import nodemailer from 'nodemailer';
 
 const sendResetEmail = async (email, token) => {
     const transporter = nodemailer.createTransport({
-        service: 'gmail',
+        host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.EMAIL_PORT) || 587,
         auth: {
-            user: process.env.EMAIL,
+            user: process.env.EMAIL_USER || process.env.EMAIL,
             pass: process.env.EMAIL_PASS,
         },
     });
@@ -17,10 +18,27 @@ const sendResetEmail = async (email, token) => {
     const resetLink = `${process.env.FRONTEND_URL}/reset-password/${token}`;
 
     const mailOptions = {
-        from: process.env.EMAIL,
+        from: `"Vector" <${process.env.EMAIL_USER || process.env.EMAIL}>`,
         to: email,
-        subject: 'Password Reset',
-        html: `<p>You requested a password reset. Click <a href="${resetLink}">here</a> to reset your password.</p>`,
+        subject: 'Password Reset Request — Vector',
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #333;">Password Reset Request</h2>
+                <p>You requested a password reset for your Vector account.</p>
+                <p>Click the button below to reset your password:</p>
+                <a href="${resetLink}" 
+                   style="background: #7c3aed; color: white; padding: 12px 24px; 
+                          text-decoration: none; border-radius: 6px; display: inline-block;">
+                    Reset Password
+                </a>
+                <p style="color: #666; margin-top: 16px;">
+                    This link expires in <strong>15 minutes</strong>.
+                </p>
+                <p style="color: #666;">
+                    If you did not request this, please ignore this email.
+                </p>
+            </div>
+        `,
     };
 
     await transporter.sendMail(mailOptions);
@@ -61,8 +79,6 @@ export const register = async (req, res) => {
             isPrivate,
         } = validation.data;
 
-
-        // check existing email
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.json({
@@ -71,7 +87,6 @@ export const register = async (req, res) => {
             });
         }
 
-        // check username
         const existingUsername = await User.findOne({ username });
         if (existingUsername) {
             return res.json({
@@ -164,16 +179,16 @@ export const login = async (req, res) => {
             return res.json({
                 success: false,
                 message: "User not found!"
-            })
+            });
         }
-        const matched = await bcrypt.compare(password, user.password)
+        const matched = await bcrypt.compare(password, user.password);
         if (!matched) {
             return res.json({
                 success: false,
                 message: "Incorrect password!"
-            })
+            });
         }
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' })
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
         res.cookie("token", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
@@ -184,14 +199,14 @@ export const login = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Logged In successfully"
-        })
+        });
     } catch (error) {
         return res.status(500).json({
             success: false,
             message: error.message
-        })
+        });
     }
-}
+};
 
 export const logout = async (req, res) => {
     try {
@@ -200,18 +215,18 @@ export const logout = async (req, res) => {
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             path: "/",
-        })
+        });
         return res.status(200).json({
             success: true,
             message: "Logged out successfully"
-        })
+        });
     } catch (error) {
         return res.status(400).json({
             success: false,
             message: error.message
-        })
+        });
     }
-}
+};
 
 export const forgotPassword = async (req, res) => {
     try {
@@ -225,15 +240,18 @@ export const forgotPassword = async (req, res) => {
         }
 
         const { email } = validation.data;
-        
+
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(404).json({ success: false, message: "User not found!" });
+            return res.status(404).json({ 
+                success: false, 
+                message: "User not found!" 
+            });
         }
 
         const resetToken = crypto.randomBytes(32).toString('hex');
         const hashedResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-        const resetTokenExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes
+        const resetTokenExpiry = Date.now() + 15 * 60 * 1000;
 
         user.resetToken = hashedResetToken;
         user.resetTokenExpiry = resetTokenExpiry;
@@ -246,7 +264,10 @@ export const forgotPassword = async (req, res) => {
             message: "Password reset email sent successfully",
         });
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        return res.status(500).json({ 
+            success: false, 
+            message: error.message 
+        });
     }
 };
 
@@ -270,7 +291,10 @@ export const resetPassword = async (req, res) => {
         });
 
         if (!user) {
-            return res.status(400).json({ success: false, message: "Invalid or expired reset token!" });
+            return res.status(400).json({ 
+                success: false, 
+                message: "Invalid or expired reset token!" 
+            });
         }
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -284,6 +308,9 @@ export const resetPassword = async (req, res) => {
             message: "Password reset successful"
         });
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        return res.status(500).json({ 
+            success: false, 
+            message: error.message 
+        });
     }
 };
