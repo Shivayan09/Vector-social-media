@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Home, Search, Bell, User, Plus, Menu, X, Settings, LogOut, Send } from "lucide-react";
+import { Home, Search, Bell, User, Plus, Menu, X, Settings, LogOut, Send, LifeBuoy } from "lucide-react";
 import CreateModal from "../modals/CreatePostModal";
 import { toast } from "react-toastify";
 import axios from "axios";
@@ -216,6 +216,13 @@ export default function Sidebar() {
             label="Settings"
             href="/main/settings"
             active={pathname === "/main/settings"}
+          />
+
+          <SidebarItem
+            icon={<LifeBuoy className="h-5 md:h-7" />}
+            label="Support"
+            href="/main/support"
+            active={pathname === "/main/support"}
           />
         </div>
 
