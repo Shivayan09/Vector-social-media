@@ -1,7 +1,7 @@
 import Comment from "../models/comment.model.js";
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
-import Notification from '../models/notification.model.js'
+import Notification from "../models/notification.model.js";
 import { getIO } from "../socket/socket.js";
 
 export const addComment = async (req, res) => {
@@ -111,6 +111,7 @@ export const deleteComment = async (req, res) => {
             });
         }
         await comment.deleteOne();
+        await Notification.deleteOne({ post: comment.post, sender: comment.author, type: "comment" });
         await Post.findByIdAndUpdate(comment.post, { $inc: { commentsCount: -1 }, });
         res.json({
             success: true

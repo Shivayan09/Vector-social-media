@@ -18,6 +18,8 @@ const { default: request } = await import('supertest');
 const { default: app } = await import('../src/app.js');
 const { default: User } = await import('../src/models/user.model.js');
 const { default: Post } = await import('../src/models/post.model.js');
+const { default: Comment } = await import('../src/models/comment.model.js');
+const { default: Notification } = await import('../src/models/notification.model.js');
 
 describe('Post and Comment Flows', () => {
   let cookie;
@@ -319,6 +321,53 @@ describe('Post and Comment Flows', () => {
         .set('Cookie', cookie);
 
       expect(deleteRes.body.success).toBe(true);
+
+      const postAfterDelete = await Post.findById(post._id);
+      expect(postAfterDelete.commentsCount).toBe(0);
+    });
+
+    it('should delete the related comment notification when deleting a comment', async () => {
+      const commenterData = {
+        name: "Comment",
+        surname: "Author",
+        phoneNumber: "2223334444",
+        email: "commenter@test.com",
+        password: "password123",
+        username: "commentauthor",
+        bio: "Bio",
+        description: "Desc"
+      };
+
+      await request(app).post('/api/auth/register').send(commenterData);
+      const commenterLoginRes = await request(app).post('/api/auth/login').send({
+        username: commenterData.username,
+        password: commenterData.password
+      });
+      const commenterCookie = commenterLoginRes.headers['set-cookie'];
+      const commenter = await User.findOne({ username: commenterData.username });
+
+      const comment = await Comment.create({
+        post: post._id,
+        author: commenter._id,
+        content: "This comment creates a notification"
+      });
+      await Post.findByIdAndUpdate(post._id, { $inc: { commentsCount: 1 } });
+
+      const notification = await Notification.create({
+        recipient: user._id,
+        sender: commenter._id,
+        type: "comment",
+        post: post._id
+      });
+
+      const deleteRes = await request(app)
+        .delete(`/api/comments/delete/${comment._id}`)
+        .set('Cookie', commenterCookie);
+
+      expect(deleteRes.status).toBe(200);
+      expect(deleteRes.body.success).toBe(true);
+      expect(await Comment.findById(comment._id)).toBeNull();
+      expect(await Notification.findById(notification._id)).toBeNull();
 
       const postAfterDelete = await Post.findById(post._id);
       expect(postAfterDelete.commentsCount).toBe(0);
