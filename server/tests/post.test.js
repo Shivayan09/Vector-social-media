@@ -21,7 +21,6 @@ const { default: User } = await import('../src/models/user.model.js');
 const { default: Post } = await import('../src/models/post.model.js');
 const { default: Comment } = await import('../src/models/comment.model.js');
 const { default: Notification } = await import('../src/models/notification.model.js');
-const { default: cloudinary } = await import('../src/config/cloudinary.js');
 
 describe('Post and Comment Flows', () => {
   let cookie;
