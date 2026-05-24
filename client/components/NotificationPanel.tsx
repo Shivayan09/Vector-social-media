@@ -614,7 +614,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                       onClick={(e) => {
                         e.stopPropagation();
                         if (!isFollowingUser(n.sender._id)) {
-                          handleFollowBack(n.sender._id);
+                          void handleFollowBack(n.sender._id);
                         }
                       }}
                       disabled={followLoading[n.sender._id] || isFollowingUser(n.sender._id)}
@@ -640,7 +640,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      deleteSingle(n._id);
+                      void deleteSingle(n._id);
                     }}
                     className="p-1 text-foreground transition hover:text-red-400"
                   >
@@ -670,7 +670,7 @@ export default function NotificationPanel({ search = "" }: Props) {
         open={warningOpen}
         onClose={() => setWarningOpen(false)}
         onConfirm={() => {
-          deleteAll();
+          void deleteAll();
           setWarningOpen(false);
         }}
         title="Clear all notifications?"
