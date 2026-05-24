@@ -39,6 +39,9 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
   const [hasMore, setHasMore] = useState(true);
   const LIMIT = 50;
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [partnerTyping, setPartnerTyping] = useState(false);
+  const isTypingRef = useRef(false);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -120,15 +123,22 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
       }
 
     };
-
+    const handleTyping = ({ conversationId: cId }: { conversationId: string }) => {
+        if (cId === conversationId) setPartnerTyping(true);
+    };
+    const handleStopTyping = ({ conversationId: cId }: { conversationId: string }) => {
+        if (cId === conversationId) setPartnerTyping(false);
+    };
     socket.on("receive_message", handleReceiveMessage);
     socket.on("message_deleted", handleDelete);
-
+    socket.on("typing", handleTyping);
+    socket.on("stop_typing", handleStopTyping);
     return () => {
-      socket.off("receive_message", handleReceiveMessage);
-      socket.off("message_deleted", handleDelete);
+        socket.off("receive_message", handleReceiveMessage);
+        socket.off("message_deleted", handleDelete);
+        socket.off("typing", handleTyping);
+        socket.off("stop_typing", handleStopTyping);
     };
-
   }, [userData, conversationId]);
 
   // FETCH CHAT
@@ -256,8 +266,23 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
       behavior: "smooth",
     });
   };
+  const handleTypingInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setText(e.target.value);
 
-  // SEND MESSAGE
+      if (!receiverId) return;
+
+      if (!isTypingRef.current) {
+          isTypingRef.current = true;
+          socket.emit("typing", { conversationId, receiverId });
+      }
+
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
+      typingTimeoutRef.current = setTimeout(() => {
+          socket.emit("stop_typing", { conversationId, receiverId });
+          isTypingRef.current = false;
+      }, 2000);
+  };// SEND MESSAGE
   const sendMessage = async () => {
 
     if (!text.trim() || !receiverId || isSending) return;
@@ -277,6 +302,9 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
       });
 
       setText("");
+      socket.emit("stop_typing", { conversationId, receiverId });
+      isTypingRef.current = false;
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     } catch (error) {
       console.error("Failed to send message:", error);
     } finally {
@@ -498,7 +526,16 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
           })}
           </>
         )}
-
+        {partnerTyping && (
+            <div className="flex items-center gap-2 px-3 py-1 text-sm surface-text-muted">
+                <span className="flex gap-0.5">
+                    <span className="animate-bounce">●</span>
+                    <span className="animate-bounce [animation-delay:0.1s]">●</span>
+                    <span className="animate-bounce [animation-delay:0.2s]">●</span>
+                </span>
+                <span>{otherUser?.name} is typing...</span>
+            </div>
+        )}
         <div ref={bottomRef} />
       </div>
 
@@ -506,7 +543,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
 
         <input
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={handleTypingInput}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey && !isSending) {
               e.preventDefault();

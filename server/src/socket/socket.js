@@ -61,7 +61,13 @@ export const initSocket = async (server) => {
         socket.join(socket.userId);
       }
     });
+    socket.on("typing", ({ conversationId, receiverId }) => {
+        io.to(receiverId).emit("typing", { conversationId, senderId: socket.userId });
+    });
 
+    socket.on("stop_typing", ({ conversationId, receiverId }) => {
+        io.to(receiverId).emit("stop_typing", { conversationId });
+    });
   });
 };
 
