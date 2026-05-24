@@ -21,7 +21,7 @@ describe('Auth Endpoints', () => {
       const response = await request(app)
         .post('/api/auth/register')
         .send(userWithoutName);
-        
+
       expect(response.body.success).toBe(false);
       expect(response.body.message).toBe("Please enter your name!");
     });

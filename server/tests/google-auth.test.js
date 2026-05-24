@@ -40,7 +40,7 @@ describe("Google Auth Endpoint", () => {
       surname: "Local",
       email: "alice@test.com",
       username: "alice",
-      password: "password123",
+      password: "Password123",
       bio: "",
       description: "",
     });
@@ -73,7 +73,7 @@ describe("Google Auth Endpoint", () => {
       surname: "Seed",
       email: "seed@test.com",
       username: "john",
-      password: "password123",
+      password: "Password123",
       bio: "",
       description: "",
     });

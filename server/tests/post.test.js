@@ -332,7 +332,7 @@ describe('Post and Comment Flows', () => {
         surname: "Author",
         phoneNumber: "2223334444",
         email: "commenter@test.com",
-        password: "password123",
+        password: "Password123",
         username: "commentauthor",
         bio: "Bio",
         description: "Desc"
@@ -343,9 +343,10 @@ describe('Post and Comment Flows', () => {
         username: commenterData.username,
         password: commenterData.password
       });
-      const commenterCookie = commenterLoginRes.headers['set-cookie'];
+      expect(commenterLoginRes.status).toBe(200);
       const commenter = await User.findOne({ username: commenterData.username });
-
+      expect(commenter).not.toBeNull();
+      const commenterCookie = commenterLoginRes.headers['set-cookie'];
       const comment = await Comment.create({
         post: post._id,
         author: commenter._id,
