@@ -301,7 +301,7 @@ export const toggleLike = async (req, res) => {
             { $addToSet: { likes: userId } }
         );
 
-        const liked = addResult.modifiedCount > 0;
+        let liked = addResult.modifiedCount > 0;
 
         if (!liked) {
             await Post.updateOne(
@@ -309,6 +309,15 @@ export const toggleLike = async (req, res) => {
                 { $pull: { likes: userId } }
             );
             await Notification.deleteOne({ recipient: post.author, sender: userId, type: "like", post: postId });
+        }
+
+        // Re-verify block status — author may have blocked since the pre-check
+        if (liked && post.author.toString() !== userId) {
+            const currentAuthor = await User.findById(post.author).select("blockedUsers");
+            if (currentAuthor?.blockedUsers?.some(id => id.toString() === userId)) {
+                await Post.updateOne({ _id: postId }, { $pull: { likes: userId } });
+                liked = false;
+            }
         }
 
         const updatedPost = await Post.findById(postId).select("likes");

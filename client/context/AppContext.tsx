@@ -108,7 +108,54 @@ export function AppContextProvider({
       return;
     }
     socket.connect();
+
+    const onConnect = () => {
+      socket.emit("register", userData.id);
+    };
+
+    const onBlocked = (data: { blockedUserId: string }) => {
+      setUserData((prev) => {
+        if (!prev) return prev;
+        const blocked = data.blockedUserId;
+        return {
+          ...prev,
+          blockedUsers: prev.blockedUsers
+            ? [...prev.blockedUsers, blocked]
+            : [blocked],
+          following: prev.following
+            ? prev.following.filter((id) => id !== blocked)
+            : [],
+          followers: prev.followers
+            ? prev.followers.filter((id) => id !== blocked)
+            : [],
+        };
+      });
+    };
+
+    const onUnblocked = (data: { unblockedUserId: string }) => {
+      setUserData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          blockedUsers: prev.blockedUsers
+            ? prev.blockedUsers.filter((id) => id !== data.unblockedUserId)
+            : [],
+        };
+      });
+    };
+
+    socket.on("connect", onConnect);
+    socket.on("user:blocked", onBlocked);
+    socket.on("user:unblocked", onUnblocked);
+
     socket.emit("register", userData.id);
+
+    return () => {
+      socket.off("connect", onConnect);
+      socket.off("user:blocked", onBlocked);
+      socket.off("user:unblocked", onUnblocked);
+      socket.disconnect();
+    };
   }, [userData?.id]);
 
   return (

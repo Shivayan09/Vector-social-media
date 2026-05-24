@@ -276,24 +276,32 @@ export const toggleFollowUser = async (req, res) => {
             } else {
                 // Public account follow (immediate)
                 const result = await User.updateOne(
-                    { _id: currentUserId, following: { $ne: targetUserId } },
+                    { _id: currentUserId, following: { $ne: targetUserId }, blockedUsers: { $ne: targetUserId } },
                     { $addToSet: { following: targetUserId }, $inc: { followingCount: 1 } }
                 );
 
                 if (result.modifiedCount > 0) {
-                    await User.updateOne(
-                        { _id: targetUserId, followers: { $ne: currentUserId } },
+                    const targetResult = await User.updateOne(
+                        { _id: targetUserId, followers: { $ne: currentUserId }, blockedUsers: { $ne: currentUserId } },
                         { $addToSet: { followers: currentUserId }, $inc: { followersCount: 1 } }
                     );
-                    const notification = await Notification.create({
-                        recipient: targetUser._id,
-                        sender: req.user._id,
-                        type: "follow",
-                    });
-                    getIO().to(targetUser._id.toString()).emit("notification:new", {
-                        notificationId: notification._id,
-                        type: notification.type,
-                    });
+
+                    if (targetResult.modifiedCount > 0) {
+                        const notification = await Notification.create({
+                            recipient: targetUser._id,
+                            sender: req.user._id,
+                            type: "follow",
+                        });
+                        getIO().to(targetUser._id.toString()).emit("notification:new", {
+                            notificationId: notification._id,
+                            type: notification.type,
+                        });
+                    } else {
+                        await User.updateOne(
+                            { _id: currentUserId },
+                            { $pull: { following: targetUserId }, $inc: { followingCount: -1 } }
+                        );
+                    }
                 }
                 return res.json({
                     followed: true
@@ -355,7 +363,7 @@ export const acceptFollowRequest = async (req, res) => {
         }
 
         const result = await User.updateOne(
-            { _id: currentUserId, followRequests: requesterId, followers: { $ne: requesterId } },
+            { _id: currentUserId, followRequests: requesterId, followers: { $ne: requesterId }, blockedUsers: { $ne: requesterId } },
             {
                 $pull: { followRequests: requesterId },
                 $addToSet: { followers: requesterId },
@@ -364,22 +372,30 @@ export const acceptFollowRequest = async (req, res) => {
         );
 
         if (result.modifiedCount > 0) {
-            await User.updateOne(
-                { _id: requesterId, following: { $ne: currentUserId } },
+            const requesterResult = await User.updateOne(
+                { _id: requesterId, following: { $ne: currentUserId }, blockedUsers: { $ne: currentUserId } },
                 {
                     $addToSet: { following: currentUserId },
                     $inc: { followingCount: 1 }
                 }
             );
-            const notification = await Notification.create({
-                recipient: requesterId,
-                sender: currentUserId,
-                type: "follow_request_accepted",
-            });
-            getIO().to(requesterId.toString()).emit("notification:new", {
-                notificationId: notification._id,
-                type: notification.type,
-            });
+
+            if (requesterResult.modifiedCount > 0) {
+                const notification = await Notification.create({
+                    recipient: requesterId,
+                    sender: currentUserId,
+                    type: "follow_request_accepted",
+                });
+                getIO().to(requesterId.toString()).emit("notification:new", {
+                    notificationId: notification._id,
+                    type: notification.type,
+                });
+            } else {
+                await User.updateOne(
+                    { _id: currentUserId },
+                    { $pull: { followers: requesterId }, $inc: { followersCount: -1 }, $addToSet: { followRequests: requesterId } }
+                );
+            }
         }
 
         res.json({ success: true, message: "Follow request accepted" });
@@ -793,6 +809,10 @@ export const blockUser = async (req, res) => {
             { $pull: { likes: targetUserId } }
         );
 
+        const io = getIO();
+        io.to(currentUserId).emit("user:blocked", { blockedUserId: targetUserId });
+        io.to(targetUserId).emit("user:blocked", { blockedUserId: currentUserId });
+
         return res.json({
             success: true,
             message: "User blocked successfully"
@@ -847,6 +867,10 @@ export const unblockUser = async (req, res) => {
             { _id: targetUserId, following: currentUserId },
             { $pull: { following: currentUserId }, $inc: { followingCount: -1 } }
         );
+
+        const io = getIO();
+        io.to(currentUserId).emit("user:unblocked", { unblockedUserId: targetUserId });
+        io.to(targetUserId).emit("user:unblocked", { unblockedUserId: currentUserId });
 
         return res.json({
             success: true,
