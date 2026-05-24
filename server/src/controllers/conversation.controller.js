@@ -104,8 +104,8 @@ export const getUserConversations = async (req, res) => {
     const userId = req.user._id;
 
     let conversations = await Conversation.aggregate([
-      // Match conversations for current user
-      { $match: { participants: userId } },
+      // Match conversations for current user that have not been soft-deleted by them
+      { $match: { participants: userId, deletedBy: { $ne: userId } } },
       
       // Lookup latest message
       {
@@ -221,16 +221,34 @@ export const getUserConversations = async (req, res) => {
 
 export const deleteConversation = async (req, res) => {
     try {
-        const convo = await Conversation.findOneAndDelete({
+        const convo = await Conversation.findOne({
             _id: req.params.conversationId,
-            participants: req.user._id
+            participants: req.user._id,
         });
 
         if (!convo) {
             return res.status(404).json({ message: "Conversation not found or unauthorized" });
         }
 
-        await Message.deleteMany({ conversation: req.params.conversationId });
+        const alreadyDeleted = convo.deletedBy.some(
+            (id) => id.toString() === req.user._id.toString()
+        );
+        if (alreadyDeleted) {
+            return res.status(400).json({ message: "Conversation already deleted" });
+        }
+
+        convo.deletedBy.push(req.user._id);
+
+        const allDeleted = convo.participants.every((participantId) =>
+            convo.deletedBy.some((id) => id.toString() === participantId.toString())
+        );
+
+        if (allDeleted) {
+            await Message.deleteMany({ conversation: convo._id });
+            await convo.deleteOne();
+        } else {
+            await convo.save();
+        }
 
         res.json({ message: "Conversation deleted successfully" });
     } catch (error) {
