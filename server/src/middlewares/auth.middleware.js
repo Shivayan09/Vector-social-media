@@ -18,6 +18,14 @@ const authMiddleware = async (req, res, next) => {
                 message: "Unauthorized. User not found!",
             });
         }
+
+        if ((decoded.version || 0) !== (user.tokenVersion || 0)) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized. Token invalidated due to password reset!",
+            });
+        }
+
         req.user = user;
         next();
     } catch {
