@@ -1,5 +1,3 @@
-import { jest } from '@jest/globals';
-
 const { default: request } = await import('supertest');
 const { default: app } = await import('../src/app.js');
 const { default: User } = await import('../src/models/user.model.js');
@@ -10,7 +8,6 @@ describe('Comment Routes', () => {
   let cookie1;
   let cookie2;
   let user1;
-  let user2;
   let post;
 
   const testUser1 = {
@@ -52,7 +49,6 @@ describe('Comment Routes', () => {
       password: testUser2.password
     });
     cookie2 = loginRes2.headers['set-cookie'];
-    user2 = await User.findOne({ username: testUser2.username });
 
     // Create a fresh post for each test
     post = await Post.create({
