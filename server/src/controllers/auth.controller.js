@@ -111,7 +111,7 @@ export const register = async (req, res) => {
         });
 
         const token = jwt.sign(
-            { id: user._id },
+            { id: user._id, version: user.tokenVersion || 0 },
             process.env.JWT_SECRET,
             { expiresIn: "7d" }
         );
@@ -195,7 +195,7 @@ export const login = async (req, res) => {
                 message: "Invalid username or password."
             })
         }
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign({ id: user._id, version: user.tokenVersion || 0 }, process.env.JWT_SECRET, { expiresIn: '7d' });
         res.cookie("token", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
@@ -308,6 +308,7 @@ export const resetPassword = async (req, res) => {
         user.password = hashedPassword;
         user.resetToken = undefined;
         user.resetTokenExpiry = undefined;
+        user.tokenVersion = (user.tokenVersion || 0) + 1;
         await user.save();
 
         return res.status(200).json({
