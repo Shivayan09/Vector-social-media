@@ -32,6 +32,10 @@ const notificationSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    readAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
@@ -46,5 +50,9 @@ notificationSchema.index(
 
 // Index for efficient notification inbox queries (filtering by recipient and sorting by newest)
 notificationSchema.index({ recipient: 1, createdAt: -1 });
+
+// TTL index for deleting old read notifications
+const retentionDays = parseInt(process.env.NOTIFICATION_RETENTION_DAYS) || 90;
+notificationSchema.index({ readAt: 1 }, { expireAfterSeconds: retentionDays * 24 * 60 * 60 });
 
 export default mongoose.model("Notification", notificationSchema);
