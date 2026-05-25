@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import Image from "next/image"; // kept: Image is used in JSX for avatars
+import Image from "next/image";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { UserSummary } from "@/lib/types";
@@ -38,7 +38,7 @@ export default function FollowActivityPanel({
     } finally {
       setLoadingReceived(false);
     }
-  }, [BACKEND_URL, setPendingFollowCount]);
+  }, [BACKEND_URL]);
 
   const fetchSent = useCallback(async () => {
     try {

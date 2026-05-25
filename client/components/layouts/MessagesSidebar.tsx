@@ -1,13 +1,12 @@
 "use client";
 
-import { Send, UserPlus, X } from "lucide-react";
+import { Search, Send, UserPlus, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import InlineLoader from "../loaders/InlineLoader";
-// Removed unused SearchBar import; search is now handled by the page-level component to avoid duplicate inputs
 
 type SuggestedUser = {
     _id: string;
@@ -17,12 +16,20 @@ type SuggestedUser = {
     avatar?: string;
 };
 
+type User = {
+    _id: string;
+    name: string;
+    username?: string;
+    avatar?: string;
+};
 
 export default function MessagesSidebar() {
     const [open, setOpen] = useState(false);
     const [users, setUsers] = useState<SuggestedUser[]>([]);
     const [loading, setLoading] = useState(true);
-    // Removed local search state: search is handled at the page level to avoid duplicate inputs
+    const [query, setQuery] = useState("");
+    const [results, setResults] = useState<User[]>([]);
+    const [searching, setSearching] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const { userData } = useAppContext();
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
@@ -43,7 +50,24 @@ export default function MessagesSidebar() {
         fetchUsers();
     }, [BACKEND_URL]);
 
-    // Removed search effect (no local input). Sidebar now only shows suggestions and follows page-level search if needed.
+    useEffect(() => {
+        const delay = setTimeout(async () => {
+            if (!query.trim()) {
+                setResults([]);
+                return;
+            }
+            try {
+                setSearching(true);
+                const res = await axios.get(`${BACKEND_URL}/api/users/search?query=${query}`, { withCredentials: true });
+                setResults(res.data.users);
+            } catch (err) {
+                console.error("Search failed:", err);
+            } finally {
+                setSearching(false);
+            }
+        }, 400);
+        return () => clearTimeout(delay);
+    }, [query, BACKEND_URL]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -101,38 +125,68 @@ export default function MessagesSidebar() {
                     <UserPlus className="h-5 text-blue-500" />
                     Suggestions
                 </p>
-                {/* search removed to avoid duplicate searchbars on chat page; search now handled in chat layout */}
+                <div className="mt-4 flex items-center gap-2 bg-white/10 px-3 py-2 rounded-md">
+                    <Search className="h-4 w-4 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Search users..."
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        className="bg-transparent outline-none text-sm text-white placeholder-gray-400 w-full"
+                    />
+                </div>
 
                 <div className="mt-5 flex flex-col gap-2 w-fit min-h-[75vh] max-h-[60vh] overflow-y-auto hide-scrollbar pr-1">
                     {loading ? (
-                            <InlineLoader text="Loading users..." />
-                        ) : filteredUsers.length === 0 ? (
+                        <InlineLoader text="Loading users..." />
+                    ) : query.trim() ? (
+                        searching ? (
+                            <p className="text-sm opacity-50">Searching...</p>
+                        ) : results.length === 0 ? (
                             <p className="text-sm opacity-50">No users found.</p>
                         ) : (
-                            // Render suggested users only; local search removed to avoid duplicates with page-level search
-                            filteredUsers.map((suggestedUser) => {
+                            results.filter((user) => user._id !== userData?.id).map((user) => {
                                 return (
-                                    <div onClick={() => startChat(suggestedUser._id)} key={suggestedUser._id} className="flex items-center gap-2 hover:bg-black/10 cursor-pointer p-3 rounded-md">
-                                        <div className="h-10 w-10 rounded-full overflow-hidden">
-                                            <Image src={suggestedUser.avatar || "/default-avatar.png"} alt={suggestedUser.name} width={40} height={40} className="h-full w-full object-cover" />
+                                    <div key={user._id} className="flex items-center gap-2">
+                                        <div className="h-12 w-12 rounded-full overflow-hidden">
+                                            <Image src={user.avatar || "/default-avatar.png"} alt={user.name} width={48} height={48} className="h-full w-full object-cover" />
                                         </div>
-
                                         <div className="flex flex-col w-30">
-                                            <p className="text-[0.9rem] text-white truncate cursor-pointer w-fit hover:text-blue-600" onClick={(e) => { e.stopPropagation(); handleClick(suggestedUser.username) }}>
-                                                {suggestedUser.name}
-                                            </p>
+                                            <p className="text-[0.9rem] truncate">{user.name}</p>
                                             <p className="opacity-50 text-[0.8rem] truncate">
-                                                {suggestedUser.bio || "No bio available"}
+                                                @{user.username}
                                             </p>
                                         </div>
-
-                                        <button onClick={() => startChat(suggestedUser._id)} className="mt-1 cursor-pointer">
-                                            <Send className="text-white opacity-60" />
-                                        </button>
                                     </div>
                                 );
                             })
-                        )}
+                        )
+                    ) : filteredUsers.length === 0 ? (
+                        <p className="text-sm opacity-50">No users found.</p>
+                    ) : (
+                        filteredUsers.map((suggestedUser) => {
+                            return (
+                                <div onClick={() => startChat(suggestedUser._id)} key={suggestedUser._id} className="flex items-center gap-2 hover:bg-black/10 cursor-pointer p-3 rounded-md">
+                                    <div className="h-10 w-10 rounded-full overflow-hidden">
+                                        <Image src={suggestedUser.avatar || "/default-avatar.png"} alt={suggestedUser.name} width={40} height={40} className="h-full w-full object-cover" />
+                                    </div>
+
+                                    <div className="flex flex-col w-30">
+                                        <p className="text-[0.9rem] text-white truncate cursor-pointer w-fit hover:text-blue-600" onClick={(e) => { e.stopPropagation(); handleClick(suggestedUser.username) }}>
+                                            {suggestedUser.name}
+                                        </p>
+                                        <p className="opacity-50 text-[0.8rem] truncate">
+                                            {suggestedUser.bio || "No bio available"}
+                                        </p>
+                                    </div>
+
+                                    <button onClick={() => startChat(suggestedUser._id)} className="mt-1 cursor-pointer">
+                                        <Send className="text-white opacity-60" />
+                                    </button>
+                                </div>
+                            );
+                        })
+                    )}
 
                 </div>
 
