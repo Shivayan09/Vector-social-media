@@ -53,6 +53,7 @@ export const addComment = async (req, res) => {
                 sender: req.user.id,
                 type: "comment",
                 post: post._id,
+                comment: comment._id,
             });
 
             getIO().to(post.author.toString()).emit("notification:new", {
@@ -123,7 +124,7 @@ export const deleteComment = async (req, res) => {
             });
         }
         await comment.deleteOne();
-        await Notification.deleteOne({ post: comment.post, sender: comment.author, type: "comment" });
+        await Notification.deleteOne({ comment: comment._id, type: "comment" });
         await Post.findByIdAndUpdate(comment.post, { $inc: { commentsCount: -1 }, });
         res.json({
             success: true
