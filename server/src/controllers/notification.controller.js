@@ -63,7 +63,7 @@ export const markAsRead = async (req, res) => {
         const currentUserId = req.user?._id || req.user?.id;
         const notification = await Notification.findOneAndUpdate(
             { _id: req.params.id, recipient: currentUserId },
-            { isRead: true }
+            { isRead: true, readAt: new Date() }
         );
         
         if (!notification) {
@@ -133,7 +133,7 @@ export const markAllAsRead = async (req, res) => {
         const currentUserId = req.user?._id || req.user?.id;
         await Notification.updateMany(
             { recipient: currentUserId, isRead: false },
-            { $set: { isRead: true } }
+            { $set: { isRead: true, readAt: new Date() } }
         );
         return res.json({ success: true, message: "All notifications marked as read" });
     } catch (error) {
