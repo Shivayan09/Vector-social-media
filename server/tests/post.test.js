@@ -380,7 +380,8 @@ describe('Post and Comment Flows', () => {
         recipient: user._id,
         sender: commenter._id,
         type: "comment",
-        post: post._id
+        post: post._id,
+        comment: comment._id,
       });
 
       const deleteRes = await request(app)
