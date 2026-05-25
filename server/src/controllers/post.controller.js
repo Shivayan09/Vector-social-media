@@ -147,6 +147,81 @@ export const getPosts = async (req, res) => {
     }
 }
 
+export const searchPosts = async (req, res) => {
+    try {
+        const q = req.query.q?.trim();
+        const cursor = req.query.cursor;
+        const limit = parseInt(req.query.limit) || 10;
+
+        if (!q) {
+            return res.status(200).json({ posts: [], limit, hasMore: false, nextCursor: null });
+        }
+
+        let filter = { $text: { $search: q } };
+        
+        if (req.user) {
+            const currentUserId = req.user._id || req.user.id;
+            const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
+            const blockerIds = blockers.map(u => u._id);
+            const blockedIds = req.user.blockedUsers || [];
+            let excludeUserIds = [...blockedIds, ...blockerIds];
+
+            const privateUsers = await User.find({
+                _id: { $nin: [...(req.user.following || []), currentUserId] },
+                isPrivate: true
+            }).select("_id");
+            const privateUserIds = privateUsers.map(u => u._id);
+            excludeUserIds = [...excludeUserIds, ...privateUserIds];
+
+            if (excludeUserIds.length > 0) {
+                filter.author = { $nin: excludeUserIds };
+            }
+        } else {
+            const privateUsers = await User.find({ isPrivate: true }).select("_id");
+            const privateUserIds = privateUsers.map(u => u._id);
+            if (privateUserIds.length > 0) {
+                filter.author = { $nin: privateUserIds };
+            }
+        }
+
+        if (cursor) {
+            if (mongoose.Types.ObjectId.isValid(cursor)) {
+                filter._id = { $lt: cursor };
+            } else {
+                return res.status(400).json({ success: false, message: "Invalid cursor format" });
+            }
+        }
+
+        const posts = await Post.find(filter)
+            .sort({ _id: -1 })
+            .limit(limit)
+            .populate("author", "username name surname avatar")
+            .populate("likes", "username name avatar _id");
+
+        const hasMore = posts.length === limit;
+        const nextCursor = hasMore ? posts[posts.length - 1]._id : null;
+
+        const userBookmarkSet = req.user?.bookmarks
+            ? new Set(req.user.bookmarks.map(String))
+            : new Set();
+        const postsWithMeta = posts.map((p) => ({
+        ...p.toObject(),
+        isBookmarked: userBookmarkSet.has(p._id.toString()),
+        }));
+        res.status(200).json({
+            posts: postsWithMeta,
+            limit,
+            hasMore,
+            nextCursor,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+}
+
 export const deletePost = async (req, res) => {
     try {
         const postId = req.params.id;
