@@ -11,7 +11,6 @@ const { default: request } = await import("supertest");
 const { default: app } = await import("../src/app.js");
 const { default: User } = await import("../src/models/user.model.js");
 const { default: Post } = await import("../src/models/post.model.js");
-const { default: Comment } = await import("../src/models/comment.model.js");
 const { default: Notification } = await import("../src/models/notification.model.js");
 
 const loginUser = async (userData) => {
@@ -46,12 +45,12 @@ const commenterData = {
 };
 
 describe("deleteComment - notification precision", () => {
-  let cookieAuthor, cookieCommenter;
+  let cookieCommenter;
   let authorUser, commenterUser;
   let postId;
 
   beforeEach(async () => {
-    cookieAuthor = await loginUser(authorData);
+    await loginUser(authorData);
     cookieCommenter = await loginUser(commenterData);
 
     authorUser = await User.findOne({ username: authorData.username });
