@@ -115,17 +115,30 @@ export const sendMessage = async (req, res) => {
 
     if (receiverId) {
 
-      const notification = await Notification.create({
+      const filter = {
         recipient: receiverId,
         sender: req.user._id,
         type: "message",
         conversation: conversationId,
-      });
+        isRead: false,
+      };
+      // findOneAndUpdate with new:false returns the pre-update doc,
+      // or null when a new doc was upserted. Only emit on first insert.
+      const existing = await Notification.findOneAndUpdate(
+        filter,
+        { $setOnInsert: filter },
+        { upsert: true, returnDocument: "before" }
+      );
       const io = getIO();
-      io.to(receiverId.toString()).emit("notification:new", {
-        notificationId: notification._id,
-        type: notification.type,
-      });
+      if (!existing) {
+        const notification = await Notification.findOne(filter);
+        if (notification) {
+          io.to(receiverId.toString()).emit("notification:new", {
+            notificationId: notification._id,
+            type: notification.type,
+          });
+        }
+      }
       
       io.to(receiverId.toString()).emit("receive_message", populated);
 
