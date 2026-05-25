@@ -10,7 +10,6 @@ jest.unstable_mockModule("../src/socket/socket.js", () => ({
 const { default: request } = await import("supertest");
 const { default: app } = await import("../src/app.js");
 const { default: User } = await import("../src/models/user.model.js");
-const { default: Conversation } = await import("../src/models/conversation.model.js");
 const { default: Notification } = await import("../src/models/notification.model.js");
 
 const loginUser = async (userData) => {
@@ -45,13 +44,13 @@ const receiverData = {
 };
 
 describe("sendMessage - notification deduplication", () => {
-  let cookieSender, cookieReceiver;
+  let cookieSender;
   let senderUser, receiverUser;
   let conversationId;
 
   beforeEach(async () => {
     cookieSender = await loginUser(senderData);
-    cookieReceiver = await loginUser(receiverData);
+    await loginUser(receiverData);
 
     senderUser = await User.findOne({ username: senderData.username });
     receiverUser = await User.findOne({ username: receiverData.username });
