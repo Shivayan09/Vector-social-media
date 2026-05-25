@@ -130,7 +130,7 @@ describe('Post and Comment Flows', () => {
           intent: "ask"
         });
 
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
       expect(res.body.message).toContain('either content or image are required');
     });

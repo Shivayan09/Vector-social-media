@@ -31,7 +31,7 @@ export const createPost = async (req, res) => {
     try {
         const { content, intent } = req.body;
         if (!intent || (!content && !req.file)) {
-            return res.json({
+            return res.status(400).json({
                 success: false,
                 message: "Intent and either content or image are required"
             });
