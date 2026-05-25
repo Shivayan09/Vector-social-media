@@ -38,7 +38,7 @@ export default function FollowActivityPanel({
     } finally {
       setLoadingReceived(false);
     }
-  }, [BACKEND_URL]);
+  }, [BACKEND_URL, setPendingFollowCount]);
 
   const fetchSent = useCallback(async () => {
     try {
