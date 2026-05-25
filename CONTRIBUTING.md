@@ -53,6 +53,7 @@ Create `server/.env`:
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
 NODE_ENV=development
+REDIS_URL=redis://localhost:6379
 CLOUDINARY_CLOUD_NAME=your_cloudinary_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
@@ -63,6 +64,12 @@ PORT=5000
 ```
 
 ### 4. Run the apps
+
+Start a local Redis instance (required for Socket.IO messaging):
+
+```bash
+docker run -p 6379:6379 -d redis
+```
 
 Start the backend:
 

@@ -39,10 +39,19 @@ jobs:
           cd server
           npm run lint --if-present
 
+      - name: Start Redis
+        if: runner.os == 'Linux'
+        uses: supercharge/redis-github-action@1.8.0
+        with:
+          redis-version: 7
+
       - name: Run server tests
+        if: runner.os == 'Linux'
         run: |
           cd server
           npm test --if-present
+        env:
+          REDIS_URL: redis://localhost:6379
 
       # ---------- CLIENT ----------
       - name: Install client dependencies

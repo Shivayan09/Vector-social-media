@@ -146,6 +146,8 @@ JWT_SECRET=your_jwt_secret
 NODE_ENV=development
 PORT=5000
 
+REDIS_URL=redis://localhost:6379
+
 CLOUDINARY_CLOUD_NAME=your_cloudinary_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
@@ -159,6 +161,12 @@ EMAIL_PASS=your_email_password_or_app_password
 ```
 
 ### 3. Start the apps
+
+Start a local Redis instance (required for Socket.IO messaging):
+
+```bash
+docker run -p 6379:6379 -d redis
+```
 
 Backend:
 
