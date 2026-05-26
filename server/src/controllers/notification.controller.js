@@ -131,11 +131,17 @@ export const deleteMultipleNotifications = async (req, res) => {
 export const markAllAsRead = async (req, res) => {
     try {
         const currentUserId = req.user?._id || req.user?.id;
-        await Notification.updateMany(
+        const result = await Notification.updateMany(
             { recipient: currentUserId, isRead: false },
             { $set: { isRead: true, readAt: new Date() } }
         );
-        return res.json({ success: true, message: "All notifications marked as read" });
+        return res.json({
+            success: true,
+            message: "All notifications marked as read",
+            // Return the actual count so clients can update the unread badge
+            // without needing an extra GET request
+            markedCount: result.modifiedCount,
+        });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }
