@@ -762,22 +762,42 @@ export const getTopPostsOfMonth = async (req, res) => {
 export const incrementShare = async (req, res) => {
     try {
         const postId = req.params.id;
-        
+        const userId = req.user.id;
+
         if (!mongoose.Types.ObjectId.isValid(postId)) {
             return res.status(400).json({ success: false, message: "Invalid post ID format" });
         }
 
-        const post = await Post.findByIdAndUpdate(
-            postId,
-            { $inc: { sharesCount: 1 } },
-            { new: true }
-        );
+        // Fetch post author to check block status before allowing share
+        const post = await Post.findById(postId).select("author sharesCount");
         if (!post) {
             return res.status(404).json({ success: false, message: "Post not found" });
         }
+
+        // Block check — users cannot interact with posts from users they have blocked or been blocked by
+        if (post.author.toString() !== userId) {
+            const [authorUser, currentUser] = await Promise.all([
+                User.findById(post.author).select("blockedUsers"),
+                User.findById(userId).select("blockedUsers"),
+            ]);
+            const isBlocked =
+                currentUser?.blockedUsers?.some(id => id.toString() === post.author.toString()) ||
+                authorUser?.blockedUsers?.some(id => id.toString() === userId);
+
+            if (isBlocked) {
+                return res.status(403).json({ success: false, message: "Action forbidden due to block status" });
+            }
+        }
+
+        const updatedPost = await Post.findByIdAndUpdate(
+            postId,
+            { $inc: { sharesCount: 1 } },
+            { new: true }
+        ).select("sharesCount");
+
         res.json({
             success: true,
-            sharesCount: post.sharesCount,
+            sharesCount: updatedPost.sharesCount,
         });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
