@@ -13,6 +13,7 @@ import conversationRouter from "./routes/conversation.routes.js";
 import reportRouter from "./routes/report.routes.js";
 import contactRouter from "./routes/contact.routes.js";
 import reviewRouter from "./routes/review.routes.js";
+import globalErrorHandler from "./middlewares/errorHandler.js";
 
 const app = express();
 
@@ -53,4 +54,8 @@ app.use("/api/reports", reportRouter);
 app.use("/api/contact", contactRouter);
 app.use("/api/reviews", reviewRouter);
 
+// Global error handler — must be registered LAST, after all routes
+app.use(globalErrorHandler);
+
 export default app;
+
