@@ -663,6 +663,12 @@ export const getTopPostsOfMonth = async (req, res) => {
         const oneMonthAgo = new Date();
         oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
 
+        // Accept a configurable limit query param (default 10, max 50)
+        const requestedLimit = Number.parseInt(req.query.limit, 10);
+        const limit = Number.isFinite(requestedLimit) && requestedLimit > 0
+            ? Math.min(requestedLimit, 50)
+            : 10;
+
         let filter = { createdAt: { $gte: oneMonthAgo } };
 
         if (req.user) {
@@ -717,7 +723,7 @@ export const getTopPostsOfMonth = async (req, res) => {
                 },
             },
             { $sort: { engagementScore: -1, createdAt: -1 } },
-            { $limit: 3 },
+            { $limit: limit },
             { $lookup: { from: "users", localField: "author", foreignField: "_id", as: "author" } },
             { $unwind: "$author" },
             {
