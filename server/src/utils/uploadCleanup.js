@@ -1,12 +1,11 @@
 import cloudinary from "../config/cloudinary.js";
-import { unlink } from "fs/promises";
 
-export const uploadToCloudinary = async (file, options) => {
-  try {
-    return await cloudinary.uploader.upload(file.path, options);
-  } finally {
-    if (file?.path) {
-      await unlink(file.path).catch(() => {});
-    }
-  }
+export const uploadToCloudinary = (file, options) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
+      if (error) reject(error);
+      else resolve(result);
+    });
+    stream.end(file.buffer);
+  });
 };

@@ -7,6 +7,7 @@ import Report from "../models/report.model.js";
 import cloudinary from "../config/cloudinary.js";
 import { getIO } from "../socket/socket.js";
 import { uploadToCloudinary } from "../utils/uploadCleanup.js";
+import { validateImageBuffer } from "../utils/validateFileType.js";
 
 export const removePostById = async (postId) => {
     const post = await Post.findById(postId);
@@ -48,6 +49,13 @@ export const createPost = async (req, res) => {
         let image = null;
 
         if (req.file) {
+            const { valid, detectedType } = await validateImageBuffer(req.file.buffer);
+            if (!valid) {
+                return res.status(415).json({
+                    success: false,
+                    message: `Unsupported file type${detectedType ? `: ${detectedType}` : ""}. Only JPEG, PNG, and WebP images are accepted.`,
+                });
+            }
             const uploadResult = await uploadToCloudinary(req.file, {
                 folder: "posts"
             });
@@ -237,6 +245,13 @@ export const updatePost = async (req, res) => {
         }
 
         if (req.file) {
+            const { valid, detectedType } = await validateImageBuffer(req.file.buffer);
+            if (!valid) {
+                return res.status(415).json({
+                    success: false,
+                    message: `Unsupported file type${detectedType ? `: ${detectedType}` : ""}. Only JPEG, PNG, and WebP images are accepted.`,
+                });
+            }
             const uploadResult = await uploadToCloudinary(req.file, {
                 folder: "posts",
             });

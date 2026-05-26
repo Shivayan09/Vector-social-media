@@ -6,6 +6,7 @@ import Notification from "../models/notification.model.js";
 import Post from "../models/post.model.js";
 import { getIO } from "../socket/socket.js";
 import { uploadToCloudinary } from "../utils/uploadCleanup.js";
+import { validateImageBuffer } from "../utils/validateFileType.js";
 
 export const uploadAvatar = async (req, res) => {
     try {
@@ -16,18 +17,11 @@ export const uploadAvatar = async (req, res) => {
             });
         }
 
-        const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-        if (!allowedTypes.includes(req.file.mimetype)) {
-            return res.status(400).json({
+        const { valid, detectedType } = await validateImageBuffer(req.file.buffer);
+        if (!valid) {
+            return res.status(415).json({
                 success: false,
-                message: "Only JPEG, PNG and WEBP images are allowed",
-            });
-        }
-
-        if (req.file.size > 5 * 1024 * 1024) {
-            return res.status(400).json({
-                success: false,
-                message: "File size must be under 5MB",
+                message: `Unsupported file type${detectedType ? `: ${detectedType}` : ""}. Only JPEG, PNG, and WebP images are accepted.`,
             });
         }
 

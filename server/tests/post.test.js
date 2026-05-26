@@ -1,17 +1,36 @@
 import { jest } from '@jest/globals';
+import { Writable } from 'stream';
+
+// PNG: signature (8) + IHDR chunk length (4) + "IHDR" (4) + width/height/depth/color (13) = 29 bytes minimum
+// file-type v22 requires at least 29 bytes to positively identify PNG by magic bytes
+export const PNG_MAGIC = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+  0x00, 0x00, 0x00, 0x0d,
+  0x49, 0x48, 0x44, 0x52,
+  0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x02, 0x00, 0x00, 0x00,
+]);
 
 export const mockDestroy = jest.fn().mockResolvedValue({ result: 'ok' });
+
+const makeUploadStreamMock = () =>
+  jest.fn((_options, callback) => {
+    const writable = new Writable({ write(_chunk, _enc, done) { done(); } });
+    process.nextTick(() =>
+      callback(null, {
+        secure_url: 'https://res.cloudinary.com/dummy-cloud/image/upload/v12345/posts/dummy_image.png',
+        public_id: 'posts/dummy_image_public_id',
+      })
+    );
+    return writable;
+  });
 
 jest.unstable_mockModule('../src/config/cloudinary.js', () => ({
   default: {
     uploader: {
-      upload: jest.fn().mockResolvedValue({
-        secure_url: 'https://res.cloudinary.com/dummy-cloud/image/upload/v12345/posts/dummy_image.png',
-        public_id: 'posts/dummy_image_public_id'
-      }),
-      destroy: mockDestroy
-    }
-  }
+      upload_stream: makeUploadStreamMock(),
+      destroy: mockDestroy,
+    },
+  },
 }));
 
 // Dynamic imports to ensure mocks are registered
@@ -80,7 +99,7 @@ describe('Post and Comment Flows', () => {
         .set('Cookie', cookie)
         .field('content', 'Post with image content')
         .field('intent', 'share')
-        .attach('image', Buffer.from('dummy image data'), 'image.png');
+        .attach('image', PNG_MAGIC, 'image.png');
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -100,7 +119,7 @@ describe('Post and Comment Flows', () => {
         .post('/api/posts')
         .set('Cookie', cookie)
         .field('intent', 'build')
-        .attach('image', Buffer.from('dummy image data 2'), 'build.png');
+        .attach('image', PNG_MAGIC, 'build.png');
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -144,7 +163,7 @@ describe('Post and Comment Flows', () => {
         .set('Cookie', cookie)
         .field('intent', 'share')
         .field('content', 'This post will fail to save')
-        .attach('image', Buffer.from('dummy data'), 'fail.png');
+        .attach('image', PNG_MAGIC, 'fail.png');
 
       expect(res.status).toBe(500);
       expect(res.body.success).toBe(false);
@@ -179,7 +198,7 @@ describe('Post and Comment Flows', () => {
         .set('Cookie', cookie)
         .field('content', 'Updated content with image')
         .field('intent', 'share')
-        .attach('image', Buffer.from('new dummy image data'), 'new_image.png');
+        .attach('image', PNG_MAGIC, 'new_image.png');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
