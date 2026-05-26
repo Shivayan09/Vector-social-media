@@ -598,12 +598,29 @@ export const getSuggestedUsers = async (req, res) => {
         const blockedIds = req.user.blockedUsers || [];
         const excludeIds = [...blockedIds, ...blockerIds, currentUserId];
 
-        const suggestedUsers = await User.find({
+        // Pagination support — previously hardcoded to 10 with no way to load more
+        const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+        const requestedLimit = parseInt(req.query.limit, 10);
+        const limit = Number.isFinite(requestedLimit) && requestedLimit > 0
+            ? Math.min(requestedLimit, 50)
+            : 10;
+        const skip = (page - 1) * limit;
+
+        const query = {
             $and: [
                 { _id: { $nin: excludeIds } },
                 { _id: { $nin: following } }
             ]
-        }).select("name username bio avatar").limit(10).lean();
+        };
+
+        const [suggestedUsers, total] = await Promise.all([
+            User.find(query)
+                .select("name username bio avatar")
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+            User.countDocuments(query),
+        ]);
 
         const suggestedUserIds = suggestedUsers.map((user) => user._id);
         const requestedUsers = await User.find({
@@ -626,7 +643,11 @@ export const getSuggestedUsers = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            users
+            users,
+            total,
+            page,
+            limit,
+            hasMore: skip + users.length < total,
         });
     } catch (error) {
         res.status(500).json({
