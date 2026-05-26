@@ -111,6 +111,19 @@ const userSchema = new mongoose.Schema(
       default: true,
     },
     bookmarks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }],
+
+    /**
+     * recentSearches — stores the user's last N search queries.
+     * Capped at 10 entries (enforced in the controller).
+     * Each entry records the query string and when it was searched.
+     */
+    recentSearches: [
+      {
+        query: { type: String, required: true, maxlength: 100 },
+        searchedAt: { type: Date, default: Date.now },
+        _id: false,
+      }
+    ],
   },
   {
     timestamps: true,

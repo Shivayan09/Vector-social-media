@@ -885,3 +885,48 @@ export const unblockUser = async (req, res) => {
     }
 };
 
+
+const MAX_SEARCH_HISTORY = 10;
+
+export const getSearchHistory = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select("recentSearches");
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+        const history = [...(user.recentSearches || [])].reverse();
+        return res.json({ success: true, history });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const saveSearchQuery = async (req, res) => {
+    try {
+        const { query } = req.body;
+        if (!query || typeof query !== "string" || !query.trim()) {
+            return res.status(400).json({ success: false, message: "Query is required" });
+        }
+        const trimmed = query.trim().substring(0, 100);
+        const user = await User.findById(req.user.id).select("recentSearches");
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+        user.recentSearches = (user.recentSearches || []).filter(
+            entry => entry.query.toLowerCase() !== trimmed.toLowerCase()
+        );
+        user.recentSearches.unshift({ query: trimmed, searchedAt: new Date() });
+        if (user.recentSearches.length > MAX_SEARCH_HISTORY) {
+            user.recentSearches = user.recentSearches.slice(0, MAX_SEARCH_HISTORY);
+        }
+        await user.save({ validateBeforeSave: false });
+        return res.json({ success: true, history: user.recentSearches });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const clearSearchHistory = async (req, res) => {
+    try {
+        await User.findByIdAndUpdate(req.user.id, { $set: { recentSearches: [] } });
+        return res.json({ success: true, message: "Search history cleared" });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
