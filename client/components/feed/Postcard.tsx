@@ -213,7 +213,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
 
                 return {
                     src: currentSrc,
-                    loaded: true,
+                    loaded: false,
                     failed: true,
                 };
             });
@@ -414,8 +414,13 @@ Report post </button>
                             />
                         </div>
                     )}
+                    {isCurrentImageFailed && !isCurrentImageLoaded && (
+    <div className="absolute bottom-2 left-0 right-0 z-20 text-center text-xs text-muted-foreground">
+        Taking longer than expected…
+    </div>
+)}
 
-                    {!isCurrentImageFailed ? (
+{!(isCurrentImageFailed && isCurrentImageLoaded) ? (
                         <Image
                             key={post.image}
                             src={post.image}
