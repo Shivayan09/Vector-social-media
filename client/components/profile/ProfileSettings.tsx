@@ -328,14 +328,19 @@ export default function ProfileSettings() {
               </div>
             </div>
 
-            {/* Danger Zone */}
-            <div className="mt-10 border-t border-border/60 pt-6">
-              <p className="text-sm font-medium text-muted-foreground mb-3">Danger Zone</p>
+            {/* Delete Account */}
+            <div className="mt-6">
               <button
+                type="button"
                 onClick={() => setShowDeactivateModal(true)}
-                className="flex items-center gap-2 text-sm text-red-500 hover:text-red-600 border border-red-300 dark:border-red-800 hover:border-red-500 px-4 py-2 rounded-xl transition cursor-pointer"
+                className="w-full text-left flex cursor-pointer items-start gap-3 rounded-2xl border border-red-500/40 bg-red-500/5 p-4 transition-colors duration-200 hover:bg-red-500/10"
               >
-                <span>Delete Account</span>
+                <div className="flex flex-col">
+                  <p className="font-medium text-foreground">Delete Account</p>
+                  <p className="text-sm text-muted-foreground">
+                    Your account will be deactivated and permanently deleted after 30 days.
+                  </p>
+                </div>
               </button>
             </div>
 
