@@ -89,6 +89,15 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false, // Default is Public
     },
+    // Soft delete
+    isDeactivated: {
+      type: Boolean,
+      default: false,
+    },
+    deletionScheduledAt: {
+      type: Date,
+      default: null,
+    },
     
     resetToken: String,
     resetTokenExpiry: Date,
