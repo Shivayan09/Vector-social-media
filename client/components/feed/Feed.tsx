@@ -70,7 +70,7 @@ export default function Feed() {
         for(const post of feedPosts){
             const isFresh = now - new Date(post.createdAt).getTime() < BOOST_WINDOW_MS;
             
-            if(isFresh && remainingPosts.length === 0){
+            if(isFresh){
                 boostedPosts.push(post);
             }
             else{
@@ -95,7 +95,6 @@ export default function Feed() {
         hasMoreRef.current = res.data.hasMore;
         cursorRef.current = res.data.nextCursor || null;
       } catch (error) {
-        console.error("Failed to fetch posts", error);
         if (isInitial) setPosts([]);
       } finally {
         loadingRef.current = false;

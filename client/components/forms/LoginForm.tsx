@@ -73,11 +73,12 @@ export default function LoginForm() {
                 toast.warn(data.message);
             }
         } catch (error: unknown) {
-            if (error instanceof Error) {
-                toast.error(error.message);
-            } else {
-                toast.error("Something went wrong");
-            }
+            const message = axios.isAxiosError(error)
+                ? error.response?.data?.message || error.message
+                : error instanceof Error
+                    ? error.message
+                    : "Something went wrong";
+            toast.error(message);
         } finally {
             setLoading(false);
         }

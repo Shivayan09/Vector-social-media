@@ -167,8 +167,7 @@ export default function NotificationPanel({ search = "" }: Props) {
       );
 
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    } catch (err) {
-      console.error(err);
+    } catch {
     }
   }, [BACKEND_URL]);
 
@@ -291,7 +290,7 @@ export default function NotificationPanel({ search = "" }: Props) {
 
     const timeoutId = window.setTimeout(() => {
       void markAllAsRead();
-    }, 0);
+    }, 5000);
 
     return () => window.clearTimeout(timeoutId);
   }, [markAllAsRead, notifications]);

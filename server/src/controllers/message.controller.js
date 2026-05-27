@@ -156,7 +156,6 @@ export const sendMessage = async (req, res) => {
     res.json(populated);
 
   } catch (error) {
-    console.error("SEND MESSAGE ERROR:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -274,8 +273,6 @@ export const deleteMessage = async (req, res) => {
     });
 
   } catch (error) {
-
-    console.error("DELETE MESSAGE ERROR:", error);
 
     res.status(500).json({
       message: error.message

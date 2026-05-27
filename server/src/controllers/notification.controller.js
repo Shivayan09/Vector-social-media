@@ -57,7 +57,6 @@ export const getNotifications = async (req, res) => {
 
         return res.json(notificationsWithFollowState);
     } catch (err) {
-        console.error("getNotifications error:", err);
         return res.status(500).json({
             success: false,
             message: "Server error"
@@ -158,7 +157,6 @@ export const deleteAllNotifications = async (req, res) => {
             message: "Notifications deleted"
         });
     } catch (err) {
-        console.error(err)
         return res.status(500).json({
             success: false,
             message: "Server error"

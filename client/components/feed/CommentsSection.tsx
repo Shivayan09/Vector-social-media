@@ -86,14 +86,9 @@ export default function CommentsSection({ postId }: { postId: string }) {
             setComments(prev => [...prev, ...data]);
             setHasMore(data.length === LIMIT);
             setPage(nextPage);
-        } catch (err: unknown) {
-            console.error("Error loading more comments:", err);
+        } catch {
             setLoadMoreError(true);
-            if (err instanceof Error) {
-                toast.error(`Failed to load more comments: ${err.message}`);
-            } else {
-                toast.error("Failed to load more comments.");
-            }
+            toast.error("Failed to load more comments.");
         } finally {
             setLoadMoreLoading(false);
         }
@@ -106,11 +101,12 @@ export default function CommentsSection({ postId }: { postId: string }) {
             setComments(prev => [...prev, data]);
             setText("");
         } catch (error: unknown) {
-            if (error instanceof Error) {
-                toast.error(error.message);
-            } else {
-                toast.error("Failed to post comment");
-            }
+            const message = axios.isAxiosError(error)
+                ? error.response?.data?.message || error.message
+                : error instanceof Error
+                    ? error.message
+                    : "Failed to post comment";
+            toast.error(message);
         } finally {
             setButtonLoading(false);
         }
@@ -132,11 +128,12 @@ export default function CommentsSection({ postId }: { postId: string }) {
             setComments(prev => prev.filter(c => c._id !== selectedComment._id));
             toast.success("Comment deleted");
         } catch (error: unknown) {
-            if (error instanceof Error) {
-                toast.error(error.message);
-            } else {
-                toast.error("Failed to delete comment");
-            }
+            const message = axios.isAxiosError(error)
+                ? error.response?.data?.message || error.message
+                : error instanceof Error
+                    ? error.message
+                    : "Failed to delete comment";
+            toast.error(message);
         } finally {
             setShowDeleteModal(false);
             setSelectedComment(null);

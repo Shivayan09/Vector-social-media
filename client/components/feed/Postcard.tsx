@@ -181,7 +181,12 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     };
 
     const handleReport = async (reason: ReportReason, details?: string) => {
-        await reportPost(post._id, reason, details);
+        try {
+            await reportPost(post._id, reason, details);
+            toast.success("Post reported");
+        } catch {
+            toast.error("Failed to report post");
+        }
     };
 
     const handlePostUpdate = (updatedPost: Post) => {

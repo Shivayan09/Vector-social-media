@@ -104,13 +104,14 @@ export const updateProfile = async (req, res) => {
             user.username = trimmedUsername;
         }
         if (name !== undefined) {
-            if (name.trim().length < 2 || name.length > 100) {
+            const trimmedName = name.trim();
+            if (trimmedName.length < 2 || trimmedName.length > 100) {
                 return res.status(400).json({
                     success: false,
                     message: "Name must be between 2 and 100 characters"
                 });
             }
-            user.name = name;
+            user.name = trimmedName;
         }
         if (surname !== undefined) {
             if (surname.length > 100) {

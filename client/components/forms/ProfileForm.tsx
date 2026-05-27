@@ -47,7 +47,7 @@ export default function ProfileForm() {
                 formData.append("avatar", avatarFile);
                 await axios.post(BACKEND_URL + "/api/users/avatar", formData, { withCredentials: true });
             }
-            const { data } = await axios.post(BACKEND_URL + "/api/auth/profileSetup", { username, bio, description }, { withCredentials: true });
+            const { data } = await axios.put(BACKEND_URL + "/api/users/update-profile", { username, bio, description }, { withCredentials: true });
             if (data.success) {
                 toast.success("Profile created successfully!");
                 router.replace("/main");

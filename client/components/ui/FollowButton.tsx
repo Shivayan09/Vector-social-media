@@ -44,10 +44,7 @@ export default function FollowButton({
         setRequested(false);
         onFollowChange?.(next);
       }
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        console.error(err.message);
-      }
+    } catch {
     } finally {
       setLoading(false);
     }
