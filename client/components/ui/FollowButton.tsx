@@ -46,7 +46,7 @@ export default function FollowButton({
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
-        console.error(err.message);
+        console.error(axios.isAxiosError(err) ? err.response?.data?.message || err.message : err.message);
       }
     } finally {
       setLoading(false);

@@ -89,11 +89,8 @@ export default function CommentsSection({ postId }: { postId: string }) {
         } catch (err: unknown) {
             console.error("Error loading more comments:", err);
             setLoadMoreError(true);
-            if (err instanceof Error) {
-                toast.error(`Failed to load more comments: ${err.message}`);
-            } else {
-                toast.error("Failed to load more comments.");
-            }
+            const msg = axios.isAxiosError(err) ? err.response?.data?.message || err.message : err instanceof Error ? err.message : null;
+            toast.error(msg ? `Failed to load more comments: ${msg}` : "Failed to load more comments.");
         } finally {
             setLoadMoreLoading(false);
         }
@@ -106,7 +103,9 @@ export default function CommentsSection({ postId }: { postId: string }) {
             setComments(prev => [...prev, data]);
             setText("");
         } catch (error: unknown) {
-            if (error instanceof Error) {
+            if (axios.isAxiosError(error)) {
+                toast.error(error.response?.data?.message || error.message);
+            } else if (error instanceof Error) {
                 toast.error(error.message);
             } else {
                 toast.error("Failed to post comment");
@@ -132,7 +131,9 @@ export default function CommentsSection({ postId }: { postId: string }) {
             setComments(prev => prev.filter(c => c._id !== selectedComment._id));
             toast.success("Comment deleted");
         } catch (error: unknown) {
-            if (error instanceof Error) {
+            if (axios.isAxiosError(error)) {
+                toast.error(error.response?.data?.message || error.message);
+            } else if (error instanceof Error) {
                 toast.error(error.message);
             } else {
                 toast.error("Failed to delete comment");

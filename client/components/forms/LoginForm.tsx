@@ -73,7 +73,9 @@ export default function LoginForm() {
                 toast.warn(data.message);
             }
         } catch (error: unknown) {
-            if (error instanceof Error) {
+            if (axios.isAxiosError(error)) {
+                toast.error(error.response?.data?.message || error.message);
+            } else if (error instanceof Error) {
                 toast.error(error.message);
             } else {
                 toast.error("Something went wrong");
