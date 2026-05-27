@@ -2,8 +2,10 @@ import "dotenv/config";
 import connectDB from "./src/config/mongodb.js";
 import { initSocket } from "./src/socket/socket.js";
 import app from "./src/app.js";
+import { startDeletionCronJob } from "./src/jobs/deleteExpiredAccounts.js";
 
 await connectDB();
+startDeletionCronJob();
 
 const PORT = process.env.PORT || 5000;
 
