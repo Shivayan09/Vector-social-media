@@ -435,7 +435,7 @@ export const getUserProfile = async (req, res) => {
         const { username } = req.params;
 
         // Single query — include followRequests and blockedUsers so we don't need second fetches below
-        const user = await User.findOne({ username })
+        const user = await User.findOne({ username, isDeactivated: { $ne: true } })
             .select("_id name surname username avatar bio description followersCount followingCount followers followRequests isPrivate blockedUsers createdAt")
             .lean();
 
@@ -662,7 +662,8 @@ export const searchUsers = async (req, res) => {
         const users = await User.find({
             $and: [
                 { $text: { $search: query } },
-                { _id: { $nin: excludeIds } }
+                { _id: { $nin: excludeIds } },
+                { isDeactivated: { $ne: true } }
             ]
         })
             .select("name username avatar")
