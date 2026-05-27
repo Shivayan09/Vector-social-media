@@ -28,7 +28,7 @@ export const removePostById = async (postId) => {
     }
 
     if (post.imagePublicId) {
-        await cloudinary.uploader.destroy(post.imagePublicId);
+        await cloudinary.uploader.destroy(post.imagePublicId).catch(() => {});
     }
 
     return post;
