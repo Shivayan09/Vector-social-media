@@ -6,12 +6,12 @@ import { Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const mounted = useMounted();
 
   if (!mounted) return <div className="h-10 w-10" />;
 
-  const isDark = theme === "dark";
+  const isDark = resolvedTheme === "dark";
 
   return (
     <button
