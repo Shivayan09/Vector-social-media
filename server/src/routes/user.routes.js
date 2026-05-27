@@ -1,7 +1,7 @@
 import express from "express";
 import authMiddleware from "../middlewares/auth.middleware.js";
 import upload from "../middlewares/upload.middleware.js";
-import { getAllUsers, getFollowers, getFollowing, getUserProfile, searchUsers, toggleFollowUser, updateProfile, uploadAvatar, getSuggestedUsers, getFollowRequests, acceptFollowRequest, rejectFollowRequest, getSentFollowRequests, blockUser, unblockUser } from "../controllers/user.controller.js";
+import { getAllUsers, getFollowers, getFollowing, getUserProfile, searchUsers, toggleFollowUser, updateProfile, uploadAvatar, getSuggestedUsers, getFollowRequests, acceptFollowRequest, rejectFollowRequest, getSentFollowRequests, blockUser, unblockUser , scheduleAccountDeletion, cancelAccountDeletion } from "../controllers/user.controller.js";
 import optionalAuth from "../middlewares/optionalAuth.middleware.js";
 
 
@@ -13,6 +13,8 @@ userRouter.put("/update-profile", authMiddleware, updateProfile);
 userRouter.put("/:id/follow", authMiddleware, toggleFollowUser);
 userRouter.put("/:id/block", authMiddleware, blockUser);
 userRouter.put("/:id/unblock", authMiddleware, unblockUser);
+userRouter.post("/deactivate", authMiddleware, scheduleAccountDeletion);
+userRouter.post("/reactivate", authMiddleware, cancelAccountDeletion);
 userRouter.get("/suggestions", authMiddleware, getSuggestedUsers);
 userRouter.get("/follow-requests", authMiddleware, getFollowRequests);
 userRouter.get("/follow-requests/sent", authMiddleware, getSentFollowRequests);
