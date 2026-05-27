@@ -904,4 +904,50 @@ export const unblockUser = async (req, res) => {
         });
     }
 };
+export const scheduleAccountDeletion = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const deletionDate = new Date();
+    deletionDate.setDate(deletionDate.getDate() + 30);
+
+    await User.findByIdAndUpdate(userId, {
+      isDeactivated: true,
+      deletionScheduledAt: deletionDate,
+    });
+
+    res.clearCookie("token");
+    res.status(200).json({
+      success: true,
+      message: "Account deactivated. It will be permanently deleted in 30 days.",
+      deletionScheduledAt: deletionDate,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const cancelAccountDeletion = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    await User.findByIdAndUpdate(userId, {
+      isDeactivated: false,
+      deletionScheduledAt: null,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Account reactivated successfully.",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
