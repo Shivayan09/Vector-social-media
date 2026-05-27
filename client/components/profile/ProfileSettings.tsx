@@ -6,6 +6,7 @@ import axios from "axios";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import type { ProfileFormData } from "@/lib/types";
+import DeactivateAccountModal from "@/components/modals/DeactivateAccountModal";
 
 type EditableFieldProps = {
   label: string;
@@ -23,6 +24,8 @@ export default function ProfileSettings() {
 
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
 
   const [initialData, setInitialData] =
     useState<ProfileFormData | null>(null);
@@ -324,6 +327,21 @@ export default function ProfileSettings() {
                 </div>
               </div>
             </div>
+
+            {/* Danger Zone */}
+            <div className="mt-10 border-t border-border/60 pt-6">
+              <p className="text-sm font-medium text-muted-foreground mb-3">Danger Zone</p>
+              <button
+                onClick={() => setShowDeactivateModal(true)}
+                className="flex items-center gap-2 text-sm text-red-500 hover:text-red-600 border border-red-300 dark:border-red-800 hover:border-red-500 px-4 py-2 rounded-xl transition cursor-pointer"
+              >
+                <span>Delete Account</span>
+              </button>
+            </div>
+
+            {showDeactivateModal && (
+              <DeactivateAccountModal onClose={() => setShowDeactivateModal(false)} />
+            )}
 
             {/* Action Buttons */}
             <div className="mt-8 flex flex-wrap justify-end gap-3">
