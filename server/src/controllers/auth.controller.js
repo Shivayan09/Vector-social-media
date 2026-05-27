@@ -195,6 +195,16 @@ export const login = async (req, res) => {
                 message: "Invalid username or password."
             })
         }
+
+        // Auto-reactivate if account was scheduled for deletion
+        let reactivated = false;
+        if (user.isDeactivated) {
+            user.isDeactivated = false;
+            user.deletionScheduledAt = null;
+            await user.save();
+            reactivated = true;
+        }
+
         const token = jwt.sign({ id: user._id, version: user.tokenVersion || 0 }, process.env.JWT_SECRET, { expiresIn: '7d' });
         res.cookie("token", token, {
             httpOnly: true,
@@ -205,7 +215,8 @@ export const login = async (req, res) => {
         });
         return res.status(200).json({
             success: true,
-            message: "Logged In successfully"
+            message: reactivated ? "Welcome back! Your account deletion has been cancelled." : "Logged In successfully",
+            reactivated,
         });
     } catch (error) {
         return res.status(500).json({
