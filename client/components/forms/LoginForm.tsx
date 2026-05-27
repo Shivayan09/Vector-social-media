@@ -66,7 +66,11 @@ export default function LoginForm() {
             );
 
             if (data.success) {
-                toast.success("Logged in successfully!");
+                if (data.reactivated) {
+                    toast.success("Welcome back! Your account deletion has been cancelled.");
+                } else {
+                    toast.success("Logged in successfully!");
+                }
                 await refreshAuth();
                 return;
             } else {
