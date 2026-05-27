@@ -210,15 +210,20 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
         setMessages(normalizedMessages.messages);
         setHasMore(normalizedMessages.hasMore);
 
-        // Mark all messages as read
-        try {
-          await axios.patch(
-            `${BACKEND_URL}/api/messages/${conversationId}/read-all`,
-            {},
-            { withCredentials: true }
-          );
-        } catch {
-          // Silently handle error to not interrupt chat load
+        // Mark all messages as read — only if there are unread messages from the other user
+        const hasUnread = normalizedMessages.messages.some(
+          (m) => !m.isRead && m.sender._id !== userData?.id
+        );
+        if (hasUnread) {
+          try {
+            await axios.patch(
+              `${BACKEND_URL}/api/messages/${conversationId}/read-all`,
+              {},
+              { withCredentials: true }
+            );
+          } catch {
+            // Silently handle error to not interrupt chat load
+          }
         }
       } catch (error) {
         console.error("Failed to fetch chat:", error);
