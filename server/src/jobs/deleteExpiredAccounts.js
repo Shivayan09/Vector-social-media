@@ -10,7 +10,6 @@ import cloudinary from "../config/cloudinary.js";
 const hardDeleteUser = async (user) => {
   const userId = user._id;
 
-  // Delete Cloudinary avatar
   if (user.avatarPublicId) {
     try {
       await cloudinary.uploader.destroy(user.avatarPublicId);
@@ -19,7 +18,6 @@ const hardDeleteUser = async (user) => {
     }
   }
 
-  // Delete Cloudinary images from user's posts
   const userPosts = await Post.find({ author: userId }).select("imagePublicId");
   for (const post of userPosts) {
     if (post.imagePublicId) {
@@ -31,13 +29,11 @@ const hardDeleteUser = async (user) => {
     }
   }
 
-  // Remove user's likes from all posts
   await Post.updateMany(
     { likes: userId },
     { $pull: { likes: userId } }
   );
 
-  // Delete user's comments and fix commentsCount on affected posts
   const userComments = await Comment.find({ author: userId }).select("post");
   const affectedPostIds = [...new Set(userComments.map(c => c.post.toString()))];
   await Comment.deleteMany({ author: userId });
@@ -46,16 +42,13 @@ const hardDeleteUser = async (user) => {
     await Post.findByIdAndUpdate(postId, { commentsCount: remaining });
   }
 
-  // Delete user's posts
   await Post.deleteMany({ author: userId });
 
-  // Remove from others' followers/following
   await User.updateMany(
     { $or: [{ followers: userId }, { following: userId }] },
     { $pull: { followers: userId, following: userId } }
   );
 
-  // Remove user from others' bookmarks
   const userPostIds = userPosts.map(p => p._id);
   if (userPostIds.length > 0) {
     await User.updateMany(
@@ -64,12 +57,10 @@ const hardDeleteUser = async (user) => {
     );
   }
 
-  // Delete notifications
   await Notification.deleteMany({
     $or: [{ recipient: userId }, { sender: userId }],
   });
 
-  // Delete conversations and messages
   const conversations = await Conversation.find({ participants: userId });
   const conversationIds = conversations.map((c) => c._id);
   if (conversationIds.length > 0) {
@@ -79,4 +70,24 @@ const hardDeleteUser = async (user) => {
 
   await User.findByIdAndDelete(userId);
   console.log(`[Cron] Permanently deleted user: ${userId}`);
+};
+
+export const startDeletionCronJob = () => {
+  schedule("0 2 * * *", async () => {
+    console.log("[Cron] Running scheduled account deletion job...");
+    try {
+      const now = new Date();
+      const expiredUsers = await User.find({
+        isDeactivated: true,
+        deletionScheduledAt: { $lte: now },
+      });
+      console.log(`[Cron] Found ${expiredUsers.length} account(s) to permanently delete.`);
+      for (const user of expiredUsers) {
+        await hardDeleteUser(user);
+      }
+    } catch (err) {
+      console.error("[Cron] Deletion job error:", err.message);
+    }
+  });
+  console.log("[Cron] Account deletion job scheduled (runs daily at 2:00 AM).");
 };
