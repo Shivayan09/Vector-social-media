@@ -215,7 +215,7 @@ export const login = async (req, res) => {
         });
         return res.status(200).json({
             success: true,
-            message: reactivated ? "Welcome back! Your account deletion has been cancelled." : "Logged In successfully",
+            message: "Logged in successfully",
             reactivated,
         });
     } catch (error) {
