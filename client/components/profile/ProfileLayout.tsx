@@ -1,6 +1,7 @@
 "use client";
 
-import { Edit, Link, Lock } from "lucide-react";
+// CHANGE 1: Added MoreVertical and Ban to imports
+import { Edit, Link, Lock, MoreVertical, Ban } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import PostsDisplay from "./PostsDisplay";
@@ -27,11 +28,14 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
   const { userData, setUserData } = useAppContext();
   const followsYou = !!userData?.followers?.includes(user._id);
   const isSelfProfile = userData?.id === user._id;
-  const tabs = isSelfProfile? ["posts", "followers", "following", "saved"]: ["posts", "followers", "following"];
+  const tabs = isSelfProfile ? ["posts", "followers", "following", "saved"] : ["posts", "followers", "following"];
   const [postsCount, setPostsCount] = useState<number>(0);
   const [following, setFollowing] = useState<boolean>(isFollowing ?? false);
   const [requested] = useState<boolean>(isRequested ?? false);
   const [blocked, setBlocked] = useState<boolean>(user.isBlockedByCurrentUser ?? false);
+  
+  // CHANGE 2: Added the dropdownOpen state
+  const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
@@ -108,7 +112,8 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
                   </button>
                 </div>
               ) : (
-                <div className="flex w-full flex-wrap justify-center gap-2 sm:justify-start md:w-auto md:flex-nowrap md:justify-end">
+                // CHANGE 3: Completely replaced this section with primary buttons + 3-dot dropdown layout
+                <div className="flex w-full flex-wrap items-center justify-center gap-2 sm:justify-start md:w-auto md:flex-nowrap md:justify-end">
                   {blocked ? (
                     <button onClick={toggleBlock} className="h-9 cursor-pointer rounded-md bg-red-500 px-4 text-sm font-semibold text-white transition hover:bg-red-600">
                       Unblock
@@ -134,18 +139,49 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
                       <button onClick={startChat} className="h-9 w-28 cursor-pointer rounded-md bg-blue-500 text-white transition hover:bg-blue-600">
                         Chat
                       </button>
-
-                      <button onClick={toggleBlock} className="h-9 cursor-pointer rounded-md bg-red-500 px-4 text-sm font-semibold text-white transition hover:bg-red-600">
-                        Block
-                      </button>
                     </>
                   )}
 
-                  <button onClick={copyProfileLink}
-                    className="flex h-9 w-28 cursor-pointer items-center justify-center gap-1 rounded-md border border-border bg-background text-sm text-foreground transition hover:bg-accent">
-                    <Link className="h-4" />
-                    Copy link
-                  </button>
+                  {/* Three-dot dropdown UI block */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setDropdownOpen(!dropdownOpen)}
+                      className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border bg-background text-foreground transition hover:bg-accent"
+                      aria-label="More options"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
+
+                    {dropdownOpen && (
+                      <>
+                        {/* Background overlay layer to close menu when clicking outside */}
+                        <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
+
+                        <div className="absolute right-0 z-50 mt-2 w-44 rounded-xl border border-border bg-background shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-1 duration-100">
+                          <button
+                            onClick={() => { copyProfileLink(); setDropdownOpen(false); }}
+                            className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-foreground transition hover:bg-accent text-left"
+                          >
+                            <Link className="h-4 w-4" />
+                            Copy Profile Link
+                          </button>
+
+                          {!blocked && (
+                            <>
+                              <hr className="border-border" />
+                              <button
+                                onClick={() => { toggleBlock(); setDropdownOpen(false); }}
+                                className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-500 transition hover:bg-red-50 dark:hover:bg-red-950/40 text-left"
+                              >
+                                <Ban className="h-4 w-4" />
+                                Block User
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -171,7 +207,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
               <span className="rounded-full border border-border bg-background/50 px-7 py-3">{user.followingCount ?? user.following?.length ?? 0} Following</span>
             </div>
 
-            {/* Social proof - only visible to logged-in users visiting someone else's profile */}
+            {/* Social proof */}
             {!isSelfProfile && (
               <MutualFollowersBar
                 mutualFollowers={user.mutualFollowers ?? []}

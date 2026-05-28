@@ -115,7 +115,34 @@ export const getUserConversations = async (req, res) => {
           pipeline: [
             { $match: { $expr: { $eq: ["$conversation", "$$conversationId"] } } },
             { $sort: { createdAt: -1 } },
-            { $limit: 1 }
+            { $limit: 1 },
+            {
+              $lookup: {
+                from: "users",
+                localField: "sender",
+                foreignField: "_id",
+                as: "sender"
+              }
+            },
+            {
+              $unwind: {
+                path: "$sender",
+                preserveNullAndEmptyArrays: true
+              }
+            },
+            {
+              $project: {
+                _id: 1,
+                conversation: 1,
+                sender: { _id: 1, username: 1, name: 1, avatar: 1 },
+                content: 1,
+                isDeleted: 1,
+                deletedAt: 1,
+                isRead: 1,
+                createdAt: 1,
+                updatedAt: 1
+              }
+            }
           ],
           as: "lastMessageArray"
         }
@@ -183,16 +210,6 @@ export const getUserConversations = async (req, res) => {
       { $sort: { updatedAt: -1 } }
     ]);
 
-    // Populate sender details in lastMessage
-    for (let convo of conversations) {
-      if (convo.lastMessage && convo.lastMessage.sender) {
-        const sender = await Message.findById(convo.lastMessage._id).populate(
-          "sender",
-          "username name avatar"
-        );
-        if (sender) convo.lastMessage.sender = sender.sender;
-      }
-    }
 
     // Filter out conversations where the other participant is blocked
     const myBlockedIds = (req.user.blockedUsers || []).map(id => id.toString());

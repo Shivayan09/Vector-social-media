@@ -46,7 +46,9 @@ describe("RegistrationForm Validation", () => {
 
     await userEvent.click(continueButton);
 
-    expect(toast.warn).toHaveBeenCalledWith("Enter first name");
+    expect(
+      screen.getByText("Enter first name")
+    ).toBeInTheDocument();
   });
 
   it("shows warning when password is too short", async () => {
@@ -86,9 +88,9 @@ describe("RegistrationForm Validation", () => {
       screen.getByRole("button", { name: /continue/i })
     );
 
-    expect(toast.warn).toHaveBeenCalledWith(
-      "Password too short"
-    );
+    expect(
+      screen.getByText("Password must be at least 6 characters!")
+    ).toBeInTheDocument();
   });
 
   it("shows warning when passwords do not match", async () => {
@@ -116,21 +118,21 @@ describe("RegistrationForm Validation", () => {
 
     await userEvent.type(
       screen.getByPlaceholderText("Enter a password"),
-      "123456"
+      "Password1"
     );
 
     await userEvent.type(
       screen.getByPlaceholderText("Confirm your password"),
-      "abcdef"
+      "Password2"
     );
 
     await userEvent.click(
       screen.getByRole("button", { name: /continue/i })
     );
 
-    expect(toast.warn).toHaveBeenCalledWith(
-      "Passwords do not match"
-    );
+    expect(
+      screen.getByText("Passwords do not match")
+    ).toBeInTheDocument();
   });
 
   it("moves to step 2 when form is valid", async () => {
@@ -158,12 +160,12 @@ describe("RegistrationForm Validation", () => {
 
     await userEvent.type(
       screen.getByPlaceholderText("Enter a password"),
-      "123456"
+      "Password1"
     );
 
     await userEvent.type(
       screen.getByPlaceholderText("Confirm your password"),
-      "123456"
+      "Password1"
     );
 
     await userEvent.click(

@@ -33,6 +33,11 @@ export default function RegistrationForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState("");
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const phoneRegex = /^\+?[1-9]\d{7,14}$/;
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -44,27 +49,43 @@ export default function RegistrationForm() {
   };
 
   const nextStep = () => {
+    setFormError("");
+
+    const cleanedPhone = phoneNumber.replace(/[\s-]/g, "");
+
     if (!name.trim()) {
-      return toast.warn("Enter first name");
+      return setFormError("Enter first name");
     }
     if (!surname.trim()) {
-      return toast.warn("Enter last name");
+      return setFormError("Enter last name");
     }
     if (!email.trim()) {
-      return toast.warn("Enter email");
+      return setFormError("Enter email");
+    }
+    if (!emailRegex.test(email.trim())) {
+      return setFormError("Please enter a valid email!");
     }
     if (!phoneNumber.trim()) {
-      return toast.warn("Enter phone number");
+      return setFormError("Enter phone number");
+    }
+    if (!phoneRegex.test(cleanedPhone)) {
+      return setFormError("Please enter a valid phone number!");
     }
     if (!password.trim()) {
-      return toast.warn("Enter password");
+      return setFormError("Enter password");
     }
     if (password.length < 6) {
-      return toast.warn("Password too short");
+      return setFormError("Password must be at least 6 characters!");
+    }
+    if (!passwordRegex.test(password)) {
+      return setFormError(
+        "Password must contain at least one uppercase letter, one lowercase letter, and one number!"
+      );
     }
     if (password !== confirmPassword) {
-      return toast.warn("Passwords do not match");
+      return setFormError("Passwords do not match");
     }
+
     setStep(2);
   };
 
@@ -82,7 +103,8 @@ export default function RegistrationForm() {
       setLoading(true);
       const { data } = await axios.post(BACKEND_URL + "/api/auth/register", { name, surname, email, phoneNumber, password, username, bio, description, isPrivate }, { withCredentials: true });
       if (!data.success) {
-        toast.warn(data.message);
+        setFormError(data.message || "Registration failed");
+        toast.warn(data.message || "Registration failed");
         return;
       }
       if (avatarFile) {
@@ -94,11 +116,15 @@ export default function RegistrationForm() {
       toast.success("Account created successfully!");
       router.replace("/main");
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error("Something went wrong");
-      }
+      const message =
+        axios.isAxiosError(error)
+          ? error.response?.data?.message || error.message
+          : error instanceof Error
+            ? error.message
+            : "Something went wrong";
+
+      setFormError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -172,6 +198,12 @@ export default function RegistrationForm() {
               )}
             </span>
           </div>
+
+          {formError && (
+            <p className="mt-3 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600">
+              {formError}
+            </p>
+          )}
 
           <Button className="w-full text-white mt-5 cursor-pointer bg-blue-500 hover:bg-blue-600" onClick={nextStep}>
             Continue

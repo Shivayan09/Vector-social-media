@@ -2,7 +2,7 @@
 
 import { X, Image as ImageIcon, Send, Trash2, HelpCircle } from "lucide-react";
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
 import { toast } from "react-toastify";
 import axios from "axios";
@@ -25,12 +25,57 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
     const [isDragActive, setIsDragActive] = useState(false);
     const [dragCounter, setDragCounter] = useState(0);
     const [showGuidelines, setShowGuidelines] = useState(false);
+    const [lastSaved, setLastSaved] = useState<Date | null>(null);
+    const [autoSaveStatus, setAutoSaveStatus] = useState("");
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const router = useRouter();
 
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
     const MAX_CHARS = 500;
+
+    useEffect(() => {
+        const savedDraft = localStorage.getItem("postDraft");
+
+        if (savedDraft) {
+            const parsedDraft = JSON.parse(savedDraft);
+
+            const shouldRestore = window.confirm(
+                "You have a saved draft. Restore it?"
+            );
+
+            if (shouldRestore) {
+                setContent(parsedDraft.content || "");
+                setIntent(parsedDraft.intent || "");
+
+                if (parsedDraft.savedAt) {
+                    setLastSaved(new Date(parsedDraft.savedAt));
+                }
+            }
+        }
+    }, []);
+    
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (!content.trim() && !intent) return;
+
+            const draftData = {
+                intent,
+                content,
+                savedAt: new Date().toISOString(),
+            };
+
+            localStorage.setItem(
+                "postDraft",
+                JSON.stringify(draftData)
+            );
+
+            setLastSaved(new Date());
+            setAutoSaveStatus("Draft auto-saved");
+        }, 5000);
+
+        return () => clearInterval(interval);
+    }, [content, intent]);
 
     const handleClose = () => {
         setVisible(false);
@@ -108,6 +153,7 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                 return;
             } else {
                 toast.success("Posted!");
+                localStorage.removeItem("postDraft");
                 router.push('/main');
             }
             onPostCreated(data.post);
@@ -118,6 +164,19 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
         } finally {
             setLoading(false);
         }
+    };
+    const handleSaveDraft = () => {
+    const draft = {
+        content,
+        intent,
+    };
+
+    localStorage.setItem(
+        "postDraft",
+        JSON.stringify(draft)
+    );
+
+    toast.success("Draft saved!");
     };
 
     const intents = [
@@ -235,6 +294,18 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                         {content.length} / {MAX_CHARS}
                     </div>
 
+                    {lastSaved && (
+                        <div className="text-xs mt-1 text-foreground/50">
+                            Last saved at {lastSaved.toLocaleTimeString()}
+                        </div>
+                    )}
+
+                    {autoSaveStatus && (
+                        <div className="text-xs text-green-500 mt-1">
+                            {autoSaveStatus}
+                        </div>
+                    )}
+
                     {/* Drop Zone - Visible when no image selected */}
                     {!imagePreview && (
                         <>
@@ -303,21 +374,32 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                     {/* Actions Row */}
                     <div className="flex flex-col gap-3 items-center justify-between pt-4 border-t border-white/10">
                         <div className="flex items-center gap-3 w-full">
-                            <Button 
-                                variant="ghost" 
-                                onClick={handleClose} 
-                                className="rounded-xl px-6 font-semibold border w-1/2"
+                            <Button
+                                variant="ghost"
+                                onClick={handleClose}
+                                className="rounded-xl px-4 font-semibold border flex-1"
                             >
                                 Cancel
-                            </Button>
-                            <Button 
-                                disabled={loading || !intent || (!content.trim() && !imageFile)}
-                                onClick={handlePost} 
-                                className={cn(
-                                    "rounded-xl w-1/2 px-8 font-bold shadow-lg transition-all active:scale-95",
-                                    "bg-primary text-primary-foreground hover:opacity-90"
-                                )}
-                            >
+                        </Button>
+
+                        <Button
+                            variant="secondary"
+                            onClick={handleSaveDraft}
+                            disabled={!content.trim() && !imageFile}
+                            className="rounded-xl px-4 font-semibold flex-1"
+                        >
+                            Save Draft
+                        </Button>
+
+                        <Button
+                            disabled={loading || !intent || (!content.trim() && !imageFile)}
+                            onClick={handlePost}
+                            className={cn(
+                                "rounded-xl flex-1 px-6 font-bold shadow-lg transition-all active:scale-95",
+                                "bg-primary text-primary-foreground hover:opacity-90"
+                            )}
+                        >
+                            
                                 {loading ? (
                                     <div className="flex items-center gap-2">
                                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -127,6 +127,11 @@ export const createCommentReport = async (req, res) => {
       return res.status(404).json({ success: false, message: "Comment not found" });
     }
 
+    // Authors cannot report their own comment
+    if (comment.author.toString() === reporterId) {
+      return res.status(400).json({ success: false, message: "You cannot report your own comment" });
+    }
+
     const existingReport = await Report.findOne({
       targetType: "comment",
       targetId: commentId,
@@ -140,7 +145,7 @@ export const createCommentReport = async (req, res) => {
       });
     }
 
-    const report = await Report.create({
+    await Report.create({
       targetType: "comment",
       targetModel: "Comment",
       targetId: commentId,
@@ -149,10 +154,43 @@ export const createCommentReport = async (req, res) => {
       details: details.trim(),
     });
 
+    // Count unique reporters for this comment after saving
+    const reportCount = await Report.countDocuments({ targetType: "comment", targetId: commentId });
+
+    if (reportCount >= REPORT_THRESHOLD) {
+      const authorId = comment.author;
+      const postId = comment.post;
+
+      // Delete the comment and update the parent post's comment count
+      await Comment.findByIdAndDelete(commentId);
+      await Post.findByIdAndUpdate(postId, { $inc: { commentsCount: -1 } });
+
+      // Clean up all reports for this comment
+      await Report.deleteMany({ targetType: "comment", targetId: commentId });
+
+      // Notify the comment author
+      const notification = await Notification.create({
+        recipient: authorId,
+        type: "comment_removed_reported",
+        comment: commentId,
+      });
+
+      getIO().to(authorId.toString()).emit("notification:new", {
+        notificationId: notification._id,
+        type: notification.type,
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Report submitted. Comment has been removed due to multiple reports.",
+        removed: true,
+      });
+    }
+
     return res.status(201).json({
       success: true,
       message: "Report submitted",
-      report,
+      removed: false,
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

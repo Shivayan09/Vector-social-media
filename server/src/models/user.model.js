@@ -93,9 +93,12 @@ const userSchema = new mongoose.Schema(
     resetToken: String,
     resetTokenExpiry: Date,
 
-    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-    following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-    followRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    tokenVersion: {
+      type: Number,
+      default: 0,
+    },
+
+
     blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
     followersCount: { type: Number, default: 0 },

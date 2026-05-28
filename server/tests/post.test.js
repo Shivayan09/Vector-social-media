@@ -33,10 +33,19 @@ jest.unstable_mockModule('../src/config/cloudinary.js', () => ({
   },
 }));
 
+jest.unstable_mockModule('../src/socket/socket.js', () => ({
+  getIO: () => ({
+    to: () => ({
+      emit: () => {},
+    }),
+  }),
+}));
+
 // Dynamic imports to ensure mocks are registered
 const { default: request } = await import('supertest');
 const { default: app } = await import('../src/app.js');
 const { default: User } = await import('../src/models/user.model.js');
+const { default: Follow } = await import('../src/models/follow.model.js');
 const { default: Post } = await import('../src/models/post.model.js');
 const { default: Comment } = await import('../src/models/comment.model.js');
 const { default: Notification } = await import('../src/models/notification.model.js');
@@ -149,7 +158,7 @@ describe('Post and Comment Flows', () => {
           intent: "ask"
         });
 
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
       expect(res.body.message).toContain('either content or image are required');
     });
@@ -342,6 +351,66 @@ describe('Post and Comment Flows', () => {
     });
   });
 
+  describe('Bookmark Toggle', () => {
+    it('should bookmark and then unbookmark a post', async () => {
+      // Bookmark
+      const bookmarkRes = await request(app)
+        .post(`/api/posts/${post._id}/bookmark`)
+        .set('Cookie', cookie);
+
+      expect(bookmarkRes.status).toBe(200);
+      expect(bookmarkRes.body.success).toBe(true);
+      expect(bookmarkRes.body.bookmarked).toBe(true);
+      expect(bookmarkRes.body.message).toBe("Added to bookmarks");
+
+      // Verify in user bookmarks
+      let updatedUser = await User.findById(user._id);
+      expect(updatedUser.bookmarks.map(String)).toContain(post._id.toString());
+
+      // Unbookmark
+      const unbookmarkRes = await request(app)
+        .post(`/api/posts/${post._id}/bookmark`)
+        .set('Cookie', cookie);
+
+      expect(unbookmarkRes.status).toBe(200);
+      expect(unbookmarkRes.body.success).toBe(true);
+      expect(unbookmarkRes.body.bookmarked).toBe(false);
+      expect(unbookmarkRes.body.message).toBe("Removed from bookmarks");
+
+      // Verify in user bookmarks
+      updatedUser = await User.findById(user._id);
+      expect(updatedUser.bookmarks.map(String)).not.toContain(post._id.toString());
+    });
+
+    it('should handle concurrent bookmark requests without losing updates', async () => {
+      // Create another post
+      const post2 = await Post.create({
+        author: user._id,
+        content: "Second Post Content",
+        intent: "share"
+      });
+
+      // Send concurrent requests to bookmark post and post2
+      const [res1, res2] = await Promise.all([
+        request(app)
+          .post(`/api/posts/${post._id}/bookmark`)
+          .set('Cookie', cookie),
+        request(app)
+          .post(`/api/posts/${post2._id}/bookmark`)
+          .set('Cookie', cookie)
+      ]);
+
+      expect(res1.status).toBe(200);
+      expect(res2.status).toBe(200);
+
+      // Verify that BOTH posts are in the bookmarks array
+      const updatedUser = await User.findById(user._id);
+      const bookmarksStr = updatedUser.bookmarks.map(String);
+      expect(bookmarksStr).toContain(post._id.toString());
+      expect(bookmarksStr).toContain(post2._id.toString());
+    });
+  });
+
   describe('Comment Counts', () => {
     it('should increment and decrement comment count', async () => {
       // Add comment
@@ -399,7 +468,8 @@ describe('Post and Comment Flows', () => {
         recipient: user._id,
         sender: commenter._id,
         type: "comment",
-        post: post._id
+        post: post._id,
+        comment: comment._id,
       });
 
       const deleteRes = await request(app)
@@ -414,5 +484,157 @@ describe('Post and Comment Flows', () => {
       const postAfterDelete = await Post.findById(post._id);
       expect(postAfterDelete.commentsCount).toBe(0);
     });
+
+    it('should block non-followers from commenting on a private user post', async () => {
+      const privateUserData = {
+        name: "Private",
+        surname: "Author",
+        phoneNumber: "3334445555",
+        email: "privateauthor@test.com",
+        password: "Password123",
+        username: "privateauthor",
+        bio: "Bio",
+        description: "Desc",
+        isPrivate: true
+      };
+      const outsiderData = {
+        name: "Outside",
+        surname: "User",
+        phoneNumber: "4445556666",
+        email: "outsider@test.com",
+        password: "Password123",
+        username: "outsideruser",
+        bio: "Bio",
+        description: "Desc"
+      };
+
+      await request(app).post('/api/auth/register').send(privateUserData);
+      await request(app).post('/api/auth/register').send(outsiderData);
+
+      const outsiderLoginRes = await request(app).post('/api/auth/login').send({
+        username: outsiderData.username,
+        password: outsiderData.password
+      });
+      const outsiderCookie = outsiderLoginRes.headers['set-cookie'];
+
+      const privateUser = await User.findOne({ username: privateUserData.username });
+      const privatePost = await Post.create({
+        author: privateUser._id,
+        content: "Private post",
+        intent: "share"
+      });
+
+      const commentRes = await request(app)
+        .post(`/api/comments/${privatePost._id}`)
+        .set('Cookie', outsiderCookie)
+        .send({ content: "I should not be able to comment" });
+
+      expect(commentRes.status).toBe(403);
+      expect(commentRes.body.message).toContain('Follow them to comment');
+      expect(await Comment.countDocuments({ post: privatePost._id })).toBe(0);
+      expect(await Notification.countDocuments({ recipient: privateUser._id, type: 'comment', post: privatePost._id })).toBe(0);
+
+      // Also verify that a follower CAN comment
+      const outsider = await User.findOne({ username: outsiderData.username });
+      await Follow.create({ follower: outsider._id, following: privateUser._id, status: 'accepted' });
+
+      const followerCommentRes = await request(app)
+        .post(`/api/comments/${privatePost._id}`)
+        .set('Cookie', outsiderCookie)
+        .send({ content: "I follow this account" });
+
+      expect(followerCommentRes.status).toBe(201);
+    });
+  });
+
+  describe('Search Posts', () => {
+    beforeAll(async () => {
+      await Post.createIndexes(); // Ensure text index is built
+    });
+
+    it('should return relevant posts for query', async () => {
+      await Post.create({
+        author: user._id,
+        content: "Unique search keyword",
+        intent: "share"
+      });
+
+      const res = await request(app)
+        .get('/api/posts/search?q=Unique')
+        .set('Cookie', cookie);
+
+      expect(res.status).toBe(200);
+      expect(res.body.posts).toBeDefined();
+      expect(res.body.posts.length).toBeGreaterThan(0);
+      expect(res.body.posts[0].content).toContain('Unique');
+    });
+
+    it('should return empty posts if no query is provided', async () => {
+      const res = await request(app)
+        .get('/api/posts/search')
+        .set('Cookie', cookie);
+
+      expect(res.status).toBe(200);
+      expect(res.body.posts).toEqual([]);
+    });
+  });
+
+  describe('Delete Post', () => {
+    it('should delete a post successfully and call cloudinary destroy', async () => {
+      const newPost = await Post.create({
+        author: user._id,
+        content: "Delete test content",
+        intent: "share",
+        image: "https://res.cloudinary.com/dummy-cloud/image/upload/v12345/posts/dummy_image.png",
+        imagePublicId: "posts/dummy_image_public_id"
+      });
+
+      mockDestroy.mockClear();
+      mockDestroy.mockResolvedValue({ result: 'ok' });
+
+      const res = await request(app)
+        .delete(`/api/posts/${newPost._id}`)
+        .set('Cookie', cookie);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.message).toContain('deleted successfully');
+      
+      const dbPost = await Post.findById(newPost._id);
+      expect(dbPost).toBeNull();
+      
+      expect(mockDestroy).toHaveBeenCalledWith('posts/dummy_image_public_id');
+    });
+
+    it('should delete a post successfully even when cloudinary destroy fails', async () => {
+      const newPost = await Post.create({
+        author: user._id,
+        content: "Delete test content with failing cloudinary",
+        intent: "share",
+        image: "https://res.cloudinary.com/dummy-cloud/image/upload/v12345/posts/dummy_image.png",
+        imagePublicId: "posts/dummy_image_public_id"
+      });
+
+      mockDestroy.mockClear();
+      mockDestroy.mockRejectedValue(new Error('Cloudinary destroy failure'));
+
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      const res = await request(app)
+        .delete(`/api/posts/${newPost._id}`)
+        .set('Cookie', cookie);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.message).toContain('deleted successfully');
+
+      const dbPost = await Post.findById(newPost._id);
+      expect(dbPost).toBeNull();
+
+      expect(mockDestroy).toHaveBeenCalledWith('posts/dummy_image_public_id');
+
+      consoleErrorSpy.mockRestore();
+    });
   });
 });
+

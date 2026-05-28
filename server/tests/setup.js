@@ -1,4 +1,4 @@
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import { jest } from '@jest/globals';
 
@@ -13,17 +13,16 @@ jest.setTimeout(60000);
 
 beforeAll(async () => {
   try {
-    mongoServer = await MongoMemoryServer.create({
-      instance: {
-        // Increase timeout for slow CI runners (Windows)
-        // This resolves the "Instance failed to start within 10000ms" error
-        launchTimeout: 60000
+    mongoServer = await MongoMemoryReplSet.create({
+      replSet: {
+        count: 1,
+        storageEngine: 'wiredTiger'
       }
     });
     const uri = mongoServer.getUri();
     await mongoose.connect(uri);
   } catch (error) {
-    console.error("Failed to start MongoMemoryServer:", error);
+    console.error("Failed to start MongoMemoryReplSet:", error);
   }
 });
 

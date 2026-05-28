@@ -2,6 +2,7 @@ import request from 'supertest';
 import app from '../src/app.js';
 import User from '../src/models/user.model.js';
 import Post from '../src/models/post.model.js';
+import Follow from '../src/models/follow.model.js';
 import jwt from 'jsonwebtoken';
 
 describe('User Search and Suggestions Endpoints', () => {
@@ -125,7 +126,7 @@ describe('User Search and Suggestions Endpoints', () => {
 
     it('should return posts from private accounts the requester follows', async () => {
       // User1 follows User2
-      await User.findByIdAndUpdate(user1._id, { $addToSet: { following: user2._id } });
+      await Follow.create({ follower: user1._id, following: user2._id, status: 'accepted' });
       // Set user2 as private
       await User.findByIdAndUpdate(user2._id, { isPrivate: true });
 
@@ -171,7 +172,7 @@ describe('User Search and Suggestions Endpoints', () => {
 
     it('should return suggested users excluding self, blocked, and already following', async () => {
       // User1 follows User2
-      await User.findByIdAndUpdate(user1._id, { $addToSet: { following: user2._id } });
+      await Follow.create({ follower: user1._id, following: user2._id, status: 'accepted' });
       // User1 blocks User3
       await User.findByIdAndUpdate(user1._id, { $addToSet: { blockedUsers: user3._id } });
 
@@ -192,7 +193,7 @@ describe('User Search and Suggestions Endpoints', () => {
 
     it('should correctly mark isRequestedByCurrentUser if follow request is pending', async () => {
       // User1 sends follow request to User2
-      await User.findByIdAndUpdate(user2._id, { $addToSet: { followRequests: user1._id } });
+      await Follow.create({ follower: user1._id, following: user2._id, status: 'pending' });
 
       const response = await request(app)
         .get('/api/users/suggestions')
@@ -203,6 +204,48 @@ describe('User Search and Suggestions Endpoints', () => {
       const suggestedBob = response.body.users.find(u => u.username === 'bobjones');
       expect(suggestedBob).toBeDefined();
       expect(suggestedBob.isRequestedByCurrentUser).toBe(true);
+    });
+  });
+
+  describe('GET /api/users/all', () => {
+    it('should return 401 if unauthorized', async () => {
+      const response = await request(app).get('/api/users/all');
+      expect(response.status).toBe(401);
+    });
+
+    it('should return all users excluding self', async () => {
+      const response = await request(app)
+        .get('/api/users/all')
+        .set('Cookie', `token=${token1}`);
+      
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      
+      const usernames = response.body.users.map(u => u.username);
+      expect(usernames).not.toContain('alicesmith'); // self
+      expect(usernames).toContain('bobjones');
+      expect(usernames).toContain('charlieb');
+      expect(usernames).toContain('alicew');
+    });
+
+    it('should exclude blocked users and users who blocked the requester', async () => {
+      // User1 blocks User2 (Bob)
+      await User.findByIdAndUpdate(user1._id, { $addToSet: { blockedUsers: user2._id } });
+      // User3 (Charlie) blocks User1
+      await User.findByIdAndUpdate(user3._id, { $addToSet: { blockedUsers: user1._id } });
+
+      const response = await request(app)
+        .get('/api/users/all')
+        .set('Cookie', `token=${token1}`);
+      
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+
+      const usernames = response.body.users.map(u => u.username);
+      expect(usernames).not.toContain('alicesmith'); // self
+      expect(usernames).not.toContain('bobjones');   // blocked by requester
+      expect(usernames).not.toContain('charlieb');   // requester blocked by them
+      expect(usernames).toContain('alicew');         // not blocked
     });
   });
 });

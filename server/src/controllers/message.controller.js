@@ -34,16 +34,21 @@ export const getMessages = async (req, res) => {
       }
     }
 
-    const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 50;
+    const before = req.query.before;
 
-    const messages = await Message.find({ conversation: conversationId, isDeleted: false })
+    const filter = {
+      conversation: conversationId,
+      isDeleted: false,
+      ...(before && { createdAt: { $lt: new Date(before) } }),
+    };
+
+    const messages = await Message.find(filter)
       .populate("sender", "username name avatar")
       .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
       .limit(limit);
 
-    res.json(messages.reverse());
+    res.json({ messages: messages.reverse(), hasMore: messages.length === limit });
 
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -115,17 +120,30 @@ export const sendMessage = async (req, res) => {
 
     if (receiverId) {
 
-      const notification = await Notification.create({
+      const filter = {
         recipient: receiverId,
         sender: req.user._id,
         type: "message",
         conversation: conversationId,
-      });
+        isRead: false,
+      };
+      // findOneAndUpdate with new:false returns the pre-update doc,
+      // or null when a new doc was upserted. Only emit on first insert.
+      const existing = await Notification.findOneAndUpdate(
+        filter,
+        { $setOnInsert: filter },
+        { upsert: true, returnDocument: "before" }
+      );
       const io = getIO();
-      io.to(receiverId.toString()).emit("notification:new", {
-        notificationId: notification._id,
-        type: notification.type,
-      });
+      if (!existing) {
+        const notification = await Notification.findOne(filter);
+        if (notification) {
+          io.to(receiverId.toString()).emit("notification:new", {
+            notificationId: notification._id,
+            type: notification.type,
+          });
+        }
+      }
       
       io.to(receiverId.toString()).emit("receive_message", populated);
 
@@ -191,6 +209,17 @@ export const markConversationAsRead = async (req, res) => {
       },
       { $set: { isRead: true } }
     );
+
+    const otherParticipant = conversation.participants.find(
+      (p) => p.toString() !== req.user._id.toString()
+    );
+
+    if (otherParticipant) {
+      getIO().to(otherParticipant.toString()).emit("conversation_read", {
+        conversationId,
+        readBy: req.user._id,
+      });
+    }
 
     res.json({ message: "Messages marked as read" });
   } catch (error) {

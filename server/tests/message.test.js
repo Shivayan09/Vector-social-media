@@ -137,9 +137,10 @@ describe('Message Endpoints', () => {
         .set('Cookie', cookieA);
 
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-      expect(res.body.length).toBeGreaterThan(0);
-      expect(res.body[0].content).toBe('Fetch me!');
+      expect(Array.isArray(res.body.messages)).toBe(true);
+      expect(res.body.messages.length).toBeGreaterThan(0);
+      expect(typeof res.body.hasMore).toBe('boolean');
+      expect(res.body.messages[0].content).toBe('Fetch me!');
     });
 
     it('should return 401 if user is not authenticated', async () => {

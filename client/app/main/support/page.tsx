@@ -2,8 +2,11 @@
 
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
+import { useState } from "react";
+import SupportModal from "@/components/modals/SupportModal";
 
 export default function SupportPage() {
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   return (
     <div className="page-scroll">
       <Navbar />
@@ -32,22 +35,34 @@ export default function SupportPage() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-xl border border-border p-6 space-y-2 cursor-pointer transition-all duration-300 hover:border-primary hover:shadow-md active:opacity-60">
+            <div 
+              onClick={() => setSelectedTopic("Account Issues")}
+              className="rounded-xl border border-border p-6 space-y-2 cursor-pointer transition-all duration-300 hover:border-primary hover:shadow-md active:opacity-60"
+            >
               <h2 className="text-lg font-semibold text-foreground">Account Issues</h2>
               <p className="text-sm text-foreground/70">Having trouble logging in or managing your account? We can help you get back on track.</p>
             </div>
 
-            <div className="rounded-xl border border-border p-6 space-y-2 cursor-pointer transition-all duration-300 hover:border-primary hover:shadow-md active:opacity-60">
+            <div 
+              onClick={() => setSelectedTopic("Report a Bug")}
+              className="rounded-xl border border-border p-6 space-y-2 cursor-pointer transition-all duration-300 hover:border-primary hover:shadow-md active:opacity-60"
+            >
               <h2 className="text-lg font-semibold text-foreground">Report a Bug</h2>
               <p className="text-sm text-foreground/70">Found something that does not look right? Let us know and we will fix it as soon as possible.</p>
             </div>
 
-            <div className="rounded-xl border border-border p-6 space-y-2 cursor-pointer transition-all duration-300 hover:border-primary hover:shadow-md active:opacity-60">
+            <div 
+              onClick={() => setSelectedTopic("Privacy & Safety")}
+              className="rounded-xl border border-border p-6 space-y-2 cursor-pointer transition-all duration-300 hover:border-primary hover:shadow-md active:opacity-60"
+            >
               <h2 className="text-lg font-semibold text-foreground">Privacy & Safety</h2>
               <p className="text-sm text-foreground/70">Questions about your data or how to stay safe on Vector? Find answers here.</p>
             </div>
 
-            <div className="rounded-xl border border-border p-6 space-y-2 cursor-pointer transition-all duration-300 hover:border-primary hover:shadow-md active:opacity-60">
+            <div 
+              onClick={() => setSelectedTopic("Contact Us")}
+              className="rounded-xl border border-border p-6 space-y-2 cursor-pointer transition-all duration-300 hover:border-primary hover:shadow-md active:opacity-60"
+            >
               <h2 className="text-lg font-semibold text-foreground">Contact Us</h2>
               <p className="text-sm text-foreground/70">Still need help? Send us a message and we will get back to you.</p>
             </div>
@@ -55,6 +70,12 @@ export default function SupportPage() {
 
         </div>
       </div>
+
+      <SupportModal 
+        open={!!selectedTopic} 
+        onClose={() => setSelectedTopic(null)} 
+        topic={selectedTopic || ""} 
+      />
     </div>
   );
 }

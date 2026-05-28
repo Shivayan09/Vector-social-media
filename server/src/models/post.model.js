@@ -7,6 +7,11 @@ const postSchema = new mongoose.Schema({
     required: true
   },
 
+  authorIsPrivate: {
+    type: Boolean,
+    default: false
+  },
+
   content: {
     type: String,
     maxlength: 1000

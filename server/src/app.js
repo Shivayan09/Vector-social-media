@@ -16,6 +16,8 @@ import reviewRouter from "./routes/review.routes.js";
 
 const app = express();
 
+app.set("trust proxy", 1);
+
 app.use(helmet());
 
 app.use(

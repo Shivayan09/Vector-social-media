@@ -189,20 +189,29 @@ export default function Explore() {
 
   const handleToggleFollow = async (userId: string) => {
     try {
-      await axios.post(
-        `${BACKEND_URL}/api/users/toggle-follow/${userId}`,
+      const res = await axios.put(
+        `${BACKEND_URL}/api/users/${userId}/follow`,
         {},
         { withCredentials: true }
       );
+
       setFollowingState((prev) => {
-        const current = prev[userId];
-        if (current === "follow") return { ...prev, [userId]: "requested" };
-        if (current === "requested") return { ...prev, [userId]: "follow" };
-        if (current === "following") return { ...prev, [userId]: "follow" };
-        return prev;
+        if (res.data.requested !== undefined) {
+          return {
+            ...prev,
+            [userId]: res.data.requested ? "requested" : "follow",
+          };
+        }
+        return {
+          ...prev,
+          [userId]: res.data.followed ? "following" : "follow",
+        };
       });
-    } catch {
-      toast.error("Failed to update follow status");
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message || "Failed to update follow status"
+        : "Failed to update follow status";
+      toast.error(message);
     }
   };
 
@@ -448,7 +457,7 @@ export default function Explore() {
                         <button
                           type="button"
                           onClick={() => handleToggleFollow(user._id)}
-                          className={`flex shrink-0 items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-200 ${
+                          className={`flex shrink-0 cursor-pointer items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-200 ${
                             state === "following"
                               ? "border-border bg-accent text-foreground hover:bg-accent/70"
                               : state === "requested"
