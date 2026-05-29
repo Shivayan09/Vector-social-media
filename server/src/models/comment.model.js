@@ -18,6 +18,13 @@ const commentSchema = new mongoose.Schema(
       trim: true,
       maxlength: 500,
     },
+    // Stores the userIds of every @mentioned user in this comment
+    mentions: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   { timestamps: true }
 );
