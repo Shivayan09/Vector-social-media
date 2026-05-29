@@ -3,6 +3,7 @@ import Conversation from "../models/conversation.model.js";
 import Notification from "../models/notification.model.js";
 import User from "../models/user.model.js";
 import { getIO } from "../socket/socket.js";
+import { sendMessageSchema } from "../validators/message.validator.js";
 
 export const getMessages = async (req, res) => {
   try {
@@ -58,11 +59,13 @@ export const getMessages = async (req, res) => {
 export const sendMessage = async (req, res) => {
   try {
 
-    const { conversationId, content } = req.body;
-
-    if (!conversationId || !content) {
-      return res.status(400).json({ message: "Missing fields" });
+    const parsed = sendMessageSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const message = parsed.error.issues[0]?.message ?? "Invalid request";
+      return res.status(400).json({ message });
     }
+
+    const { conversationId, content } = parsed.data;
 
     const conversation = await Conversation.findById(conversationId);
 
@@ -156,7 +159,6 @@ export const sendMessage = async (req, res) => {
     res.json(populated);
 
   } catch (error) {
-    console.error("SEND MESSAGE ERROR:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -274,12 +276,8 @@ export const deleteMessage = async (req, res) => {
     });
 
   } catch (error) {
-
-    console.error("DELETE MESSAGE ERROR:", error);
-
     res.status(500).json({
       message: error.message
     });
-
   }
 };

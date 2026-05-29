@@ -30,7 +30,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
     const [showReportModal, setShowReportModal] = useState(false);
     const [selectedComment, setSelectedComment] = useState<Comment | null>(null);
     const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
-    const [page, setPage] = useState(1);
+    const [cursor, setCursor] = useState<string | null>(null);
     const [hasMore, setHasMore] = useState(true);
     const LIMIT = 20;
 
@@ -55,10 +55,10 @@ export default function CommentsSection({ postId }: { postId: string }) {
         setLoading(true);
         setError(null);
         try {
-            const { data } = await axios.get(`${BACKEND_URL}/api/comments/${postId}?page=1&limit=${LIMIT}`, { withCredentials: true });
-            setComments(data);
-            setHasMore(data.length === LIMIT);
-            setPage(1);
+            const { data } = await axios.get(`${BACKEND_URL}/api/comments/${postId}?limit=${LIMIT}`, { withCredentials: true });
+            setComments(data.comments);
+            setHasMore(data.hasMore);
+            setCursor(data.nextCursor);
         } catch (err: unknown) {
             console.error("Error fetching comments:", err);
             if (axios.isAxiosError(err)) {
@@ -78,14 +78,13 @@ export default function CommentsSection({ postId }: { postId: string }) {
     }, [fetchComments]);
 
     const loadMoreComments = async () => {
-        const nextPage = page + 1;
         setLoadMoreLoading(true);
         setLoadMoreError(false);
         try {
-            const { data } = await axios.get(`${BACKEND_URL}/api/comments/${postId}?page=${nextPage}&limit=${LIMIT}`, { withCredentials: true });
-            setComments(prev => [...prev, ...data]);
-            setHasMore(data.length === LIMIT);
-            setPage(nextPage);
+            const { data } = await axios.get(`${BACKEND_URL}/api/comments/${postId}?cursor=${cursor}&limit=${LIMIT}`, { withCredentials: true });
+            setComments(prev => [...prev, ...data.comments]);
+            setHasMore(data.hasMore);
+            setCursor(data.nextCursor);
         } catch (err: unknown) {
             console.error("Error loading more comments:", err);
             setLoadMoreError(true);
@@ -103,7 +102,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
         try {
             setButtonLoading(true);
             const { data } = await axios.post(`${BACKEND_URL}/api/comments/${postId}`, { content: text }, { withCredentials: true });
-            setComments(prev => [...prev, data]);
+            setComments(prev => [data, ...prev]);
             setText("");
         } catch (error: unknown) {
             if (error instanceof Error) {
@@ -270,7 +269,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
                     );
                 })}
 
-                {hasMore && comments.length >= LIMIT && (
+                {hasMore && (
                     <div className="mt-3 text-center">
                         {loadMoreLoading ? (
                             <InlineLoader text="Loading more comments..." />

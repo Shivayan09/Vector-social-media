@@ -46,6 +46,11 @@ const postSchema = new mongoose.Schema({
     default: 0,
   },
 
+  sharedBy: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  }],
+
 }, { timestamps: true });
 
 postSchema.index({ content: "text", intent: "text" });

@@ -45,6 +45,7 @@ export default function ActivitySidebar() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<User[]>([]);
   const [searching, setSearching] = useState(false);
+  const [isDebouncing, setIsDebouncing] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const { userData } = useAppContext();
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
@@ -80,14 +81,20 @@ export default function ActivitySidebar() {
     if (!userData?.id) {
       setResults([]);
       setSearching(false);
+      setIsDebouncing(false);
       return;
     }
 
+    if (!query.trim()) {
+      setResults([]);
+      setIsDebouncing(false);
+      return;
+    }
+
+    setIsDebouncing(true);
+
     const delay = setTimeout(async () => {
-      if (!query.trim()) {
-        setResults([]);
-        return;
-      }
+      setIsDebouncing(false);
       try {
         setSearching(true);
         const res = await axios.get<SearchResponse>(
@@ -167,8 +174,8 @@ export default function ActivitySidebar() {
           {loading ? (
             <InlineLoader text="Loading users..." />
           ) : query.trim() ? (
-            searching ? (
-              <p className="surface-text-muted text-sm">Searching...</p>
+            isDebouncing || searching ? (
+              <InlineLoader text="Searching..." />
             ) : filteredSearchResults.length === 0 ? (
               <p className="surface-text-muted text-sm">No users found.</p>
             ) : (

@@ -320,10 +320,16 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
           socket.emit("stop_typing", { conversationId, receiverId });
           isTypingRef.current = false;
       }, 2000);
-  };// SEND MESSAGE
+  };
+
+  const MESSAGE_MAX = 2000;
+  const isOverLimit = text.length > MESSAGE_MAX;
+  const isSendDisabled = isSending || !text.trim() || isOverLimit;
+
+  // SEND MESSAGE
   const sendMessage = async () => {
 
-    if (!text.trim() || !receiverId || isSending) return;
+    if (isSendDisabled || !receiverId) return;
 
     setIsSending(true);
 
@@ -584,30 +590,41 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
         <div ref={bottomRef} />
       </div>
 
-      <div className="chat-composer">
+      <div className="flex flex-col">
+        {text.length > 0 && (
+          <div className={`px-5 pt-1 text-right text-xs ${isOverLimit ? "text-red-500 font-medium" : "text-muted-foreground"}`}>
+            {text.length} / {MESSAGE_MAX}
+            {isOverLimit && <span className="ml-2">Message too long</span>}
+          </div>
+        )}
 
-        <input
-          value={text}
-          onChange={handleTypingInput}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey && !isSending) {
-              e.preventDefault();
-              sendMessage();
-            }
-          }}
-          disabled={isSending}
-          className="chat-composer-input"
-          placeholder="Type a message..."
-        />
+        <div className="chat-composer">
 
-        <button
-          onClick={sendMessage}
-          disabled={isSending}
-          className="chat-primary-button"
-        >
-          {isSending ? "Sending..." : "Send"}
-        </button>
+          <input
+            value={text}
+            onChange={handleTypingInput}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey && !isSendDisabled) {
+                e.preventDefault();
+                sendMessage();
+              }
+            }}
+            maxLength={MESSAGE_MAX + 100}
+            disabled={isSending}
+            className={`chat-composer-input ${isOverLimit ? "border-red-500 focus:ring-red-500" : ""}`}
+            placeholder="Type a message..."
+            aria-label="Message input"
+          />
 
+          <button
+            onClick={sendMessage}
+            disabled={isSendDisabled}
+            className="chat-primary-button disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSending ? "Sending..." : "Send"}
+          </button>
+
+        </div>
       </div>
 
       {showScrollButton && (

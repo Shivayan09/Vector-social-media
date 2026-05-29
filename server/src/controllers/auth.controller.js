@@ -1,9 +1,10 @@
-import User from "../models/user.model.js"
+import User from "../models/user.model.js";
+import Follow from "../models/follow.model.js";
 import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "../validators/user.validator.js";
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
+import { generateToken, getCookieOptions } from "../utils/generateToken.js";
 
 const sendResetEmail = async (email, token) => {
     const transporter = nodemailer.createTransport({
@@ -110,19 +111,9 @@ export const register = async (req, res) => {
             isProfileComplete: true,
         });
 
-        const token = jwt.sign(
-            { id: user._id, version: user.tokenVersion || 0 },
-            process.env.JWT_SECRET,
-            { expiresIn: "7d" }
-        );
+        const token = generateToken(user._id, user.tokenVersion || 0);
 
-        res.cookie("token", token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-            path: "/",
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
+        res.cookie("token", token, getCookieOptions());
 
         return res.status(200).json({
             success: true,
@@ -136,7 +127,7 @@ export const register = async (req, res) => {
     }
 };
 
-export const getMe = (req, res) => {
+export const getMe = async (req, res) => {
     try {
         if (!req.user) {
             return res.status(401).json({
@@ -145,6 +136,11 @@ export const getMe = (req, res) => {
             });
         }
         const user = req.user;
+
+        const followings = await Follow.find({ follower: user._id, status: "accepted" }).select("following").lean();
+        const followers = await Follow.find({ following: user._id, status: "accepted" }).select("follower").lean();
+        const followRequests = await Follow.find({ following: user._id, status: "pending" }).select("follower").lean();
+
         return res.status(200).json({
             success: true,
             user: {
@@ -159,10 +155,10 @@ export const getMe = (req, res) => {
                 avatar: user.avatar,
                 isProfileComplete: user.isProfileComplete,
                 signupStep: user.signupStep,
-                followers: (user.followers || []).map(id => id.toString()),
-                following: (user.following || []).map(id => id.toString()),
+                followers: followers.map(f => f.follower.toString()),
+                following: followings.map(f => f.following.toString()),
                 isPrivate: user.isPrivate,
-                followRequests: (user.followRequests || []).map(id => id.toString()),
+                followRequests: followRequests.map(f => f.follower.toString()),
                 blockedUsers: (user.blockedUsers || []).map(id => id.toString()),
             },
         });
@@ -205,14 +201,9 @@ export const login = async (req, res) => {
             reactivated = true;
         }
 
-        const token = jwt.sign({ id: user._id, version: user.tokenVersion || 0 }, process.env.JWT_SECRET, { expiresIn: '7d' });
-        res.cookie("token", token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-            path: "/",
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
+        const token = generateToken(user._id, user.tokenVersion || 0);
+        res.cookie("token", token, getCookieOptions());
+
         return res.status(200).json({
             success: true,
             message: "Logged in successfully",
@@ -228,12 +219,7 @@ export const login = async (req, res) => {
 
 export const logout = async (req, res) => {
     try {
-        res.clearCookie('token', {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-            path: "/",
-        });
+        res.clearCookie('token', getCookieOptions());
         return res.status(200).json({
             success: true,
             message: "Logged out successfully"

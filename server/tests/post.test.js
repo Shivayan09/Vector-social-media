@@ -26,6 +26,7 @@ jest.unstable_mockModule('../src/socket/socket.js', () => ({
 const { default: request } = await import('supertest');
 const { default: app } = await import('../src/app.js');
 const { default: User } = await import('../src/models/user.model.js');
+const { default: Follow } = await import('../src/models/follow.model.js');
 const { default: Post } = await import('../src/models/post.model.js');
 const { default: Comment } = await import('../src/models/comment.model.js');
 const { default: Notification } = await import('../src/models/notification.model.js');
@@ -513,6 +514,17 @@ describe('Post and Comment Flows', () => {
       expect(commentRes.body.message).toContain('Follow them to comment');
       expect(await Comment.countDocuments({ post: privatePost._id })).toBe(0);
       expect(await Notification.countDocuments({ recipient: privateUser._id, type: 'comment', post: privatePost._id })).toBe(0);
+
+      // Also verify that a follower CAN comment
+      const outsider = await User.findOne({ username: outsiderData.username });
+      await Follow.create({ follower: outsider._id, following: privateUser._id, status: 'accepted' });
+
+      const followerCommentRes = await request(app)
+        .post(`/api/comments/${privatePost._id}`)
+        .set('Cookie', outsiderCookie)
+        .send({ content: "I follow this account" });
+
+      expect(followerCommentRes.status).toBe(201);
     });
   });
 
@@ -547,4 +559,63 @@ describe('Post and Comment Flows', () => {
       expect(res.body.posts).toEqual([]);
     });
   });
+
+  describe('Delete Post', () => {
+    it('should delete a post successfully and call cloudinary destroy', async () => {
+      const newPost = await Post.create({
+        author: user._id,
+        content: "Delete test content",
+        intent: "share",
+        image: "https://res.cloudinary.com/dummy-cloud/image/upload/v12345/posts/dummy_image.png",
+        imagePublicId: "posts/dummy_image_public_id"
+      });
+
+      mockDestroy.mockClear();
+      mockDestroy.mockResolvedValue({ result: 'ok' });
+
+      const res = await request(app)
+        .delete(`/api/posts/${newPost._id}`)
+        .set('Cookie', cookie);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.message).toContain('deleted successfully');
+      
+      const dbPost = await Post.findById(newPost._id);
+      expect(dbPost).toBeNull();
+      
+      expect(mockDestroy).toHaveBeenCalledWith('posts/dummy_image_public_id');
+    });
+
+    it('should delete a post successfully even when cloudinary destroy fails', async () => {
+      const newPost = await Post.create({
+        author: user._id,
+        content: "Delete test content with failing cloudinary",
+        intent: "share",
+        image: "https://res.cloudinary.com/dummy-cloud/image/upload/v12345/posts/dummy_image.png",
+        imagePublicId: "posts/dummy_image_public_id"
+      });
+
+      mockDestroy.mockClear();
+      mockDestroy.mockRejectedValue(new Error('Cloudinary destroy failure'));
+
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      const res = await request(app)
+        .delete(`/api/posts/${newPost._id}`)
+        .set('Cookie', cookie);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.message).toContain('deleted successfully');
+
+      const dbPost = await Post.findById(newPost._id);
+      expect(dbPost).toBeNull();
+
+      expect(mockDestroy).toHaveBeenCalledWith('posts/dummy_image_public_id');
+
+      consoleErrorSpy.mockRestore();
+    });
+  });
 });
+

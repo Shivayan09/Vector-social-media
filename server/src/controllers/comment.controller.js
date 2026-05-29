@@ -1,6 +1,8 @@
+import mongoose from "mongoose";
 import Comment from "../models/comment.model.js";
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
+import Follow from "../models/follow.model.js";
 import Notification from "../models/notification.model.js";
 import { getIO } from "../socket/socket.js";
 
@@ -27,9 +29,7 @@ export const addComment = async (req, res) => {
             }
 
             if (authorUser?.isPrivate && currentUserId !== post.author.toString()) {
-                const isFollower = authorUser.followers?.some(
-                    id => id.toString() === currentUserId
-                );
+                const isFollower = await Follow.exists({ follower: currentUserId, following: post.author, status: "accepted" });
                 if (!isFollower) {
                     return res.status(403).json({
                         message: "This post is from a private account. Follow them to comment.",
@@ -37,10 +37,10 @@ export const addComment = async (req, res) => {
                 }
             }
         }
-        // Re-verify block status right before create
+        // Re-verify block status and follow right before create
         if (req.user) {
             const [freshAuthor, freshCurrent] = await Promise.all([
-                User.findById(post.author).select("blockedUsers followers isPrivate"),
+                User.findById(post.author).select("blockedUsers isPrivate"),
                 User.findById(req.user.id).select("blockedUsers"),
             ]);
             const stillBlocked = freshCurrent?.blockedUsers?.some(id => id.toString() === post.author.toString()) ||
@@ -50,9 +50,7 @@ export const addComment = async (req, res) => {
             }
 
             if (freshAuthor?.isPrivate && req.user.id !== post.author.toString()) {
-                const isStillFollower = freshAuthor.followers?.some(
-                    id => id.toString() === req.user.id
-                );
+                const isStillFollower = await Follow.exists({ follower: req.user.id, following: post.author, status: "accepted" });
                 if (!isStillFollower) {
                     return res.status(403).json({
                         message: "This post is from a private account. Follow them to comment.",
@@ -98,7 +96,7 @@ export const getPostComments = async (req, res) => {
             return res.status(404).json({ message: "Post not found" });
         }
 
-        const postAuthor = await User.findById(post.author).select("blockedUsers followers isPrivate");
+        const postAuthor = await User.findById(post.author).select("blockedUsers isPrivate");
 
         if (req.user) {
             const currentUserId = req.user.id;
@@ -109,7 +107,7 @@ export const getPostComments = async (req, res) => {
             }
 
             if (postAuthor?.isPrivate && currentUserId !== post.author.toString()) {
-                const isFollower = postAuthor.followers?.some(id => id.toString() === currentUserId);
+                const isFollower = await Follow.exists({ follower: currentUserId, following: post.author, status: "accepted" });
                 if (!isFollower) {
                     return res.status(403).json({ message: "This post is from a private account. Follow them to see it." });
                 }
@@ -118,15 +116,40 @@ export const getPostComments = async (req, res) => {
             return res.status(403).json({ message: "This post is from a private account. Follow them to see it." });
         }
 
-        const page = parseInt(req.query.page) || 1;
+        const cursor = req.query.cursor || null;
         const limit = parseInt(req.query.limit) || 20;
 
-        const comments = await Comment.find({ post: postId })
-            .sort({ createdAt: 1 })
-            .skip((page - 1) * limit)
+        let excludeUserIds = [];
+        if (req.user) {
+            const currentUserId = req.user._id || req.user.id;
+            const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
+            const blockerIds = blockers.map((u) => u._id);
+            const blockedIds = req.user.blockedUsers || [];
+            excludeUserIds = [...blockedIds, ...blockerIds];
+        }
+
+        let filter = {
+            post: postId,
+            ...(excludeUserIds.length ? { author: { $nin: excludeUserIds } } : {}),
+        };
+
+        if (cursor) {
+            if (mongoose.Types.ObjectId.isValid(cursor)) {
+                filter._id = { $lt: cursor };
+            } else {
+                return res.status(400).json({ success: false, message: "Invalid cursor format" });
+            }
+        }
+
+        const comments = await Comment.find(filter)
+            .sort({ _id: -1 })
             .limit(limit)
             .populate("author", "username name avatar");
-        res.json(comments);
+
+        const hasMore = comments.length === limit;
+        const nextCursor = hasMore ? comments[comments.length - 1]._id : null;
+
+        res.json({ comments, nextCursor, hasMore });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

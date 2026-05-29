@@ -87,6 +87,7 @@ export default function Explore() {
   const [results, setResults] = useState<User[]>([]);
   const [postResults, setPostResults] = useState<SearchPost[]>([]);
   const [searching, setSearching] = useState(false);
+  const [isDebouncing, setIsDebouncing] = useState(false);
   const [open, setOpen] = useState(false);
   const [suggestedUsers, setSuggestedUsers] = useState<SuggestedUser[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(true);
@@ -216,14 +217,19 @@ export default function Explore() {
   };
 
   useEffect(() => {
-    const delay = setTimeout(async () => {
-      if (!query.trim()) {
-        setResults([]);
-        setPostResults([]);
-        setOpen(false);
-        return;
-      }
+    if (!query.trim()) {
+      setResults([]);
+      setPostResults([]);
+      setOpen(false);
+      setIsDebouncing(false);
+      return;
+    }
 
+    setOpen(true);
+    setIsDebouncing(true);
+
+    const delay = setTimeout(async () => {
+      setIsDebouncing(false);
       try {
         setSearching(true);
         const res = await axios.get(
@@ -235,7 +241,6 @@ export default function Explore() {
 
         setResults(res.data.users || []);
         setPostResults(res.data.posts || []);
-        setOpen(true);
       } catch (err) {
         console.error("Search failed:", err);
       } finally {
@@ -304,10 +309,10 @@ export default function Explore() {
 
                 {open && (
                   <div className="absolute z-50 mt-2 max-h-75 w-full min-w-0 max-w-full overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
-                    {searching ? (
-                      <p className="p-4 text-sm text-muted-foreground">
-                        Searching...
-                      </p>
+                    {isDebouncing || searching ? (
+                      <div className="p-4">
+                        <InlineLoader text="Searching..." />
+                      </div>
                     ) : results.length === 0 && postResults.length === 0? (
                       <div className="p-4 text-center">
                         <p className="text-sm font-medium text-foreground">

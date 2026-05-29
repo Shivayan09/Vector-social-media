@@ -1,5 +1,6 @@
 import Notification from "../models/notification.model.js";
 import User from "../models/user.model.js";
+import Follow from "../models/follow.model.js";
 
 export const getNotifications = async (req, res) => {
     try {
@@ -30,21 +31,21 @@ export const getNotifications = async (req, res) => {
             .limit(limit)
             .lean();
 
-        const followingUserIds = new Set(
-            (req.user?.following || []).map(id => id.toString())
-        );
+        const followingDocs = await Follow.find({ follower: currentUserId, status: "accepted" }).select("following").lean();
+        const followingUserIds = new Set(followingDocs.map(f => f.following.toString()));
 
         const senderIds = notifications
             .map(n => n.sender?._id)
             .filter(id => id);
 
-        const requestedUsers = await User.find({
-            _id: { $in: senderIds },
-            followRequests: currentUserId,
-        }).select("_id").lean();
+        const requestedUsers = await Follow.find({
+            following: { $in: senderIds },
+            follower: currentUserId,
+            status: "pending",
+        }).select("following").lean();
 
         const requestedUserIds = new Set(
-            requestedUsers.map((user) => user._id.toString())
+            requestedUsers.map((user) => user.following.toString())
         );
 
         const notificationsWithFollowState = notifications.map(notification => {

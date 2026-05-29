@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
+import Follow from "../models/follow.model.js";
 import Comment from "../models/comment.model.js";
 import Notification from "../models/notification.model.js";
 import Report from "../models/report.model.js";
@@ -28,7 +29,11 @@ export const removePostById = async (postId) => {
     }
 
     if (post.imagePublicId) {
-        await cloudinary.uploader.destroy(post.imagePublicId);
+        try {
+            await cloudinary.uploader.destroy(post.imagePublicId);
+        } catch (error) {
+            console.error("Failed to delete post image from Cloudinary:", error);
+        }
     }
 
     return post;
@@ -93,20 +98,23 @@ export const getPosts = async (req, res) => {
         const limit = parseInt(req.query.limit) || 10;
 
         let filter = {};
+        let excludeUserIds = [];
         if (req.user) {
             const currentUserId = req.user._id || req.user.id;
             const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
             const blockerIds = blockers.map(u => u._id);
             const blockedIds = req.user.blockedUsers || [];
-            let excludeUserIds = [...blockedIds, ...blockerIds];
+            excludeUserIds = [...blockedIds, ...blockerIds];
 
             if (excludeUserIds.length > 0) {
                 filter = { author: { $nin: excludeUserIds } };
             }
 
+            const followingDocs = await Follow.find({ follower: currentUserId, status: "accepted" }).select("following").lean();
+            const followingIds = followingDocs.map(f => f.following);
             filter.$or = [
                 { authorIsPrivate: { $ne: true } },
-                { author: { $in: [...(req.user.following || []), currentUserId] } }
+                { author: { $in: [...followingIds, currentUserId] } }
             ];
         } else {
             filter.authorIsPrivate = { $ne: true };
@@ -124,7 +132,11 @@ export const getPosts = async (req, res) => {
             .sort({ _id: -1 })
             .limit(limit)
             .populate("author", "username name surname avatar")
-            .populate("likes", "username name avatar _id");
+            .populate(
+                excludeUserIds.length
+                    ? { path: "likes", select: "username name avatar _id", match: { _id: { $nin: excludeUserIds } } }
+                    : { path: "likes", select: "username name avatar _id" }
+            );
 
         const hasMore = posts.length === limit;
         const nextCursor = hasMore ? posts[posts.length - 1]._id : null;
@@ -161,21 +173,24 @@ export const searchPosts = async (req, res) => {
         }
 
         let filter = { $text: { $search: q } };
+        let excludeUserIds = [];
         
         if (req.user) {
             const currentUserId = req.user._id || req.user.id;
             const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
             const blockerIds = blockers.map(u => u._id);
             const blockedIds = req.user.blockedUsers || [];
-            let excludeUserIds = [...blockedIds, ...blockerIds];
+            excludeUserIds = [...blockedIds, ...blockerIds];
 
             if (excludeUserIds.length > 0) {
                 filter.author = { $nin: excludeUserIds };
             }
 
+            const followingDocs = await Follow.find({ follower: currentUserId, status: "accepted" }).select("following").lean();
+            const followingIds = followingDocs.map(f => f.following);
             filter.$or = [
                 { authorIsPrivate: { $ne: true } },
-                { author: { $in: [...(req.user.following || []), currentUserId] } }
+                { author: { $in: [...followingIds, currentUserId] } }
             ];
         } else {
             filter.authorIsPrivate = { $ne: true };
@@ -193,7 +208,11 @@ export const searchPosts = async (req, res) => {
             .sort({ _id: -1 })
             .limit(limit)
             .populate("author", "username name surname avatar")
-            .populate("likes", "username name avatar _id");
+            .populate(
+                excludeUserIds.length
+                    ? { path: "likes", select: "username name avatar _id", match: { _id: { $nin: excludeUserIds } } }
+                    : { path: "likes", select: "username name avatar _id" }
+            );
 
         const hasMore = posts.length === limit;
         const nextCursor = hasMore ? posts[posts.length - 1]._id : null;
@@ -463,7 +482,7 @@ export const getPostsByUser = async (req, res) => {
 
         // Check if current user is allowed to see posts
         const isSelf = req.user?.id === userId;
-        const isFollower = targetUser.followers.some(id => id.toString() === req.user?.id);
+        const isFollower = req.user ? await Follow.exists({ follower: req.user.id, following: userId, status: "accepted" }) : false;
 
         if (req.user) {
             const currentUserId = req.user.id;
@@ -485,7 +504,23 @@ export const getPostsByUser = async (req, res) => {
             });
         }
 
-        const posts = await Post.find({ author: userId }).populate("author", "username name avatar").populate("likes", "username name avatar _id").sort({ createdAt: -1 });
+        let excludeUserIds = [];
+        if (req.user) {
+            const currentUserId = req.user._id || req.user.id;
+            const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
+            const blockerIds = blockers.map(u => u._id);
+            const blockedIds = req.user.blockedUsers || [];
+            excludeUserIds = [...blockedIds, ...blockerIds];
+        }
+
+        const posts = await Post.find({ author: userId })
+            .populate("author", "username name avatar")
+            .populate(
+                excludeUserIds.length
+                    ? { path: "likes", select: "username name avatar _id", match: { _id: { $nin: excludeUserIds } } }
+                    : { path: "likes", select: "username name avatar _id" }
+            )
+            .sort({ createdAt: -1 });
         const userBookmarkSet = req.user?.bookmarks
         ? new Set(req.user.bookmarks.map(String))
         : new Set();
@@ -512,7 +547,22 @@ export const getSinglePost = async (req, res) => {
             return res.status(400).json({ message: "Invalid post ID format" });
         }
 
-        const post = await Post.findById(postId).populate("author", "username name avatar isPrivate").populate("likes", "username name avatar _id");
+        let excludeUserIds = [];
+        if (req.user) {
+            const currentUserId = req.user._id || req.user.id;
+            const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
+            const blockerIds = blockers.map(u => u._id);
+            const blockedIds = req.user.blockedUsers || [];
+            excludeUserIds = [...blockedIds, ...blockerIds];
+        }
+
+        const post = await Post.findById(postId)
+            .populate("author", "username name avatar isPrivate")
+            .populate(
+                excludeUserIds.length
+                    ? { path: "likes", select: "username name avatar _id", match: { _id: { $nin: excludeUserIds } } }
+                    : { path: "likes", select: "username name avatar _id" }
+            );
         if (!post) {
             return res.status(404).json({ message: "Post not found" });
         }
@@ -520,8 +570,8 @@ export const getSinglePost = async (req, res) => {
         const author = post.author;
         const authorId = author._id;
 
-        // Fetch full author data for block/follower checks
-        const authorFull = await User.findById(authorId).select("blockedUsers followers");
+        // Fetch full author data for block checks
+        const authorFull = await User.findById(authorId).select("blockedUsers");
 
         if (req.user) {
             const currentUserId = req.user.id;
@@ -533,7 +583,7 @@ export const getSinglePost = async (req, res) => {
 
             const isSelf = currentUserId === authorId.toString();
             if (author.isPrivate && !isSelf) {
-                const isFollower = authorFull?.followers?.some(id => id.toString() === currentUserId);
+                const isFollower = await Follow.exists({ follower: currentUserId, following: authorId, status: "accepted" });
                 if (!isFollower) {
                     return res.status(403).json({ message: "This post is from a private account. Follow them to see it." });
                 }
@@ -560,13 +610,14 @@ export const getTopPostsOfWeek = async (req, res) => {
             ? requestedLimit
             : 10;
         let filter = { createdAt: { $gte: oneWeekAgo } };
+        let excludeUserIds = [];
 
         if (req.user) {
             const currentUserId = req.user._id || req.user.id;
             const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
             const blockerIds = blockers.map((user) => user._id);
             const blockedIds = req.user.blockedUsers || [];
-            let excludeUserIds = [...blockedIds, ...blockerIds];
+            excludeUserIds = [...blockedIds, ...blockerIds];
 
             if (excludeUserIds.length > 0) {
                 filter = {
@@ -574,9 +625,11 @@ export const getTopPostsOfWeek = async (req, res) => {
                     author: { $nin: excludeUserIds },
                 };
             }
+            const followingDocsWeek = await Follow.find({ follower: currentUserId, status: "accepted" }).select("following").lean();
+            const followingIdsWeek = followingDocsWeek.map(f => f.following);
             filter.$or = [
                 { authorIsPrivate: { $ne: true } },
-                { author: { $in: [...(req.user.following || []), currentUserId] } }
+                { author: { $in: [...followingIdsWeek, currentUserId] } }
             ];
         } else {
             filter.authorIsPrivate = { $ne: true };
@@ -586,7 +639,8 @@ export const getTopPostsOfWeek = async (req, res) => {
             { $match: filter },
             {
                 $addFields: {
-                    likesCount: { $size: "$likes" },
+                    likes: { $setDifference: ["$likes", excludeUserIds] },
+                    likesCount: { $size: { $setDifference: ["$likes", excludeUserIds] } },
                     commentsCount: { $ifNull: ["$commentsCount", 0] },
                     sharesCount: { $ifNull: ["$sharesCount", 0] },
                 },
@@ -651,13 +705,14 @@ export const getTopPostsOfMonth = async (req, res) => {
         oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
 
         let filter = { createdAt: { $gte: oneMonthAgo } };
+        let excludeUserIds = [];
 
         if (req.user) {
             const currentUserId = req.user._id || req.user.id;
             const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
             const blockerIds = blockers.map((user) => user._id);
             const blockedIds = req.user.blockedUsers || [];
-            let excludeUserIds = [...blockedIds, ...blockerIds];
+            excludeUserIds = [...blockedIds, ...blockerIds];
 
             if (excludeUserIds.length > 0) {
                 filter = {
@@ -665,9 +720,11 @@ export const getTopPostsOfMonth = async (req, res) => {
                     author: { $nin: excludeUserIds },
                 };
             }
+            const followingDocsMonth = await Follow.find({ follower: currentUserId, status: "accepted" }).select("following").lean();
+            const followingIdsMonth = followingDocsMonth.map(f => f.following);
             filter.$or = [
                 { authorIsPrivate: { $ne: true } },
-                { author: { $in: [...(req.user.following || []), currentUserId] } }
+                { author: { $in: [...followingIdsMonth, currentUserId] } }
             ];
         } else {
             filter.authorIsPrivate = { $ne: true };
@@ -677,7 +734,8 @@ export const getTopPostsOfMonth = async (req, res) => {
             { $match: filter },
             {
                 $addFields: {
-                    likesCount: { $size: "$likes" },
+                    likes: { $setDifference: ["$likes", excludeUserIds] },
+                    likesCount: { $size: { $setDifference: ["$likes", excludeUserIds] } },
                     commentsCount: { $ifNull: ["$commentsCount", 0] },
                     sharesCount: { $ifNull: ["$sharesCount", 0] },
                 },
@@ -739,19 +797,26 @@ export const getTopPostsOfMonth = async (req, res) => {
 export const incrementShare = async (req, res) => {
     try {
         const postId = req.params.id;
-        
+        const userId = req.user.id || req.user._id;
+
         if (!mongoose.Types.ObjectId.isValid(postId)) {
             return res.status(400).json({ success: false, message: "Invalid post ID format" });
         }
 
-        const post = await Post.findByIdAndUpdate(
-            postId,
-            { $inc: { sharesCount: 1 } },
+        const post = await Post.findOneAndUpdate(
+            { _id: postId, sharedBy: { $ne: userId } },
+            { $addToSet: { sharedBy: userId }, $inc: { sharesCount: 1 } },
             { new: true }
         );
+
         if (!post) {
-            return res.status(404).json({ success: false, message: "Post not found" });
+            const exists = await Post.exists({ _id: postId });
+            if (!exists) {
+                return res.status(404).json({ success: false, message: "Post not found" });
+            }
+            return res.status(409).json({ success: false, message: "Already shared" });
         }
+
         res.json({
             success: true,
             sharesCount: post.sharesCount,
@@ -785,7 +850,7 @@ export const toggleBookmark = async (req, res) => {
     // Only enforce block/privacy checks when adding a new bookmark (removal is always allowed)
     if (!isBookmarked && post.author.toString() !== userId) {
       const [postAuthor, currentUser] = await Promise.all([
-        User.findById(post.author).select("blockedUsers isPrivate followers"),
+        User.findById(post.author).select("blockedUsers isPrivate"),
         User.findById(userId).select("blockedUsers"),
       ]);
       const isBlocked = currentUser?.blockedUsers?.some(
@@ -797,7 +862,7 @@ export const toggleBookmark = async (req, res) => {
         return res.status(403).json({ success: false, message: "Action forbidden due to block status" });
       }
       if (postAuthor?.isPrivate) {
-        const isFollower = postAuthor.followers?.some(id => id.toString() === userId);
+        const isFollower = await Follow.exists({ follower: userId, following: post.author, status: "accepted" });
         if (!isFollower) {
           return res.status(403).json({ success: false, message: "This account is private. Follow to bookmark posts." });
         }
@@ -857,7 +922,8 @@ export const getBookmarks = async (req, res) => {
     const blockerDocs = await User.find({ blockedUsers: currentUserId }).select("_id").lean();
     blockerDocs.forEach(u => blockedIds.add(u._id.toString()));
 
-    const followingIds = new Set((req.user.following || []).map(id => id.toString()));
+    const followingDocs = await Follow.find({ follower: currentUserId, status: "accepted" }).select("following").lean();
+    const followingIds = new Set(followingDocs.map(f => f.following.toString()));
 
     const authorIds = [...new Set(orderedPosts.map(p => p.author?._id?.toString()).filter(Boolean))];
     const privateNotFollowed = await User.find({

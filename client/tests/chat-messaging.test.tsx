@@ -237,6 +237,87 @@ describe('ChatPage Component', () => {
     });
   });
 
+  describe('character limit enforcement', () => {
+    beforeEach(async () => {
+      vi.mocked(axios.get).mockImplementation((url) => {
+        if (url.includes(`/api/conversation/${CONVERSATION_ID}`)) return Promise.resolve({ data: mockConversation });
+        if (url.includes(`/api/messages/${CONVERSATION_ID}`)) return Promise.resolve({ data: [] });
+        return Promise.reject();
+      });
+      vi.mocked(axios.patch).mockResolvedValue({ data: {} });
+
+      await act(async () => {
+        render(
+          <TestProvider>
+            <Suspense fallback={<div>Loading...</div>}>
+              <ChatPage params={mockParams} />
+            </Suspense>
+          </TestProvider>
+        );
+      });
+
+      await waitFor(() => {
+        expect(screen.queryByText(/No messages yet/i)).toBeInTheDocument();
+      });
+    });
+
+    it('Send button is disabled when the input is empty', async () => {
+      const sendButton = screen.getByRole('button', { name: /send/i });
+      expect(sendButton).toBeDisabled();
+    });
+
+    it('Send button becomes enabled when valid text is typed', async () => {
+      const input = screen.getByPlaceholderText('Type a message...');
+      const sendButton = screen.getByRole('button', { name: /send/i });
+
+      fireEvent.change(input, { target: { value: 'Hello!' } });
+
+      expect(sendButton).not.toBeDisabled();
+    });
+
+    it('character counter appears once the user starts typing', async () => {
+      const input = screen.getByPlaceholderText('Type a message...');
+      fireEvent.change(input, { target: { value: 'Hello' } });
+
+      await waitFor(() => {
+        expect(screen.getByText(/5 \/ 2000/)).toBeInTheDocument();
+      });
+    });
+
+    it('Send button is disabled and counter shows error when over 2000 characters', async () => {
+      const input = screen.getByPlaceholderText('Type a message...');
+      const longText = 'a'.repeat(2001);
+
+      fireEvent.change(input, { target: { value: longText } });
+
+      const sendButton = screen.getByRole('button', { name: /send/i });
+      expect(sendButton).toBeDisabled();
+
+      await waitFor(() => {
+        expect(screen.getByText(/Message too long/i)).toBeInTheDocument();
+      });
+    });
+
+    it('Send button re-enables once text is trimmed back within the limit', async () => {
+      const input = screen.getByPlaceholderText('Type a message...');
+
+      fireEvent.change(input, { target: { value: 'a'.repeat(2001) } });
+      const sendButton = screen.getByRole('button', { name: /send/i });
+      expect(sendButton).toBeDisabled();
+
+      fireEvent.change(input, { target: { value: 'Valid message' } });
+      expect(sendButton).not.toBeDisabled();
+    });
+
+    it('Send button is disabled for whitespace-only content', async () => {
+      const input = screen.getByPlaceholderText('Type a message...');
+      fireEvent.change(input, { target: { value: '     ' } });
+
+      const sendButton = screen.getByRole('button', { name: /send/i });
+      expect(sendButton).toBeDisabled();
+    });
+  });
+
   it('shows error state when clearing chat fails', async () => {
     vi.mocked(axios.get).mockImplementation((url) => {
       if (url.includes(`/api/conversation/${CONVERSATION_ID}`)) return Promise.resolve({ data: mockConversation });

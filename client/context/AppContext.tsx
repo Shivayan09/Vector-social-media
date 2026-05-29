@@ -155,10 +155,47 @@ export function AppContextProvider({
       }));
     };
 
+    const onBlockLikesCleaned = (data: { targetUserId: string; postIds?: string[] }) => {
+      if (!data?.targetUserId) return;
+
+      setPosts((prev) =>
+        prev.map((p) => {
+          if (data.postIds?.length && !data.postIds.includes(p._id)) return p;
+
+          const nextLikes = p.likes.filter((like) => {
+            const likeUserId = typeof like === "string" ? like : like._id;
+            return likeUserId !== data.targetUserId;
+          });
+
+          return nextLikes.length === p.likes.length ? p : { ...p, likes: nextLikes };
+        })
+      );
+    };
+
+    const onBlockCommentsCleaned = (data: {
+      targetUserId: string;
+      commentRemovals: Array<{ postId: string; count: number }>;
+    }) => {
+      if (!data?.commentRemovals?.length) return;
+
+      setPosts((prev) =>
+        prev.map((p) => {
+          const removal = data.commentRemovals.find((r) => r.postId === p._id);
+          if (!removal) return p;
+          return {
+            ...p,
+            commentsCount: Math.max(0, (p.commentsCount || 0) - removal.count),
+          };
+        })
+      );
+    };
+
     socket.on("connect", onConnect);
     socket.on("user:blocked", onBlocked);
     socket.on("user:unblocked", onUnblocked);
     socket.on("bookmarks:invalidated", onBookmarksInvalidated);
+    socket.on("block:likes_cleaned", onBlockLikesCleaned);
+    socket.on("block:comments_cleaned", onBlockCommentsCleaned);
 
     socket.emit("register", userData.id);
 
@@ -167,6 +204,8 @@ export function AppContextProvider({
       socket.off("user:blocked", onBlocked);
       socket.off("user:unblocked", onUnblocked);
       socket.off("bookmarks:invalidated", onBookmarksInvalidated);
+      socket.off("block:likes_cleaned", onBlockLikesCleaned);
+      socket.off("block:comments_cleaned", onBlockCommentsCleaned);
       socket.disconnect();
     };
   }, [userData?.id]);

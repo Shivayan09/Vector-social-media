@@ -176,7 +176,7 @@ export default function NotificationPanel({ search = "" }: Props) {
     try {
       setFollowLoading((prev) => ({ ...prev, [senderId]: true }));
       await axios.put(
-        `${BACKEND_URL}/api/users/${senderId}/accept`,
+        `${BACKEND_URL}/api/users/${senderId}/accept-request`,
         {},
         { withCredentials: true }
       );
@@ -208,7 +208,7 @@ export default function NotificationPanel({ search = "" }: Props) {
     try {
       setFollowLoading((prev) => ({ ...prev, [senderId]: true }));
       await axios.put(
-        `${BACKEND_URL}/api/users/${senderId}/reject`,
+        `${BACKEND_URL}/api/users/${senderId}/reject-request`,
         {},
         { withCredentials: true }
       );
@@ -306,6 +306,7 @@ export default function NotificationPanel({ search = "" }: Props) {
     follow_request: "follow request requested",
     follow_request_accepted: "accepted your follow request",
     post_removed_reported: "post removed reported",
+    comment_removed_reported: "comment removed reported",
   };
 
   const FILTER_TABS = [
@@ -462,7 +463,7 @@ export default function NotificationPanel({ search = "" }: Props) {
             >
               <div
                 onClick={() => {
-                  if (n.type === "post_removed_reported") return;
+                  if (n.type === "post_removed_reported" || n.type === "comment_removed_reported") return;
 
                   if (n.post?._id) {
                     router.push(`/main/post/${n.post._id}`);
@@ -480,7 +481,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                 }}
                 className="flex gap-3 flex-1 cursor-pointer p-2 rounded-lg"
               >
-                {n.type === "post_removed_reported" ? (
+                {n.type === "post_removed_reported" || n.type === "comment_removed_reported" ? (
                   <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
                     <span className="text-red-500 text-lg">!</span>
                   </div>
@@ -500,6 +501,10 @@ export default function NotificationPanel({ search = "" }: Props) {
                       <span className="text-red-500 font-semibold">
                         Post removed
                       </span>
+                    ) : n.type === "comment_removed_reported" ? (
+                      <span className="text-red-500 font-semibold">
+                        Comment removed
+                      </span>
                     ) : (
                       <span className="font-semibold">{getSenderName(n)}</span>
                     )}{" "}
@@ -512,6 +517,8 @@ export default function NotificationPanel({ search = "" }: Props) {
                     {n.type === "message" && "messaged you"}
                     {n.type === "post_removed_reported" &&
                       "Your post was removed after receiving too many reports"}
+                    {n.type === "comment_removed_reported" &&
+                      "Your comment was removed after receiving too many reports"}
                   </p>
 
                   <p className="surface-text-muted mt-1 text-xs">

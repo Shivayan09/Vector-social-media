@@ -124,11 +124,16 @@ describe('Comment Routes', () => {
         .set('Cookie', cookie1);
 
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-      expect(res.body.length).toBe(2);
-      expect(res.body[0].content).toBe("Comment 1");
-      expect(res.body[1].content).toBe("Comment 2");
-      expect(res.body[0].author).toBeDefined();
+      expect(res.body).toHaveProperty("comments");
+      expect(res.body).toHaveProperty("nextCursor");
+      expect(res.body).toHaveProperty("hasMore");
+      expect(Array.isArray(res.body.comments)).toBe(true);
+      expect(res.body.comments.length).toBe(2);
+      expect(res.body.comments[0].content).toBe("Comment 2");
+      expect(res.body.comments[1].content).toBe("Comment 1");
+      expect(res.body.comments[0].author).toBeDefined();
+      expect(res.body.hasMore).toBe(false);
+      expect(res.body.nextCursor).toBeNull();
     });
 
     it('should return 404 if trying to get comments for non-existent post', async () => {

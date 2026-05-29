@@ -117,4 +117,51 @@ describe('Auth Endpoints', () => {
       expect(response.body.message).toBe('Password reset email sent successfully');
     });
   });
+
+  describe('Token version validation (optionalAuth and authMiddleware)', () => {
+    let cookie;
+    let user;
+
+    beforeEach(async () => {
+      await request(app).post('/api/auth/register').send(validUser);
+      const loginRes = await request(app).post('/api/auth/login').send({
+        username: validUser.username,
+        password: validUser.password
+      });
+      cookie = loginRes.headers['set-cookie'];
+      user = await User.findOne({ username: validUser.username });
+    });
+
+    it('should authenticate the user for optionalAuth when token is valid and version matches', async () => {
+      const res = await request(app)
+        .get('/api/posts')
+        .set('Cookie', cookie);
+
+      expect(res.status).toBe(200);
+      expect(res.body.posts).toBeDefined();
+    });
+
+    it('should treat user as unauthenticated for optionalAuth after password reset (tokenVersion mismatch)', async () => {
+      // 1. Reset password / increment token version in DB
+      user.tokenVersion = (user.tokenVersion || 0) + 1;
+      await user.save();
+
+      // 2. Request optionalAuth endpoint with old cookie (which contains old version)
+      // Since it is optional, the endpoint should STILL succeed (status 200) but it should NOT use user's context (e.g. blockers, following)
+      const optionalRes = await request(app)
+        .get('/api/posts')
+        .set('Cookie', cookie);
+
+      expect(optionalRes.status).toBe(200);
+
+      // Now verify authMiddleware fails with 401
+      const authRequiredRes = await request(app)
+        .get('/api/auth/me')
+        .set('Cookie', cookie);
+
+      expect(authRequiredRes.status).toBe(401);
+      expect(authRequiredRes.body.success).toBe(false);
+      expect(authRequiredRes.body.message).toContain("Token invalidated due to password reset!");
+    });
+  });
 });

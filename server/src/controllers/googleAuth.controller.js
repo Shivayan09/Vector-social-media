@@ -1,7 +1,7 @@
 import { OAuth2Client } from "google-auth-library";
 import crypto from "crypto";
-import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
+import { generateToken, getCookieOptions } from "../utils/generateToken.js";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -152,20 +152,9 @@ export const googleAuth = async (req, res) => {
       }
     }
 
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    const token = generateToken(user._id, user.tokenVersion || 0);
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite:
-        process.env.NODE_ENV === "production" ? "none" : "lax",
-      path: "/",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie("token", token, getCookieOptions());
 
     res.json({
       success: true,

@@ -2,6 +2,7 @@ import { jest } from "@jest/globals";
 import request from "supertest";
 import jwt from "jsonwebtoken";
 import User from "../src/models/user.model.js";
+import Follow from "../src/models/follow.model.js";
 import Post from "../src/models/post.model.js";
 
 // Mock socket to avoid "Socket.io not initialized" error in block/unblock controllers
@@ -33,10 +34,9 @@ describe("Block System Integrity", () => {
 
       expect(res.status).toBe(403);
 
-      const updatedAlice = await User.findById(alice._id);
-      const updatedBob = await User.findById(bob._id);
-      expect(updatedAlice.following.map((id) => id.toString())).not.toContain(bob._id.toString());
-      expect(updatedBob.followers.map((id) => id.toString())).not.toContain(alice._id.toString());
+      // Verify no Follow document was created
+      const followDoc = await Follow.findOne({ follower: alice._id, following: bob._id });
+      expect(followDoc).toBeNull();
     });
 
     it("should reject a follow when the requester has blocked the target", async () => {
@@ -70,8 +70,9 @@ describe("Block System Integrity", () => {
         .put(`/api/users/${bob._id}/follow`)
         .set("Cookie", cookieFor(alice));
 
-      const updatedAlice = await User.findById(alice._id);
-      expect(updatedAlice.following.map((id) => id.toString())).not.toContain(bob._id.toString());
+      // Verify no Follow document was created
+      const updatedFollow = await Follow.findOne({ follower: alice._id, following: bob._id });
+      expect(updatedFollow).toBeNull();
     });
   });
 
@@ -84,17 +85,20 @@ describe("Block System Integrity", () => {
         name: "Bob", surname: "B", email: "bob_af1@test.com", username: "bob_af1", password: "pwd123", bio: "", description: "", isPrivate: false,
       });
 
+      // Bob blocks Alice (the one who would accept), AND seed a pending follow request from bob to alice
       await User.updateOne({ _id: bob._id }, { $addToSet: { blockedUsers: alice._id } });
-      await User.updateOne({ _id: alice._id }, { $addToSet: { followRequests: bob._id } });
+      await Follow.create({ follower: bob._id, following: alice._id, status: 'pending' });
 
-      await request(app)
+      const res = await request(app)
         .put(`/api/users/${bob._id}/accept-request`)
         .set("Cookie", cookieFor(alice));
 
-      const updatedAlice = await User.findById(alice._id);
-      const updatedBob = await User.findById(bob._id);
-      expect(updatedAlice.followers.map((id) => id.toString())).not.toContain(bob._id.toString());
-      expect(updatedBob.following.map((id) => id.toString())).not.toContain(alice._id.toString());
+      // Should be rejected due to block status
+      expect(res.status).toBe(403);
+
+      // Verify Follow document was NOT promoted to accepted
+      const followDoc = await Follow.findOne({ follower: bob._id, following: alice._id });
+      expect(followDoc?.status).not.toBe('accepted');
     });
   });
 
