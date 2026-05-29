@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import {
   ArrowRight,
+  AtSign,
   Bell,
   Heart,
   MessageCircle,
@@ -33,18 +34,12 @@ export default function NotificationPanel({ search = "" }: Props) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
   const [warningOpen, setWarningOpen] = useState(false);
-  const [followLoading, setFollowLoading] = useState<Record<string, boolean>>(
-    {}
-  );
+  const [followLoading, setFollowLoading] = useState<Record<string, boolean>>({});
   const [senderFollowState, setSenderFollowState] = useState<
     Record<string, { isFollowing: boolean; isRequested: boolean }>
   >({});
-  const [messageLoading, setMessageLoading] = useState<Record<string, boolean>>(
-    {}
-  );
-  const [deleteLoading, setDeleteLoading] = useState<Record<string, boolean>>(
-    {}
-  );
+  const [messageLoading, setMessageLoading] = useState<Record<string, boolean>>({});
+  const [deleteLoading, setDeleteLoading] = useState<Record<string, boolean>>({});
   const [modalOpen, setModalOpen] = useState(false);
   const [singleDeleteId, setSingleDeleteId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -97,10 +92,8 @@ export default function NotificationPanel({ search = "" }: Props) {
           data.forEach((notification) => {
             if (notification.sender?._id) {
               followStates[notification.sender._id] = {
-                isFollowing:
-                  notification.sender.isFollowedByCurrentUser ?? false,
-                isRequested:
-                  notification.sender.isRequestedByCurrentUser ?? false,
+                isFollowing: notification.sender.isFollowedByCurrentUser ?? false,
+                isRequested: notification.sender.isRequestedByCurrentUser ?? false,
               };
             }
           });
@@ -108,9 +101,7 @@ export default function NotificationPanel({ search = "" }: Props) {
         });
       } catch (err: unknown) {
         if (axios.isAxiosError(err)) {
-          toast.error(
-            err.response?.data?.message || "Failed to fetch notifications"
-          );
+          toast.error(err.response?.data?.message || "Failed to fetch notifications");
         } else {
           toast.error("Failed to fetch notifications");
         }
@@ -165,7 +156,6 @@ export default function NotificationPanel({ search = "" }: Props) {
         {},
         { withCredentials: true }
       );
-
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     } catch (err) {
       console.error(err);
@@ -190,10 +180,7 @@ export default function NotificationPanel({ search = "" }: Props) {
       );
       setSenderFollowState((prev) => ({
         ...prev,
-        [senderId]: prev[senderId] || {
-          isFollowing: false,
-          isRequested: false,
-        },
+        [senderId]: prev[senderId] || { isFollowing: false, isRequested: false },
       }));
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
@@ -302,6 +289,7 @@ export default function NotificationPanel({ search = "" }: Props) {
     follow: "follow followed",
     like: "like liked",
     comment: "comment commented",
+    mention: "mention mentioned",
     message: "message messaged",
     follow_request: "follow request requested",
     follow_request_accepted: "accepted your follow request",
@@ -316,7 +304,8 @@ export default function NotificationPanel({ search = "" }: Props) {
       id: "comment" as const,
       label: "Comments",
       Icon: MessageSquare,
-      types: ["comment"],
+      // mention notifications appear in the Comments tab too
+      types: ["comment", "mention"],
     },
     {
       id: "follow" as const,
@@ -353,7 +342,7 @@ export default function NotificationPanel({ search = "" }: Props) {
     like: { icon: Heart, message: "No likes yet. Share something great!" },
     comment: {
       icon: MessageSquare,
-      message: "No comments on your posts yet.",
+      message: "No comments or mentions yet.",
     },
     follow: { icon: UserCheck, message: "No new follower notifications." },
     message: {
@@ -371,7 +360,7 @@ export default function NotificationPanel({ search = "" }: Props) {
     const query = search.toLowerCase();
     if (query) {
       const searchable =
-        `${getSenderName(n)} ${getSenderUsername(n)} ${typeText[n.type]}`.toLowerCase();
+        `${getSenderName(n)} ${getSenderUsername(n)} ${typeText[n.type] ?? ""}`.toLowerCase();
       if (!searchable.includes(query)) return false;
     }
 
@@ -457,167 +446,153 @@ export default function NotificationPanel({ search = "" }: Props) {
             const senderId = n.sender?._id;
 
             return (
-            <div
-              key={n._id}
-              className={`notification-card ${!n.isRead ? "notification-card-unread" : ""}`}
-            >
               <div
-                onClick={() => {
-                  if (n.type === "post_removed_reported" || n.type === "comment_removed_reported") return;
-
-                  if (n.post?._id) {
-                    router.push(`/main/post/${n.post._id}`);
-                  } else if (n.type === "message") {
-                    if (senderId) {
-                      void handleReplyToMessage(
-                        n._id,
-                        senderId,
-                        n.conversation?._id
-                      );
-                    }
-                  } else if (n.sender?.username) {
-                    router.push(`/main/user/${n.sender.username}`);
-                  }
-                }}
-                className="flex gap-3 flex-1 cursor-pointer p-2 rounded-lg"
+                key={n._id}
+                className={`notification-card ${!n.isRead ? "notification-card-unread" : ""}`}
               >
-                {n.type === "post_removed_reported" || n.type === "comment_removed_reported" ? (
-                  <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
-                    <span className="text-red-500 text-lg">!</span>
-                  </div>
-                ) : (
-                  <Image
-                    alt={getSenderName(n)}
-                    src={getSenderAvatar(n)}
-                    width={40}
-                    height={40}
-                    className="h-10 w-10 rounded-full object-cover"
-                  />
-                )}
+                <div
+                  onClick={() => {
+                    if (
+                      n.type === "post_removed_reported" ||
+                      n.type === "comment_removed_reported"
+                    )
+                      return;
 
-                <div>
-                  <p className="text-foreground">
-                    {n.type === "post_removed_reported" ? (
-                      <span className="text-red-500 font-semibold">
-                        Post removed
-                      </span>
-                    ) : n.type === "comment_removed_reported" ? (
-                      <span className="text-red-500 font-semibold">
-                        Comment removed
-                      </span>
-                    ) : (
-                      <span className="font-semibold">{getSenderName(n)}</span>
-                    )}{" "}
-                    {n.type === "follow" && "followed you"}
-                    {n.type === "follow_request" && "wants to follow you"}
-                    {n.type === "follow_request_accepted" &&
-                      "accepted your follow request"}
-                    {n.type === "like" && "liked your post"}
-                    {n.type === "comment" && "commented on your post"}
-                    {n.type === "message" && "messaged you"}
-                    {n.type === "post_removed_reported" &&
-                      "Your post was removed after receiving too many reports"}
-                    {n.type === "comment_removed_reported" &&
-                      "Your comment was removed after receiving too many reports"}
-                  </p>
-
-                  <p className="surface-text-muted mt-1 text-xs">
-                    {new Date(n.createdAt).toLocaleString()}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2 ml-auto">
-                  {n.type === "message" && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (senderId) {
-                          void handleReplyToMessage(
-                            n._id,
-                            senderId,
-                            n.conversation?._id
-                          );
-                        }
-                      }}
-                      disabled={messageLoading[n._id] || !senderId}
-                      className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:opacity-70 text-white rounded-md transition"
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                      {messageLoading[n._id] ? "Loading..." : "Reply"}
-                    </button>
+                    if (n.post?._id) {
+                      router.push(`/main/post/${n.post._id}`);
+                    } else if (n.type === "message") {
+                      if (senderId) {
+                        void handleReplyToMessage(n._id, senderId, n.conversation?._id);
+                      }
+                    } else if (n.sender?.username) {
+                      router.push(`/main/user/${n.sender.username}`);
+                    }
+                  }}
+                  className="flex gap-3 flex-1 cursor-pointer p-2 rounded-lg"
+                >
+                  {n.type === "post_removed_reported" ||
+                  n.type === "comment_removed_reported" ? (
+                    <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
+                      <span className="text-red-500 text-lg">!</span>
+                    </div>
+                  ) : n.type === "mention" ? (
+                    // Distinct icon for mention notifications
+                    <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                      <AtSign className="h-5 w-5 text-blue-500" />
+                    </div>
+                  ) : (
+                    <Image
+                      alt={getSenderName(n)}
+                      src={getSenderAvatar(n)}
+                      width={40}
+                      height={40}
+                      className="h-10 w-10 rounded-full object-cover"
+                    />
                   )}
 
-                  {n.type === "follow_request_accepted" && senderId && (
-                    <div onClick={(e) => e.stopPropagation()}>
+                  <div>
+                    <p className="text-foreground">
+                      {n.type === "post_removed_reported" ? (
+                        <span className="text-red-500 font-semibold">Post removed</span>
+                      ) : n.type === "comment_removed_reported" ? (
+                        <span className="text-red-500 font-semibold">Comment removed</span>
+                      ) : (
+                        <span className="font-semibold">{getSenderName(n)}</span>
+                      )}{" "}
+                      {n.type === "follow" && "followed you"}
+                      {n.type === "follow_request" && "wants to follow you"}
+                      {n.type === "follow_request_accepted" && "accepted your follow request"}
+                      {n.type === "like" && "liked your post"}
+                      {n.type === "comment" && "commented on your post"}
+                      {n.type === "mention" && "mentioned you in a comment"}
+                      {n.type === "message" && "messaged you"}
+                      {n.type === "post_removed_reported" &&
+                        "Your post was removed after receiving too many reports"}
+                      {n.type === "comment_removed_reported" &&
+                        "Your comment was removed after receiving too many reports"}
+                    </p>
+
+                    <p className="surface-text-muted mt-1 text-xs">
+                      {new Date(n.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 ml-auto">
+                    {n.type === "message" && (
                       <button
-                        onClick={() => {
-                          void handleReplyToMessage(
-                            n._id,
-                            senderId,
-                            n.conversation?._id
-                          );
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (senderId) {
+                            void handleReplyToMessage(n._id, senderId, n.conversation?._id);
+                          }
                         }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
+                        disabled={messageLoading[n._id] || !senderId}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:opacity-70 text-white rounded-md transition"
                       >
                         <MessageCircle className="h-4 w-4" />
-                        Message
+                        {messageLoading[n._id] ? "Loading..." : "Reply"}
                       </button>
-                    </div>
-                  )}
+                    )}
 
-                  {n.type === "follow" && senderId && (
-                    <div onClick={(e) => e.stopPropagation()}>
-                      {senderFollowState[senderId]?.isFollowing ? (
+                    {n.type === "follow_request_accepted" && senderId && (
+                      <div onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => {
-                            void handleReplyToMessage(
-                              n._id,
-                              senderId,
-                              n.conversation?._id
-                            );
+                            void handleReplyToMessage(n._id, senderId, n.conversation?._id);
                           }}
                           className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
                         >
                           <MessageCircle className="h-4 w-4" />
                           Message
                         </button>
-                      ) : (
-                        <FollowButton
-                          userId={senderId}
-                          isFollowing={false}
-                          isRequested={
-                            senderFollowState[senderId]?.isRequested ?? false
-                          }
-                          isFollowBack={true}
-                          onFollowChange={(next) =>
-                            setSenderFollowState((prev) => ({
-                              ...prev,
-                              [senderId]: {
-                                isFollowing: next,
-                                isRequested: false,
-                              },
-                            }))
-                          }
-                        />
-                      )}
-                    </div>
-                  )}
+                      </div>
+                    )}
 
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (deleteLoading[n._id]) return;
-                      setSingleDeleteId(n._id);
-                    }}
-                    disabled={deleteLoading[n._id]}
-                    className="p-1 text-foreground transition hover:text-red-400 disabled:pointer-events-none disabled:opacity-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                    {n.type === "follow" && senderId && (
+                      <div onClick={(e) => e.stopPropagation()}>
+                        {senderFollowState[senderId]?.isFollowing ? (
+                          <button
+                            onClick={() => {
+                              void handleReplyToMessage(n._id, senderId, n.conversation?._id);
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                            Message
+                          </button>
+                        ) : (
+                          <FollowButton
+                            userId={senderId}
+                            isFollowing={false}
+                            isRequested={senderFollowState[senderId]?.isRequested ?? false}
+                            isFollowBack={true}
+                            onFollowChange={(next) =>
+                              setSenderFollowState((prev) => ({
+                                ...prev,
+                                [senderId]: { isFollowing: next, isRequested: false },
+                              }))
+                            }
+                          />
+                        )}
+                      </div>
+                    )}
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (deleteLoading[n._id]) return;
+                        setSingleDeleteId(n._id);
+                      }}
+                      disabled={deleteLoading[n._id]}
+                      className="p-1 text-foreground transition hover:text-red-400 disabled:pointer-events-none disabled:opacity-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )})}
+            );
+          })}
         </div>
       )}
 
