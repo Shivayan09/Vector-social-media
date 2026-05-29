@@ -58,6 +58,7 @@ export type Comment = {
   author?: UserSummary;
   content: string;
   createdAt: string;
+  mentions?: string[]; // userIds of @mentioned users
 };
 
 export type Conversation = {
@@ -85,7 +86,16 @@ export type Message = {
 
 export type Notification = {
   _id: string;
-  type: "follow" | "like" | "comment" | "message" | "follow_request" | "follow_request_accepted" | "post_removed_reported" | "comment_removed_reported";
+  type:
+    | "follow"
+    | "like"
+    | "comment"
+    | "mention"          // new: @username mention in a comment
+    | "message"
+    | "follow_request"
+    | "follow_request_accepted"
+    | "post_removed_reported"
+    | "comment_removed_reported";
   sender: UserSummary | null;
   post?: {
     _id: string;
