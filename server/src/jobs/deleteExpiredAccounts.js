@@ -91,3 +91,15 @@ export const startDeletionCronJob = () => {
   });
   console.log("[Cron] Account deletion job scheduled (runs daily at 2:00 AM).");
 };
+
+// Exported for testing
+export const hardDeleteExpiredUsers = async () => {
+  const now = new Date();
+  const expiredUsers = await User.find({
+    isDeactivated: true,
+    deletionScheduledAt: { $lte: now },
+  });
+  for (const user of expiredUsers) {
+    await hardDeleteUser(user);
+  }
+};
