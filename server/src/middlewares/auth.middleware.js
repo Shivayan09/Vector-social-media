@@ -26,6 +26,13 @@ const authMiddleware = async (req, res, next) => {
             });
         }
 
+        if (user.isDeactivated) {
+            return res.status(401).json({
+                success: false,
+                message: "Account is deactivated.",
+            });
+        }
+
         req.user = user;
         next();
     } catch {
