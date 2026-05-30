@@ -192,9 +192,16 @@ export const login = async (req, res) => {
             })
         }
 
-        // Auto-reactivate if account was scheduled for deletion
+        // Auto-reactivate only within the 30-day grace period
         let reactivated = false;
         if (user.isDeactivated) {
+            const now = new Date();
+            if (user.deletionScheduledAt && user.deletionScheduledAt <= now) {
+                return res.status(403).json({
+                    success: false,
+                    message: "This account has been permanently deleted and cannot be recovered.",
+                });
+            }
             user.isDeactivated = false;
             user.deletionScheduledAt = null;
             await user.save();
