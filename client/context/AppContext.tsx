@@ -11,6 +11,8 @@ import {
 } from "react";
 import type { Post } from "@/lib/types";
 import { socket } from "@/socket/socket";
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 
 axios.defaults.withCredentials = true;
 
@@ -63,6 +65,7 @@ export function AppContextProvider({
 }) {
   const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [userData, setUserData] = useState<User | null>(null);
+  const router = useRouter();
 
 
   const [loading, setLoading] = useState(false);
@@ -190,12 +193,96 @@ export function AppContextProvider({
       );
     };
 
+    const onNotificationNew = async (data: { notificationId?: string; type?: string }) => {
+      try {
+        if (typeof window !== "undefined" && window.location.pathname === "/main/activity") {
+          return;
+        }
+
+        const { data: notifications } = await axios.get<any[]>(
+          `${BACKEND_URL}/api/notifications?page=1&limit=1`,
+          { withCredentials: true }
+        );
+
+        if (notifications && notifications[0]) {
+          const notif = notifications[0];
+
+          // Skip if stale (older than 10 seconds) or already read
+          const isStale = new Date().getTime() - new Date(notif.createdAt).getTime() > 10000;
+          if (notif.isRead || isStale) return;
+
+          // Skip if message and already on that specific conversation page
+          if (
+            notif.type === "message" &&
+            notif.conversation?._id &&
+            typeof window !== "undefined" &&
+            window.location.pathname.includes(`/main/chat/${notif.conversation._id}`)
+          ) {
+            return;
+          }
+
+          const senderName = notif.sender?.name || notif.sender?.username || "Someone";
+          let message = "";
+
+          switch (notif.type) {
+            case "follow":
+              message = `👤 ${senderName} followed you!`;
+              break;
+            case "follow_request":
+              message = `📬 ${senderName} sent you a follow request!`;
+              break;
+            case "follow_request_accepted":
+              message = `✅ ${senderName} accepted your follow request!`;
+              break;
+            case "like":
+              message = `❤️ ${senderName} liked your post!`;
+              break;
+            case "comment":
+              message = `💬 ${senderName} commented on your post!`;
+              break;
+            case "message":
+              message = `✉️ New message from ${senderName}`;
+              break;
+            case "post_removed_reported":
+              message = `⚠️ Your post was removed due to excessive reports.`;
+              break;
+            case "comment_removed_reported":
+              message = `⚠️ Your comment was removed due to excessive reports.`;
+              break;
+            default:
+              message = `🔔 New notification from ${senderName}`;
+          }
+
+          toast.info(message, {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            onClick: () => {
+              if (notif.type === "message" && notif.conversation?._id) {
+                router.push(`/main/chat/${notif.conversation._id}`);
+              } else if (notif.post?._id) {
+                router.push(`/main/post/${notif.post._id}`);
+              } else if (notif.sender?.username) {
+                router.push(`/main/user/${notif.sender.username}`);
+              }
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch notification details for toast:", err);
+      }
+    };
+
     socket.on("connect", onConnect);
     socket.on("user:blocked", onBlocked);
     socket.on("user:unblocked", onUnblocked);
     socket.on("bookmarks:invalidated", onBookmarksInvalidated);
     socket.on("block:likes_cleaned", onBlockLikesCleaned);
     socket.on("block:comments_cleaned", onBlockCommentsCleaned);
+    socket.on("notification:new", onNotificationNew);
 
     socket.emit("register", userData.id);
 
@@ -206,9 +293,10 @@ export function AppContextProvider({
       socket.off("bookmarks:invalidated", onBookmarksInvalidated);
       socket.off("block:likes_cleaned", onBlockLikesCleaned);
       socket.off("block:comments_cleaned", onBlockCommentsCleaned);
+      socket.off("notification:new", onNotificationNew);
       socket.disconnect();
     };
-  }, [userData?.id]);
+  }, [userData?.id, BACKEND_URL, router]);
 
   return (
     <AppContext.Provider
