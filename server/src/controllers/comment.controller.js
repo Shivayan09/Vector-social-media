@@ -1,9 +1,13 @@
+import mongoose from "mongoose";
 import Comment from "../models/comment.model.js";
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
 import Follow from "../models/follow.model.js";
 import Notification from "../models/notification.model.js";
 import { getIO } from "../socket/socket.js";
+
+// Hard upper bound on comments returned per request.
+const MAX_LIMIT = 50;
 
 export const addComment = async (req, res) => {
     try {
@@ -115,8 +119,8 @@ export const getPostComments = async (req, res) => {
             return res.status(403).json({ message: "This post is from a private account. Follow them to see it." });
         }
 
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 20;
+        const cursor = req.query.cursor || null;
+        const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), MAX_LIMIT);
 
         let excludeUserIds = [];
         if (req.user) {
@@ -127,15 +131,28 @@ export const getPostComments = async (req, res) => {
             excludeUserIds = [...blockedIds, ...blockerIds];
         }
 
-        const comments = await Comment.find({
+        let filter = {
             post: postId,
             ...(excludeUserIds.length ? { author: { $nin: excludeUserIds } } : {}),
-        })
-            .sort({ createdAt: 1 })
-            .skip((page - 1) * limit)
+        };
+
+        if (cursor) {
+            if (mongoose.Types.ObjectId.isValid(cursor)) {
+                filter._id = { $lt: cursor };
+            } else {
+                return res.status(400).json({ success: false, message: "Invalid cursor format" });
+            }
+        }
+
+        const comments = await Comment.find(filter)
+            .sort({ _id: -1 })
             .limit(limit)
             .populate("author", "username name avatar");
-        res.json(comments);
+
+        const hasMore = comments.length === limit;
+        const nextCursor = hasMore ? comments[comments.length - 1]._id : null;
+
+        res.json({ comments, nextCursor, hasMore });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useAppContext } from "@/context/AppContext";
-import type { Notification } from "@/lib/types";
 import { socket } from "@/socket/socket";
 
 export default function NotificationBell() {
@@ -17,12 +16,11 @@ export default function NotificationBell() {
 
   const fetchUnreadCount = useCallback(async () => {
     try {
-      const { data } = await axios.get<Notification[]>(
-        `${BACKEND_URL}/api/notifications`,
+      const { data } = await axios.get<{ unreadCount: number }>(
+        `${BACKEND_URL}/api/notifications?countOnly=true`,
         { withCredentials: true }
       );
-      const unread = data.filter((n) => !n.isRead).length;
-      setUnreadCount(unread);
+      setUnreadCount(data.unreadCount);
     } catch {
       console.error("Failed to fetch notifications");
     }

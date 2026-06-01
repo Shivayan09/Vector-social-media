@@ -40,6 +40,8 @@ npm install
 
 ### 3. Create environment files
 
+> **Note**: To get your environment variables working, check the "Setting up Third-Party Services" guide in the root `README.md`.
+
 Create `client/.env.local`:
 
 ```env

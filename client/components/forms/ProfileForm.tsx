@@ -7,6 +7,7 @@ import { Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast } from "react-toastify";
+import { getErrorMessage } from "@/lib/error";
 
 export default function ProfileForm() {
     const fileRef = useRef<HTMLInputElement | null>(null);
@@ -56,11 +57,7 @@ export default function ProfileForm() {
                 toast.error(data.message);
             }
         } catch (error: unknown) {
-            if (error instanceof Error) {
-                toast.error(error.message);
-            } else {
-                toast.error("Something went wrong");
-            }
+            toast.error(getErrorMessage(error));
         } finally {
             setLoading(false);
         }

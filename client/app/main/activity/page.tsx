@@ -25,6 +25,7 @@ useEffect(() => {
       );
 
       setPendingFollowCount(data.length);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       console.error("Failed to fetch pending follow requests");
     }
@@ -61,7 +62,7 @@ useEffect(() => {
 </button>
         </div>
 
-        <div className="flex-grow flex flex-col mt-5 overflow-hidden">
+        <div className="grow flex flex-col mt-5 overflow-hidden">
          {view === "notifications" ? (
   <>
     <div className="search-pill">

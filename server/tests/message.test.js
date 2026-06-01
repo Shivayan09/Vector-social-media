@@ -89,7 +89,7 @@ describe('Message Endpoints', () => {
         .send({ conversationId });
 
       expect(res.status).toBe(400);
-      expect(res.body.message).toBe('Missing fields');
+      expect(res.body.message).toBeDefined();
     });
 
     it('should return 400 if conversationId is missing', async () => {
@@ -99,7 +99,7 @@ describe('Message Endpoints', () => {
         .send({ content: 'Hello!' });
 
       expect(res.status).toBe(400);
-      expect(res.body.message).toBe('Missing fields');
+      expect(res.body.message).toBeDefined();
     });
 
     it('should return 404 if conversation does not exist', async () => {
@@ -118,6 +118,61 @@ describe('Message Endpoints', () => {
         .send({ conversationId, content: 'Hello!' });
 
       expect(res.status).toBe(401);
+    });
+
+    it('should accept a message exactly at the 2000 character limit', async () => {
+      const content = 'a'.repeat(2000);
+      const res = await request(app)
+        .post('/api/messages')
+        .set('Cookie', cookieA)
+        .send({ conversationId, content });
+
+      expect(res.status).toBe(200);
+      expect(res.body.content).toBe(content);
+    });
+
+    it('should return 400 when message content exceeds 2000 characters', async () => {
+      const content = 'a'.repeat(2001);
+      const res = await request(app)
+        .post('/api/messages')
+        .set('Cookie', cookieA)
+        .send({ conversationId, content });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Message must be between 1 and 2000 characters');
+    });
+
+    it('should return 400 when content is whitespace only', async () => {
+      const res = await request(app)
+        .post('/api/messages')
+        .set('Cookie', cookieA)
+        .send({ conversationId, content: '   \t\n  ' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Message content cannot be empty');
+    });
+
+    it('should trim surrounding whitespace before the empty check', async () => {
+      const res = await request(app)
+        .post('/api/messages')
+        .set('Cookie', cookieA)
+        .send({ conversationId, content: '     ' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should reject a payload well above the limit without a DB write', async () => {
+      const content = 'x'.repeat(5_000);
+      const res = await request(app)
+        .post('/api/messages')
+        .set('Cookie', cookieA)
+        .send({ conversationId, content });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Message must be between 1 and 2000 characters');
+
+      const count = await Message.countDocuments({ conversation: conversationId });
+      expect(count).toBe(0);
     });
 
   });

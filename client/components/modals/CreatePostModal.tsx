@@ -15,7 +15,7 @@ type CreateModalProps = {
     onPostCreated: (post: Post) => void;
 };
 
-export default function CreatePostModal({onClose,onPostCreated}: CreateModalProps) {
+export default function CreatePostModal({ onClose, onPostCreated }: CreateModalProps) {
     const [visible, setVisible] = useState(true);
     const [intent, setIntent] = useState("");
     const [content, setContent] = useState("");
@@ -38,23 +38,29 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
         const savedDraft = localStorage.getItem("postDraft");
 
         if (savedDraft) {
-            const parsedDraft = JSON.parse(savedDraft);
+            // ✅ Wrap in try/catch — bad JSON silently clears the draft
+            try {
+                const parsedDraft = JSON.parse(savedDraft);
 
-            const shouldRestore = window.confirm(
-                "You have a saved draft. Restore it?"
-            );
+                const shouldRestore = window.confirm(
+                    "You have a saved draft. Restore it?"
+                );
 
-            if (shouldRestore) {
-                setContent(parsedDraft.content || "");
-                setIntent(parsedDraft.intent || "");
+                if (shouldRestore) {
+                    setContent(parsedDraft.content || "");
+                    setIntent(parsedDraft.intent || "");
 
-                if (parsedDraft.savedAt) {
-                    setLastSaved(new Date(parsedDraft.savedAt));
+                    if (parsedDraft.savedAt) {
+                        setLastSaved(new Date(parsedDraft.savedAt));
+                    }
                 }
+            } catch {
+                // Draft is corrupted — remove it and open modal with empty fields
+                localStorage.removeItem("postDraft");
             }
         }
     }, []);
-    
+
     useEffect(() => {
         const interval = setInterval(() => {
             if (!content.trim() && !intent) return;
@@ -144,7 +150,7 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                 formData.append("image", imageFile);
             }
 
-            const { data } = await axios.post(BACKEND_URL + "/api/posts", formData, { 
+            const { data } = await axios.post(BACKEND_URL + "/api/posts", formData, {
                 withCredentials: true,
                 headers: { "Content-Type": "multipart/form-data" }
             });
@@ -165,18 +171,19 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
             setLoading(false);
         }
     };
+
     const handleSaveDraft = () => {
-    const draft = {
-        content,
-        intent,
-    };
+        const draft = {
+            content,
+            intent,
+        };
 
-    localStorage.setItem(
-        "postDraft",
-        JSON.stringify(draft)
-    );
+        localStorage.setItem(
+            "postDraft",
+            JSON.stringify(draft)
+        );
 
-    toast.success("Draft saved!");
+        toast.success("Draft saved!");
     };
 
     const intents = [
@@ -189,12 +196,12 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
 
     return (
         <>
-            <div 
-                onClick={handleClose} 
+            <div
+                onClick={handleClose}
                 className={cn(
                     "fixed inset-0 z-60 bg-black/60 backdrop-blur-sm transition-opacity duration-300",
                     visible ? "opacity-100" : "opacity-0"
-                )} 
+                )}
             />
 
             <div className={cn(
@@ -214,8 +221,8 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                             <HelpCircle size={16} />
                         </button>
                     </div>
-                    <button 
-                        onClick={handleClose} 
+                    <button
+                        onClick={handleClose}
                         className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-foreground/70 hover:text-foreground"
                     >
                         <X size={20} />
@@ -248,8 +255,8 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                                     onClick={() => setIntent(item.value)}
                                     className={cn(
                                         "px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 border",
-                                        intent === item.value 
-                                            ? "bg-primary text-primary-foreground border-primary shadow-md scale-105" 
+                                        intent === item.value
+                                            ? "bg-primary text-primary-foreground border-primary shadow-md scale-105"
                                             : "bg-black/5 dark:bg-white/5 text-foreground/60 border-transparent hover:border-foreground/20 hover:bg-black/10 dark:hover:bg-white/10"
                                     )}
                                 >
@@ -261,10 +268,10 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
 
                     {/* Content Area */}
                     <div className="relative">
-                        <textarea 
+                        <textarea
                             maxLength={MAX_CHARS}
-                            placeholder="What's on your mind? Share your thoughts..." 
-                            value={content} 
+                            placeholder="What's on your mind? Share your thoughts..."
+                            value={content}
                             onChange={(e) => {
                                 const value = e.target.value;
 
@@ -273,14 +280,13 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                                 } else {
                                     toast.error("Post content cannot exceed 500 characters");
                                 }
-                            }} 
+                            }}
                             className={cn(
                                 "w-full h-40 resize-none rounded-2xl p-4 outline-none transition-all duration-200",
                                 "bg-black/5 dark:bg-white/5 border-2 border-transparent focus:border-primary/30",
                                 "text-foreground placeholder:text-foreground/40 text-lg leading-relaxed"
-                            )} 
+                            )}
                         />
-                        
                     </div>
 
                     <div className={cn(
@@ -288,8 +294,8 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                         content.length >= MAX_CHARS
                             ? "text-red-500"
                             : content.length >= 400
-                            ? "text-yellow-500"
-                            : "text-foreground/40"
+                                ? "text-yellow-500"
+                                : "text-foreground/40"
                     )}>
                         {content.length} / {MAX_CHARS}
                     </div>
@@ -309,50 +315,50 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                     {/* Drop Zone - Visible when no image selected */}
                     {!imagePreview && (
                         <>
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                    processFile(file);
-                                }
-                            }}
-                        />
-                        <div
-                            onDragEnter={handleDragEnter}
-                            onDragLeave={handleDragLeave}
-                            onDragOver={handleDragOver}
-                            onDrop={handleDrop}
-                            onClick={() => fileInputRef.current?.click()}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter" || e.key === " ") {
-                                    e.preventDefault();
-                                    fileInputRef.current?.click();
-                                }
-                            }}
-                            role="button"
-                            tabIndex={0}
-                            className={cn(
-                                "mt-4 p-4 rounded-2xl border-2 border-dashed transition-all duration-200 flex flex-col items-center justify-center cursor-pointer",
-                                isDragActive
-                                    ? "bg-primary/10 border-primary ring-2 ring-primary/30"
-                                    : "border-foreground/20 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 hover:border-foreground/40"
-                            )}
-                        >
-                            <ImageIcon size={28} className={cn(
-                                "mb-2 transition-all duration-200",
-                                isDragActive ? "text-primary animate-bounce" : "text-foreground/50"
-                            )} />
-                            <p className="text-xs font-semibold text-foreground/70 text-center">
-                                Drop your photos here
-                            </p>
-                            <p className="text-xs text-foreground/50 mt-0.5 text-center">
-                                or click to upload
-                            </p>
-                        </div>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                        processFile(file);
+                                    }
+                                }}
+                            />
+                            <div
+                                onDragEnter={handleDragEnter}
+                                onDragLeave={handleDragLeave}
+                                onDragOver={handleDragOver}
+                                onDrop={handleDrop}
+                                onClick={() => fileInputRef.current?.click()}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                        e.preventDefault();
+                                        fileInputRef.current?.click();
+                                    }
+                                }}
+                                role="button"
+                                tabIndex={0}
+                                className={cn(
+                                    "mt-4 p-4 rounded-2xl border-2 border-dashed transition-all duration-200 flex flex-col items-center justify-center cursor-pointer",
+                                    isDragActive
+                                        ? "bg-primary/10 border-primary ring-2 ring-primary/30"
+                                        : "border-foreground/20 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 hover:border-foreground/40"
+                                )}
+                            >
+                                <ImageIcon size={28} className={cn(
+                                    "mb-2 transition-all duration-200",
+                                    isDragActive ? "text-primary animate-bounce" : "text-foreground/50"
+                                )} />
+                                <p className="text-xs font-semibold text-foreground/70 text-center">
+                                    Drop your photos here
+                                </p>
+                                <p className="text-xs text-foreground/50 mt-0.5 text-center">
+                                    or click to upload
+                                </p>
+                            </div>
                         </>
                     )}
 
@@ -362,8 +368,8 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                             <div className="w-full max-h-48 rounded-2xl overflow-hidden border border-white/10 shadow-lg">
                                 <Image src={imagePreview} alt="Preview" width={800} height={400} unoptimized className="w-full h-full object-cover" />
                             </div>
-                            <button 
-                                onClick={() => { setImageFile(null); setImagePreview(null); }} 
+                            <button
+                                onClick={() => { setImageFile(null); setImagePreview(null); }}
                                 className="absolute top-3 right-3 bg-red-500/90 p-2 rounded-full text-white shadow-xl hover:bg-red-600 transition-all scale-90 group-hover:scale-100"
                             >
                                 <Trash2 size={18} />
@@ -380,26 +386,25 @@ export default function CreatePostModal({onClose,onPostCreated}: CreateModalProp
                                 className="rounded-xl px-4 font-semibold border flex-1"
                             >
                                 Cancel
-                        </Button>
+                            </Button>
 
-                        <Button
-                            variant="secondary"
-                            onClick={handleSaveDraft}
-                            disabled={!content.trim() && !imageFile}
-                            className="rounded-xl px-4 font-semibold flex-1"
-                        >
-                            Save Draft
-                        </Button>
+                            <Button
+                                variant="secondary"
+                                onClick={handleSaveDraft}
+                                disabled={!content.trim() && !imageFile}
+                                className="rounded-xl px-4 font-semibold flex-1"
+                            >
+                                Save Draft
+                            </Button>
 
-                        <Button
-                            disabled={loading || !intent || (!content.trim() && !imageFile)}
-                            onClick={handlePost}
-                            className={cn(
-                                "rounded-xl flex-1 px-6 font-bold shadow-lg transition-all active:scale-95",
-                                "bg-primary text-primary-foreground hover:opacity-90"
-                            )}
-                        >
-                            
+                            <Button
+                                disabled={loading || !intent || (!content.trim() && !imageFile)}
+                                onClick={handlePost}
+                                className={cn(
+                                    "rounded-xl flex-1 px-6 font-bold shadow-lg transition-all active:scale-95",
+                                    "bg-primary text-primary-foreground hover:opacity-90"
+                                )}
+                            >
                                 {loading ? (
                                     <div className="flex items-center gap-2">
                                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

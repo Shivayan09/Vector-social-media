@@ -160,7 +160,16 @@ EMAIL=your_email_address
 EMAIL_PASS=your_email_password_or_app_password
 ```
 
-### 3. Start the apps
+### 3. Setting up Third-Party Services
+
+To fill out the environment variables above, you will need to set up the following free services:
+
+- **MongoDB**: Create a free cluster on [MongoDB Atlas](https://www.mongodb.com/atlas/database). Click "Connect", choose "Drivers", and copy the connection string. Replace `<password>` with your database user password.
+- **Cloudinary**: Sign up at [Cloudinary](https://cloudinary.com/). Your `Cloud Name`, `API Key`, and `API Secret` will be immediately visible on your Programmable Media Dashboard.
+- **Google OAuth**: Go to the [Google Cloud Console](https://console.cloud.google.com/). Create a new project, navigate to **APIs & Services > Credentials**, click "Create Credentials" -> "OAuth client ID" (Web application). Add `http://localhost:5000/api/auth/google/callback` to the Authorized redirect URIs. Copy the Client ID and Secret.
+- **Nodemailer (Gmail)**: To send emails, you must use a Google App Password. Go to your Google Account -> **Security** -> **2-Step Verification** -> **App passwords**. Generate a new password and use that 16-character string as your `EMAIL_PASS`.
+
+### 4. Start the apps
 
 Start a local Redis instance (required for Socket.IO messaging):
 

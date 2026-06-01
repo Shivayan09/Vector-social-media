@@ -228,7 +228,9 @@ export default function ChatListPage() {
                                         </div>
                                         <div className="flex justify-between items-center">
                                             <p className="surface-text-muted truncate pr-2 text-sm">
-                                                {convo.lastMessage?.content || `@${otherUser?.username}`}
+                                                {(convo.lastMessage?.isDeleted
+                                                    ? "Message deleted"
+                                                    : convo.lastMessage?.content) || `@${otherUser?.username}`}
                                             </p>
                                             {unreadCounts[convo._id] > 0 && (
                                                 <div className="flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground shadow-sm">

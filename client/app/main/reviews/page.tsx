@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import InlineLoader from "@/components/loaders/InlineLoader";
+import { getErrorMessage } from "@/lib/error";
 
 type Review = {
   _id: string;
@@ -59,10 +60,7 @@ export default function ReviewsPage() {
       }
     } catch (err: unknown) {
       console.error(err);
-      const message = axios.isAxiosError(err)
-        ? err.response?.data?.message
-        : undefined;
-      toast.error(message || "Failed to submit review");
+      toast.error(getErrorMessage(err, "Failed to submit review"));
     } finally {
       setSubmitting(false);
     }

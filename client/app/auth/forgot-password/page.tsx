@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
+import { getErrorMessage } from "@/lib/error";
 
 export default function ForgotPasswordPage() {
     const router = useRouter();
@@ -35,11 +36,7 @@ export default function ForgotPasswordPage() {
                 toast.error(data.message);
             }
         } catch (error: unknown) {
-            if (error instanceof Error) {
-                toast.error(error.message);
-            } else {
-                toast.error("Something went wrong");
-            }
+            toast.error(getErrorMessage(error));
         } finally {
             setLoading(false);
         }

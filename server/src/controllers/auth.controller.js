@@ -4,6 +4,7 @@ import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema 
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
+import jwt from "jsonwebtoken";
 import { generateToken, getCookieOptions } from "../utils/generateToken.js";
 
 const sendResetEmail = async (email, token) => {
@@ -67,19 +68,25 @@ export const register = async (req, res) => {
                 message: getValidationMessage(validation, "Invalid registration data"),
             });
         }
+const {
+    name,
+    surname,
+    phoneNumber, 
+    email,
+    password,
+    username,
+    bio,
+    description,
+    isPrivate,
+} = validation.data;
 
-        const {
-            name,
-            surname,
-            phoneNumber,
-            email,
-            password,
-            username,
-            bio,
-            description,
-            isPrivate,
-        } = validation.data;
-
+const cleanedPhone = phoneNumber.replace(/[\s-]/g, "");
+if (!/^\d{10}$/.test(cleanedPhone)) {
+    return res.status(400).json({
+        success: false,
+        message: "Please enter a valid 10 digit phone number!",
+    });
+}
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(409).json({
@@ -115,7 +122,7 @@ export const register = async (req, res) => {
 
         res.cookie("token", token, getCookieOptions());
 
-        return res.status(200).json({
+        return res.status(201).json({
             success: true,
             message: "Account created successfully",
         });
@@ -207,6 +214,17 @@ export const login = async (req, res) => {
 
 export const logout = async (req, res) => {
     try {
+        const token = req.cookies?.token;
+        if (token) {
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                if (decoded?.id) {
+                    await User.updateOne({ _id: decoded.id }, { $inc: { tokenVersion: 1 } });
+                }
+            } catch {
+                // Ignore invalid/expired tokens — still clear cookie below.
+            }
+        }
         res.clearCookie('token', getCookieOptions());
         return res.status(200).json({
             success: true,

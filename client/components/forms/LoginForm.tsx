@@ -12,6 +12,7 @@ import { useAppContext } from "@/context/AppContext";
 import { GoogleLogin } from "@react-oauth/google";
 import type { GoogleCredentialResponseLite } from "@/lib/types";
 import { useMounted } from "@/lib/useMounted";
+import { getErrorMessage } from "@/lib/error";
 
 export default function LoginForm() {
     const router = useRouter();
@@ -73,11 +74,7 @@ export default function LoginForm() {
                 toast.warn(data.message);
             }
         } catch (error: unknown) {
-            if (error instanceof Error) {
-                toast.error(error.message);
-            } else {
-                toast.error("Something went wrong");
-            }
+            toast.error(getErrorMessage(error));
         } finally {
             setLoading(false);
         }

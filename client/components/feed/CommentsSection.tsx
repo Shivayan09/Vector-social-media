@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
+import { getErrorMessage } from "@/lib/error";
 import { Flag, MoreHorizontal, Trash2, AlertCircle } from "lucide-react";
 import DeleteWarning from "@/components/modals/DeleteWarning";
 import InlineLoader from "../loaders/InlineLoader";
@@ -30,7 +31,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
     const [showReportModal, setShowReportModal] = useState(false);
     const [selectedComment, setSelectedComment] = useState<Comment | null>(null);
     const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
-    const [page, setPage] = useState(1);
+    const [cursor, setCursor] = useState<string | null>(null);
     const [hasMore, setHasMore] = useState(true);
     const LIMIT = 20;
 
@@ -55,19 +56,13 @@ export default function CommentsSection({ postId }: { postId: string }) {
         setLoading(true);
         setError(null);
         try {
-            const { data } = await axios.get(`${BACKEND_URL}/api/comments/${postId}?page=1&limit=${LIMIT}`, { withCredentials: true });
-            setComments(data);
-            setHasMore(data.length === LIMIT);
-            setPage(1);
+            const { data } = await axios.get(`${BACKEND_URL}/api/comments/${postId}?limit=${LIMIT}`, { withCredentials: true });
+            setComments(data.comments);
+            setHasMore(data.hasMore);
+            setCursor(data.nextCursor);
         } catch (err: unknown) {
             console.error("Error fetching comments:", err);
-            if (axios.isAxiosError(err)) {
-                setError(err.response?.data?.message || err.message || "Failed to load comments.");
-            } else if (err instanceof Error) {
-                setError(err.message);
-            } else {
-                setError("Failed to load comments.");
-            }
+            setError(getErrorMessage(err, "Failed to load comments."));
         } finally {
             setLoading(false);
         }
@@ -78,22 +73,17 @@ export default function CommentsSection({ postId }: { postId: string }) {
     }, [fetchComments]);
 
     const loadMoreComments = async () => {
-        const nextPage = page + 1;
         setLoadMoreLoading(true);
         setLoadMoreError(false);
         try {
-            const { data } = await axios.get(`${BACKEND_URL}/api/comments/${postId}?page=${nextPage}&limit=${LIMIT}`, { withCredentials: true });
-            setComments(prev => [...prev, ...data]);
-            setHasMore(data.length === LIMIT);
-            setPage(nextPage);
+            const { data } = await axios.get(`${BACKEND_URL}/api/comments/${postId}?cursor=${cursor}&limit=${LIMIT}`, { withCredentials: true });
+            setComments(prev => [...prev, ...data.comments]);
+            setHasMore(data.hasMore);
+            setCursor(data.nextCursor);
         } catch (err: unknown) {
             console.error("Error loading more comments:", err);
             setLoadMoreError(true);
-            if (err instanceof Error) {
-                toast.error(`Failed to load more comments: ${err.message}`);
-            } else {
-                toast.error("Failed to load more comments.");
-            }
+            toast.error(getErrorMessage(err, "Failed to load more comments."));
         } finally {
             setLoadMoreLoading(false);
         }
@@ -103,14 +93,10 @@ export default function CommentsSection({ postId }: { postId: string }) {
         try {
             setButtonLoading(true);
             const { data } = await axios.post(`${BACKEND_URL}/api/comments/${postId}`, { content: text }, { withCredentials: true });
-            setComments(prev => [...prev, data]);
+            setComments(prev => [data, ...prev]);
             setText("");
         } catch (error: unknown) {
-            if (error instanceof Error) {
-                toast.error(error.message);
-            } else {
-                toast.error("Failed to post comment");
-            }
+            toast.error(getErrorMessage(error, "Failed to post comment"));
         } finally {
             setButtonLoading(false);
         }
@@ -132,11 +118,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
             setComments(prev => prev.filter(c => c._id !== selectedComment._id));
             toast.success("Comment deleted");
         } catch (error: unknown) {
-            if (error instanceof Error) {
-                toast.error(error.message);
-            } else {
-                toast.error("Failed to delete comment");
-            }
+            toast.error(getErrorMessage(error, "Failed to delete comment"));
         } finally {
             setShowDeleteModal(false);
             setSelectedComment(null);
@@ -257,7 +239,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
                                     </div>
                                 </div>
 
-                                <div className="surface-text-muted text-[0.9rem] whitespace-pre-wrap break-words">
+                                <div className="surface-text-muted text-[0.9rem] whitespace-pre-wrap wrap-break-word">
                                     <Linkify text={c?.content || ""} />
                                 </div>
 
@@ -270,7 +252,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
                     );
                 })}
 
-                {hasMore && comments.length >= LIMIT && (
+                {hasMore && (
                     <div className="mt-3 text-center">
                         {loadMoreLoading ? (
                             <InlineLoader text="Loading more comments..." />

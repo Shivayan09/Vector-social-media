@@ -50,6 +50,11 @@ const { default: Post } = await import('../src/models/post.model.js');
 const { default: Comment } = await import('../src/models/comment.model.js');
 const { default: Notification } = await import('../src/models/notification.model.js');
 
+const validPng = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+  0x00, 0x00, 0x00, 0x0d,
+]);
+
 describe('Post and Comment Flows', () => {
   let cookie;
   let user;
@@ -109,6 +114,7 @@ describe('Post and Comment Flows', () => {
         .field('content', 'Post with image content')
         .field('intent', 'share')
         .attach('image', PNG_MAGIC, 'image.png');
+        .attach('image', validPng, { filename: 'image.png', contentType: 'image/png' });
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -129,6 +135,7 @@ describe('Post and Comment Flows', () => {
         .set('Cookie', cookie)
         .field('intent', 'build')
         .attach('image', PNG_MAGIC, 'build.png');
+        .attach('image', validPng, { filename: 'build.png', contentType: 'image/png' });
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -173,6 +180,7 @@ describe('Post and Comment Flows', () => {
         .field('intent', 'share')
         .field('content', 'This post will fail to save')
         .attach('image', PNG_MAGIC, 'fail.png');
+        .attach('image', validPng, { filename: 'fail.png', contentType: 'image/png' });
 
       expect(res.status).toBe(500);
       expect(res.body.success).toBe(false);
@@ -182,6 +190,50 @@ describe('Post and Comment Flows', () => {
       expect(mockDestroy).toHaveBeenCalledWith('posts/dummy_image_public_id');
 
       createSpy.mockRestore();
+    });
+
+    it('should reject a non-image MIME type before upload', async () => {
+      const res = await request(app)
+        .post('/api/posts')
+        .set('Cookie', cookie)
+        .field('intent', 'share')
+        .field('content', 'Invalid MIME upload')
+        .attach('image', Buffer.from('not an image'), { filename: 'payload.txt', contentType: 'text/plain' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toContain('Only JPEG, PNG, GIF, WebP, and AVIF images are allowed');
+    });
+
+    it('should reject a spoofed image extension with invalid file content', async () => {
+      const res = await request(app)
+        .post('/api/posts')
+        .set('Cookie', cookie)
+        .field('intent', 'share')
+        .field('content', 'Spoofed image upload')
+        .attach('image', Buffer.from('not really a png'), { filename: 'spoof.png', contentType: 'image/png' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toContain('Only valid JPEG, PNG, GIF, WEBP, AVIF images are allowed');
+    });
+
+    it('should reject oversized post images at the controller boundary', async () => {
+      const oversizedPng = Buffer.concat([
+        validPng,
+        Buffer.alloc((2 * 1024 * 1024) + 1),
+      ]);
+
+      const res = await request(app)
+        .post('/api/posts')
+        .set('Cookie', cookie)
+        .field('intent', 'share')
+        .field('content', 'Oversized upload')
+        .attach('image', oversizedPng, { filename: 'large.png', contentType: 'image/png' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toContain('Post image must be 2MB or smaller');
     });
   });
 
@@ -208,6 +260,7 @@ describe('Post and Comment Flows', () => {
         .field('content', 'Updated content with image')
         .field('intent', 'share')
         .attach('image', PNG_MAGIC, 'new_image.png');
+        .attach('image', validPng, { filename: 'new_image.png', contentType: 'image/png' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);

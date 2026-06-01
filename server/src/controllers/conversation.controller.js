@@ -113,7 +113,16 @@ export const getUserConversations = async (req, res) => {
           from: "messages",
           let: { conversationId: "$_id" },
           pipeline: [
-            { $match: { $expr: { $eq: ["$conversation", "$$conversationId"] } } },
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$conversation", "$$conversationId"] },
+                    { $eq: ["$isDeleted", false] },
+                  ],
+                },
+              },
+            },
             { $sort: { createdAt: -1 } },
             { $limit: 1 },
             {
@@ -166,6 +175,7 @@ export const getUserConversations = async (req, res) => {
                 $expr: {
                   $and: [
                     { $eq: ["$conversation", "$$conversationId"] },
+                    { $eq: ["$isDeleted", false] },
                     { $eq: ["$isRead", false] },
                     { $ne: ["$sender", userId] }
                   ]
