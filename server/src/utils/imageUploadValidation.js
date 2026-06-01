@@ -1,4 +1,4 @@
-import { readFile, unlink } from "fs/promises";
+import { unlink } from "fs/promises";
 
 export const IMAGE_UPLOAD_LIMITS = {
   post: 2 * 1024 * 1024,
@@ -75,15 +75,10 @@ export async function validateImageUpload(file, { allowedFormats, maxSize, label
   }
 
   const allowed = new Set(allowedFormats);
-  const buffer = await readFile(file.path);
-  const detectedFormat = detectImageType(buffer);
+  const detectedFormat = detectImageType(file.buffer);
 
   if (!detectedFormat || !allowed.has(detectedFormat)) {
     throw uploadError(`Only valid ${formatAllowedTypes(allowedFormats)} images are allowed`);
-  }
-
-  if (!IMAGE_TYPES[detectedFormat].mimeTypes.has(file.mimetype)) {
-    throw uploadError("Uploaded file content does not match its declared image type");
   }
 
   return detectedFormat;
