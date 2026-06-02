@@ -380,12 +380,11 @@ export const getUserProfile = async (req, res) => {
         const { username } = req.params;
 
         // Single query — include followRequests and blockedUsers so we don't need second fetches below
+        // Single query — include followRequests and blockedUsers so we don't need second fetches below
         const user = await User.findOne({ username, isDeactivated: { $ne: true } })
-            .select("_id name surname username avatar bio description followersCount followingCount followers followRequests isPrivate blockedUsers createdAt")
-        
-
+            .select("_id name surname username avatar bio description followersCount followingCount followers isPrivate blockedUsers createdAt")
             .lean();
-
+            
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
