@@ -6,6 +6,9 @@ import Follow from "../models/follow.model.js";
 import Notification from "../models/notification.model.js";
 import { getIO } from "../socket/socket.js";
 
+// Hard upper bound on comments returned per request.
+const MAX_LIMIT = 50;
+
 export const addComment = async (req, res) => {
     try {
         const { postId } = req.params;
@@ -117,7 +120,7 @@ export const getPostComments = async (req, res) => {
         }
 
         const cursor = req.query.cursor || null;
-        const limit = parseInt(req.query.limit) || 20;
+        const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), MAX_LIMIT);
 
         let excludeUserIds = [];
         if (req.user) {

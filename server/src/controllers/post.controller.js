@@ -8,6 +8,11 @@ import Report from "../models/report.model.js";
 import cloudinary from "../config/cloudinary.js";
 import { getIO } from "../socket/socket.js";
 import { uploadToCloudinary } from "../utils/uploadCleanup.js";
+import { cleanupTempUpload, IMAGE_UPLOAD_LIMITS, validateImageUpload } from "../utils/imageUploadValidation.js";
+
+// Hard upper bound on result-set size for any list endpoint in this controller.
+// Prevents callers from triggering full-collection scans with deep .populate() chains.
+const MAX_LIMIT = 50;
 
 export const removePostById = async (postId) => {
     const post = await Post.findById(postId);
@@ -61,6 +66,11 @@ export const createPost = async (req, res) => {
         let image = null;
 
         if (req.file) {
+            await validateImageUpload(req.file, {
+                allowedFormats: ["jpeg", "png", "gif", "webp", "avif"],
+                maxSize: IMAGE_UPLOAD_LIMITS.post,
+                label: "Post image",
+            });
             const uploadResult = await uploadToCloudinary(req.file, {
                 folder: "posts"
             });
@@ -82,10 +92,11 @@ export const createPost = async (req, res) => {
             post: populatedPost
         });
     } catch (error) {
+        await cleanupTempUpload(req.file);
         if (imagePublicId) {
             await cloudinary.uploader.destroy(imagePublicId).catch(() => {});
         }
-        return res.status(500).json({
+        return res.status(error.statusCode || 500).json({
             success: false,
             message: error.message
         })
@@ -95,7 +106,7 @@ export const createPost = async (req, res) => {
 export const getPosts = async (req, res) => {
     try {
         const cursor = req.query.cursor;
-        const limit = parseInt(req.query.limit) || 10;
+        const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), MAX_LIMIT);
 
         let filter = {};
         let excludeUserIds = [];
@@ -166,7 +177,7 @@ export const searchPosts = async (req, res) => {
     try {
         const q = req.query.q?.trim();
         const cursor = req.query.cursor;
-        const limit = parseInt(req.query.limit) || 10;
+        const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), MAX_LIMIT);
 
         if (!q) {
             return res.status(200).json({ posts: [], limit, hasMore: false, nextCursor: null });
@@ -275,6 +286,7 @@ export const deletePost = async (req, res) => {
 };
 
 export const updatePost = async (req, res) => {
+    let newImagePublicId = null;
     try {
         const postId = req.params.id;
         const userId = req.user.id;
@@ -328,14 +340,20 @@ export const updatePost = async (req, res) => {
         }
 
         if (req.file) {
+            await validateImageUpload(req.file, {
+                allowedFormats: ["jpeg", "png", "gif", "webp", "avif"],
+                maxSize: IMAGE_UPLOAD_LIMITS.post,
+                label: "Post image",
+            });
             const uploadResult = await uploadToCloudinary(req.file, {
                 folder: "posts",
             });
+            newImagePublicId = uploadResult.public_id;
             if (post.imagePublicId) {
                 await cloudinary.uploader.destroy(post.imagePublicId).catch(() => {});
             }
             post.image = uploadResult.secure_url;
-            post.imagePublicId = uploadResult.public_id;
+            post.imagePublicId = newImagePublicId;
         } else if (shouldRemoveImage && post.imagePublicId) {
             await cloudinary.uploader.destroy(post.imagePublicId);
             post.image = null;
@@ -356,7 +374,11 @@ export const updatePost = async (req, res) => {
             post: populatedPost,
         });
     } catch (error) {
-        res.status(500).json({
+        await cleanupTempUpload(req.file);
+        if (newImagePublicId) {
+            await cloudinary.uploader.destroy(newImagePublicId).catch(() => {});
+        }
+        res.status(error.statusCode || 500).json({
             success: false,
             message: error.message,
         });
@@ -513,14 +535,29 @@ export const getPostsByUser = async (req, res) => {
             excludeUserIds = [...blockedIds, ...blockerIds];
         }
 
-        const posts = await Post.find({ author: userId })
+        const cursor = req.query.cursor;
+        const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), MAX_LIMIT);
+
+        let postFilter = { author: userId };
+        if (cursor) {
+            if (mongoose.Types.ObjectId.isValid(cursor)) {
+                postFilter._id = { $lt: cursor };
+            } else {
+                return res.status(400).json({ success: false, message: "Invalid cursor format" });
+            }
+        }
+
+        const posts = await Post.find(postFilter)
             .populate("author", "username name avatar")
             .populate(
                 excludeUserIds.length
                     ? { path: "likes", select: "username name avatar _id", match: { _id: { $nin: excludeUserIds } } }
                     : { path: "likes", select: "username name avatar _id" }
             )
-            .sort({ createdAt: -1 });
+            .sort({ _id: -1 })
+            .limit(limit);
+        const hasMore = posts.length === limit;
+        const nextCursor = hasMore ? posts[posts.length - 1]._id : null;
         const userBookmarkSet = req.user?.bookmarks
         ? new Set(req.user.bookmarks.map(String))
         : new Set();
@@ -531,6 +568,9 @@ export const getPostsByUser = async (req, res) => {
         return res.status(200).json({
         success: true,
         posts: postsWithMeta,
+        hasMore,
+        nextCursor,
+        limit,
         });
     } catch (error) {
         return res.status(500).json({
@@ -606,9 +646,10 @@ export const getTopPostsOfWeek = async (req, res) => {
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
         const requestedLimit = Number.parseInt(req.query.limit, 10);
-        const limit = Number.isFinite(requestedLimit) && requestedLimit > 0
-            ? requestedLimit
-            : 10;
+        const limit = Math.min(
+            Number.isFinite(requestedLimit) && requestedLimit > 0 ? requestedLimit : 10,
+            MAX_LIMIT
+        );
         let filter = { createdAt: { $gte: oneWeekAgo } };
         let excludeUserIds = [];
 

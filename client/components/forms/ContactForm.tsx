@@ -4,6 +4,7 @@ import { useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { Button } from "../ui/button";
+import { getErrorMessage } from "@/lib/error";
 
 export default function ContactForm() {
   const [formData, setFormData] = useState({
@@ -53,12 +54,7 @@ export default function ContactForm() {
         toast.error(data.message || "Failed to send message");
       }
     } catch (error: unknown) {
-      const message = axios.isAxiosError(error)
-        ? error.response?.data?.message || "Something went wrong"
-        : error instanceof Error
-          ? error.message
-          : "Something went wrong";
-      toast.error(message);
+      toast.error(getErrorMessage(error, "Failed to send message"));
     } finally {
       setLoading(false);
     }

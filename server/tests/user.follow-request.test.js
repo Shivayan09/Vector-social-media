@@ -248,6 +248,34 @@ describe('User Follow Request Flows', () => {
       expect(notification).not.toBeNull();
     });
 
+    it('should be concurrency-safe: only one accept succeeds and counters/notifications do not duplicate', async () => {
+      await Follow.create({ follower: user1._id, following: user2._id, status: 'pending' });
+
+      const [r1, r2] = await Promise.all([
+        request(app).put(`/api/users/${user1._id}/accept-request`).set('Cookie', `token=${token2}`),
+        request(app).put(`/api/users/${user1._id}/accept-request`).set('Cookie', `token=${token2}`),
+      ]);
+
+      const statuses = [r1.status, r2.status].sort((a, b) => a - b);
+      expect(statuses).toEqual([200, 400]);
+
+      const followDoc = await Follow.findOne({ follower: user1._id, following: user2._id });
+      expect(followDoc).not.toBeNull();
+      expect(followDoc.status).toBe('accepted');
+
+      const updatedUser1 = await User.findById(user1._id);
+      const updatedUser2 = await User.findById(user2._id);
+      expect(updatedUser2.followersCount).toBe(1);
+      expect(updatedUser1.followingCount).toBe(1);
+
+      const notifications = await Notification.find({
+        recipient: user1._id,
+        sender: user2._id,
+        type: "follow_request_accepted",
+      });
+      expect(notifications).toHaveLength(1);
+    });
+
     it('should return 400 if there is no pending request from the user', async () => {
       const response = await request(app)
         .put(`/api/users/${user1._id}/accept-request`)

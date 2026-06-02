@@ -12,6 +12,7 @@ import MutualFollowersBar from "./MutualFollowersBar";
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { getErrorMessage } from "@/lib/error";
 import type { UserSummary } from "@/lib/types";
 import SavedPostsFeed from "./SavedPostsFeed";
 
@@ -51,10 +52,7 @@ export default function ProfileLayout({ user, isFollowing, isRequested }: Profil
         }
       }
     } catch (error: unknown) {
-      const message = axios.isAxiosError(error)
-        ? error.response?.data?.message
-        : "Failed to complete action";
-      toast.error(message || "Failed to complete action");
+      toast.error(getErrorMessage(error, "Failed to complete action"));
     }
   };
 

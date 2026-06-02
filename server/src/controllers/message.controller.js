@@ -5,6 +5,9 @@ import User from "../models/user.model.js";
 import { getIO } from "../socket/socket.js";
 import { sendMessageSchema } from "../validators/message.validator.js";
 
+// Hard upper bound on messages returned per page.
+const MAX_LIMIT = 100;
+
 export const getMessages = async (req, res) => {
   try {
     const { conversationId } = req.params;
@@ -35,13 +38,27 @@ export const getMessages = async (req, res) => {
       }
     }
 
-    const limit = parseInt(req.query.limit) || 50;
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), MAX_LIMIT);
     const before = req.query.before;
+
+    // Validate the before cursor before passing it to new Date().
+    // A truthy but non-date string such as "null", "undefined", or "1 OR 1=1"
+    // produces Invalid Date, which turns the $lt filter into a NaN comparison
+    // that silently returns zero results with HTTP 200.
+    let beforeDate;
+    if (before) {
+      beforeDate = new Date(before);
+      if (isNaN(beforeDate.getTime())) {
+        return res.status(400).json({
+          message: "Invalid 'before' cursor: must be a valid ISO 8601 date string.",
+        });
+      }
+    }
 
     const filter = {
       conversation: conversationId,
       isDeleted: false,
-      ...(before && { createdAt: { $lt: new Date(before) } }),
+      ...(beforeDate && { createdAt: { $lt: beforeDate } }),
     };
 
     const messages = await Message.find(filter)

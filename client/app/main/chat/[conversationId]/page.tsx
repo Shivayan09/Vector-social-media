@@ -164,17 +164,25 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
         );
       }
     };
+    const handleConversationDeleted = (data: { conversationId: string }) => {
+        if (data.conversationId === conversationId) {
+            router.push("/main/chat");
+            toast.info("This conversation has been deleted");
+        }
+    };
     socket.on("receive_message", handleReceiveMessage);
     socket.on("message_deleted", handleDelete);
     socket.on("typing", handleTyping);
     socket.on("stop_typing", handleStopTyping);
     socket.on("conversation_read", handleConversationRead);
+    socket.on("conversation:deleted", handleConversationDeleted);
     return () => {
         socket.off("receive_message", handleReceiveMessage);
         socket.off("message_deleted", handleDelete);
         socket.off("typing", handleTyping);
         socket.off("stop_typing", handleStopTyping);
         socket.off("conversation_read", handleConversationRead);
+        socket.off("conversation:deleted", handleConversationDeleted);
     };
   }, [userData, conversationId, BACKEND_URL]);
 

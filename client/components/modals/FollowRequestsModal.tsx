@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { getErrorMessage } from "@/lib/error";
 import { createPortal } from "react-dom";
 import { useMounted } from "@/lib/useMounted";
 import { UserSummary } from "@/lib/types";
@@ -28,8 +29,8 @@ export default function FollowRequestsModal({ open, onClose }: Props) {
         withCredentials: true,
       });
       setRequests(data);
-    } catch {
-      toast.error("Failed to fetch follow requests");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to fetch follow requests"));
     } finally {
       setLoading(false);
     }
@@ -52,8 +53,8 @@ export default function FollowRequestsModal({ open, onClose }: Props) {
             followRequests: userData.followRequests?.filter((rId) => rId !== id)
         });
       }
-    } catch {
-      toast.error("Failed to accept request");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to accept request"));
     }
   };
 
@@ -68,8 +69,8 @@ export default function FollowRequestsModal({ open, onClose }: Props) {
             followRequests: userData.followRequests?.filter((rId) => rId !== id)
         });
       }
-    } catch {
-      toast.error("Failed to reject request");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to reject request"));
     }
   };
 

@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
+import { getErrorMessage } from "@/lib/error";
 import { Flag, MoreHorizontal, Trash2, AlertCircle } from "lucide-react";
 import DeleteWarning from "@/components/modals/DeleteWarning";
 import InlineLoader from "../loaders/InlineLoader";
@@ -61,13 +62,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
             setCursor(data.nextCursor);
         } catch (err: unknown) {
             console.error("Error fetching comments:", err);
-            if (axios.isAxiosError(err)) {
-                setError(err.response?.data?.message || err.message || "Failed to load comments.");
-            } else if (err instanceof Error) {
-                setError(err.message);
-            } else {
-                setError("Failed to load comments.");
-            }
+            setError(getErrorMessage(err, "Failed to load comments."));
         } finally {
             setLoading(false);
         }
@@ -88,11 +83,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
         } catch (err: unknown) {
             console.error("Error loading more comments:", err);
             setLoadMoreError(true);
-            if (err instanceof Error) {
-                toast.error(`Failed to load more comments: ${err.message}`);
-            } else {
-                toast.error("Failed to load more comments.");
-            }
+            toast.error(getErrorMessage(err, "Failed to load more comments."));
         } finally {
             setLoadMoreLoading(false);
         }
@@ -105,11 +96,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
             setComments(prev => [data, ...prev]);
             setText("");
         } catch (error: unknown) {
-            if (error instanceof Error) {
-                toast.error(error.message);
-            } else {
-                toast.error("Failed to post comment");
-            }
+            toast.error(getErrorMessage(error, "Failed to post comment"));
         } finally {
             setButtonLoading(false);
         }
@@ -131,11 +118,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
             setComments(prev => prev.filter(c => c._id !== selectedComment._id));
             toast.success("Comment deleted");
         } catch (error: unknown) {
-            if (error instanceof Error) {
-                toast.error(error.message);
-            } else {
-                toast.error("Failed to delete comment");
-            }
+            toast.error(getErrorMessage(error, "Failed to delete comment"));
         } finally {
             setShowDeleteModal(false);
             setSelectedComment(null);
@@ -256,7 +239,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
                                     </div>
                                 </div>
 
-                                <div className="surface-text-muted text-[0.9rem] whitespace-pre-wrap break-words">
+                                <div className="surface-text-muted text-[0.9rem] whitespace-pre-wrap wrap-break-word">
                                     <Linkify text={c?.content || ""} />
                                 </div>
 

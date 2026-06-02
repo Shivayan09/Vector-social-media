@@ -68,6 +68,32 @@ describe("DELETE /api/conversations/:id - Soft Delete", () => {
     });
   });
 
+  it("does not leak soft-deleted message content through the conversation lastMessage preview", async () => {
+    const deleted = await Message.create({
+      conversation: conversationId,
+      sender: userA._id,
+      content: "This should not appear",
+    });
+
+    const delRes = await request(app)
+      .delete(`/api/messages/${deleted._id}`)
+      .set("Cookie", cookieA);
+
+    expect(delRes.status).toBe(200);
+
+    const listRes = await request(app)
+      .get("/api/conversation")
+      .set("Cookie", cookieA);
+
+    expect(listRes.status).toBe(200);
+
+    const convo = listRes.body.find((c) => c._id === conversationId);
+    expect(convo).toBeDefined();
+    expect(convo.lastMessage).not.toBeNull();
+    expect(convo.lastMessage.content).toBe("Hello");
+    expect(convo.lastMessage.isDeleted).toBe(false);
+  });
+
   it("hides the conversation from the deleting user but preserves it for the other participant", async () => {
     const resA = await request(app)
       .delete(`/api/conversation/${conversationId}`)

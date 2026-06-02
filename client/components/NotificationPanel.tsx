@@ -6,6 +6,7 @@ import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
+import { getErrorMessage } from "@/lib/error";
 import {
   ArrowRight,
   Bell,
@@ -33,6 +34,7 @@ export default function NotificationPanel({ search = "" }: Props) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
   const [warningOpen, setWarningOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [followLoading, setFollowLoading] = useState<Record<string, boolean>>(
     {}
   );
@@ -107,13 +109,7 @@ export default function NotificationPanel({ search = "" }: Props) {
           return followStates;
         });
       } catch (err: unknown) {
-        if (axios.isAxiosError(err)) {
-          toast.error(
-            err.response?.data?.message || "Failed to fetch notifications"
-          );
-        } else {
-          toast.error("Failed to fetch notifications");
-        }
+        toast.error(getErrorMessage(err, "Failed to fetch notifications"));
       } finally {
         setLoading(false);
       }
@@ -132,11 +128,7 @@ export default function NotificationPanel({ search = "" }: Props) {
       setNotifications((prev) => prev.filter((n) => n._id !== id));
       toast.success("Notification deleted");
     } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || "Delete failed");
-      } else {
-        toast.error("Delete failed");
-      }
+      toast.error(getErrorMessage(err, "Delete failed"));
     } finally {
       setDeleteLoading((prev) => ({ ...prev, [id]: false }));
     }
@@ -150,11 +142,7 @@ export default function NotificationPanel({ search = "" }: Props) {
       setNotifications([]);
       toast.success("All notifications cleared");
     } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || "Delete all failed");
-      } else {
-        toast.error("Delete all failed");
-      }
+      toast.error(getErrorMessage(err, "Delete all failed"));
     }
   };
 
@@ -172,60 +160,56 @@ export default function NotificationPanel({ search = "" }: Props) {
     }
   }, [BACKEND_URL]);
 
-  const handleAcceptRequest = async (senderId: string) => {
-    try {
-      setFollowLoading((prev) => ({ ...prev, [senderId]: true }));
-      await axios.put(
-        `${BACKEND_URL}/api/users/${senderId}/accept-request`,
-        {},
-        { withCredentials: true }
-      );
-      toast.success("Follow request accepted");
-      setNotifications((prev) =>
-        prev.map((n) =>
-          n.sender?._id === senderId && n.type === "follow_request"
-            ? { ...n, type: "follow" as const }
-            : n
-        )
-      );
-      setSenderFollowState((prev) => ({
-        ...prev,
-        [senderId]: prev[senderId] || {
-          isFollowing: false,
-          isRequested: false,
-        },
-      }));
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || "Action failed");
-      }
-    } finally {
-      setFollowLoading((prev) => ({ ...prev, [senderId]: false }));
-    }
-  };
+  // const handleAcceptRequest = async (senderId: string) => {
+  //   try {
+  //     setFollowLoading((prev) => ({ ...prev, [senderId]: true }));
+  //     await axios.put(
+  //       `${BACKEND_URL}/api/users/${senderId}/accept-request`,
+  //       {},
+  //       { withCredentials: true }
+  //     );
+  //     toast.success("Follow request accepted");
+  //     setNotifications((prev) =>
+  //       prev.map((n) =>
+  //         n.sender?._id === senderId && n.type === "follow_request"
+  //           ? { ...n, type: "follow" as const }
+  //           : n
+  //       )
+  //     );
+  //     setSenderFollowState((prev) => ({
+  //       ...prev,
+  //       [senderId]: prev[senderId] || {
+  //         isFollowing: false,
+  //         isRequested: false,
+  //       },
+  //     }));
+  //   } catch (err: unknown) {
+  //     toast.error(getErrorMessage(err, "Action failed"));
+  //   } finally {
+  //     setFollowLoading((prev) => ({ ...prev, [senderId]: false }));
+  //   }
+  // };
 
-  const handleRejectRequest = async (senderId: string) => {
-    try {
-      setFollowLoading((prev) => ({ ...prev, [senderId]: true }));
-      await axios.put(
-        `${BACKEND_URL}/api/users/${senderId}/reject-request`,
-        {},
-        { withCredentials: true }
-      );
-      toast.success("Follow request rejected");
-      setNotifications((prev) =>
-        prev.filter(
-          (n) => !(n.sender?._id === senderId && n.type === "follow_request")
-        )
-      );
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || "Action failed");
-      }
-    } finally {
-      setFollowLoading((prev) => ({ ...prev, [senderId]: false }));
-    }
-  };
+  // const handleRejectRequest = async (senderId: string) => {
+  //   try {
+  //     setFollowLoading((prev) => ({ ...prev, [senderId]: true }));
+  //     await axios.put(
+  //       `${BACKEND_URL}/api/users/${senderId}/reject-request`,
+  //       {},
+  //       { withCredentials: true }
+  //     );
+  //     toast.success("Follow request rejected");
+  //     setNotifications((prev) =>
+  //       prev.filter(
+  //         (n) => !(n.sender?._id === senderId && n.type === "follow_request")
+  //       )
+  //     );
+  //   } catch (err: unknown) {
+  //     toast.error(getErrorMessage(err, "Action failed"));
+  //   } finally {
+  //     setFollowLoading((prev) => ({ ...prev, [senderId]: false }));
+  //   }
+  // };
 
   const handleReplyToMessage = async (
     notificationId: string,
@@ -247,11 +231,7 @@ export default function NotificationPanel({ search = "" }: Props) {
       );
       router.push(`/main/chat/${data._id}`);
     } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || "Failed to open chat");
-      } else {
-        toast.error("Failed to open chat");
-      }
+      toast.error(getErrorMessage(err, "Failed to open chat"));
     } finally {
       setMessageLoading((prev) => ({ ...prev, [notificationId]: false }));
     }
@@ -482,7 +462,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                 className="flex gap-3 flex-1 cursor-pointer p-2 rounded-lg"
               >
                 {n.type === "post_removed_reported" || n.type === "comment_removed_reported" ? (
-                  <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
+                  <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
                     <span className="text-red-500 text-lg">!</span>
                   </div>
                 ) : (

@@ -195,7 +195,18 @@ export function AppContextProvider({
     socket.on("user:unblocked", onUnblocked);
     socket.on("bookmarks:invalidated", onBookmarksInvalidated);
     socket.on("block:likes_cleaned", onBlockLikesCleaned);
+    const onConversationDeleted = (data: { conversationId: string }) => {
+      // Full deletion — both participants deleted
+      // The conversation no longer exists in the database
+    };
+
+    const onParticipantDeleted = (data: { conversationId: string; deletedBy: string }) => {
+      // Soft deletion — one participant deleted, conversation still exists
+    };
+
     socket.on("block:comments_cleaned", onBlockCommentsCleaned);
+    socket.on("conversation:deleted", onConversationDeleted);
+    socket.on("conversation:participant_deleted", onParticipantDeleted);
 
     socket.emit("register", userData.id);
 
@@ -206,6 +217,8 @@ export function AppContextProvider({
       socket.off("bookmarks:invalidated", onBookmarksInvalidated);
       socket.off("block:likes_cleaned", onBlockLikesCleaned);
       socket.off("block:comments_cleaned", onBlockCommentsCleaned);
+      socket.off("conversation:deleted", onConversationDeleted);
+      socket.off("conversation:participant_deleted", onParticipantDeleted);
       socket.disconnect();
     };
   }, [userData?.id]);

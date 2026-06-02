@@ -1,6 +1,7 @@
 import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
 import User from "../models/user.model.js";
+import { getIO } from "../socket/socket.js";
 
 export const createConversation = async (req, res) => {
     try {
@@ -113,7 +114,16 @@ export const getUserConversations = async (req, res) => {
           from: "messages",
           let: { conversationId: "$_id" },
           pipeline: [
-            { $match: { $expr: { $eq: ["$conversation", "$$conversationId"] } } },
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$conversation", "$$conversationId"] },
+                    { $eq: ["$isDeleted", false] },
+                  ],
+                },
+              },
+            },
             { $sort: { createdAt: -1 } },
             { $limit: 1 },
             {
@@ -166,6 +176,7 @@ export const getUserConversations = async (req, res) => {
                 $expr: {
                   $and: [
                     { $eq: ["$conversation", "$$conversationId"] },
+                    { $eq: ["$isDeleted", false] },
                     { $eq: ["$isRead", false] },
                     { $ne: ["$sender", userId] }
                   ]
@@ -238,23 +249,26 @@ export const getUserConversations = async (req, res) => {
 
 export const deleteConversation = async (req, res) => {
     try {
-        const convo = await Conversation.findOne({
-            _id: req.params.conversationId,
-            participants: req.user._id,
-        });
+        const convo = await Conversation.findOneAndUpdate(
+            {
+                _id: req.params.conversationId,
+                participants: req.user._id,
+                deletedBy: { $ne: req.user._id },
+            },
+            { $addToSet: { deletedBy: req.user._id } },
+            { new: true }
+        );
 
         if (!convo) {
-            return res.status(404).json({ message: "Conversation not found or unauthorized" });
-        }
-
-        const alreadyDeleted = convo.deletedBy.some(
-            (id) => id.toString() === req.user._id.toString()
-        );
-        if (alreadyDeleted) {
+            const existingConvo = await Conversation.findOne({
+                _id: req.params.conversationId,
+                participants: req.user._id,
+            });
+            if (!existingConvo) {
+                return res.status(404).json({ message: "Conversation not found or unauthorized" });
+            }
             return res.status(400).json({ message: "Conversation already deleted" });
         }
-
-        convo.deletedBy.push(req.user._id);
 
         const allDeleted = convo.participants.every((participantId) =>
             convo.deletedBy.some((id) => id.toString() === participantId.toString())
@@ -262,9 +276,21 @@ export const deleteConversation = async (req, res) => {
 
         if (allDeleted) {
             await Message.deleteMany({ conversation: convo._id });
-            await convo.deleteOne();
+            await Conversation.deleteOne({ _id: convo._id });
+
+            getIO().to(convo._id.toString()).emit("conversation:deleted", {
+                conversationId: convo._id,
+            });
         } else {
-            await convo.save();
+            const otherParticipants = convo.participants.filter(
+                (pid) => pid.toString() !== req.user._id.toString()
+            );
+            otherParticipants.forEach((pid) => {
+                getIO().to(pid.toString()).emit("conversation:participant_deleted", {
+                    conversationId: convo._id,
+                    deletedBy: req.user._id,
+                });
+            });
         }
 
         res.json({ message: "Conversation deleted successfully" });

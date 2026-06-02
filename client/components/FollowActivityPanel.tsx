@@ -4,9 +4,9 @@ import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { getErrorMessage } from "@/lib/error";
 import { UserSummary } from "@/lib/types";
 import { UserMinus, Check, X, ShieldAlert } from "lucide-react";
-import { useAppContext } from "@/context/AppContext";
 
 export default function FollowActivityPanel({
   pendingFollowCount,
@@ -16,7 +16,6 @@ export default function FollowActivityPanel({
   setPendingFollowCount: (count: number) => void;
 }) {
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
-  const { userData, setUserData } = useAppContext();
   
   const [received, setReceived] = useState<UserSummary[]>([]);
   const [sent, setSent] = useState<UserSummary[]>([]);
@@ -33,12 +32,12 @@ export default function FollowActivityPanel({
       });
       setReceived(data);
       setPendingFollowCount(data.length);
-    } catch {
-      toast.error("Failed to load received follow requests");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to load received follow requests"));
     } finally {
       setLoadingReceived(false);
     }
-  }, [BACKEND_URL]);
+  }, [BACKEND_URL, setPendingFollowCount]);
 
   const fetchSent = useCallback(async () => {
     try {
@@ -47,8 +46,8 @@ export default function FollowActivityPanel({
         withCredentials: true,
       });
       setSent(data);
-    } catch {
-      toast.error("Failed to load sent follow requests");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to load sent follow requests"));
     } finally {
       setLoadingSent(false);
     }
@@ -64,17 +63,10 @@ export default function FollowActivityPanel({
     setActionLoading((prev) => ({ ...prev, [id]: true }));
     try {
       await axios.put(`${BACKEND_URL}/api/users/${id}/accept-request`, {}, { withCredentials: true });
-      setReceived((prev) => prev.filter((r) => r._id !== id));
-      setPendingFollowCount(Math.max(0, pendingFollowCount - 1));
+      await fetchReceived();
       toast.success("Follow request accepted");
-      if (userData) {
-        setUserData({
-          ...userData,
-          followRequests: userData.followRequests?.filter((rId) => typeof rId === "string" ? rId !== id : (rId as UserSummary)._id !== id)
-        });
-      }
-    } catch {
-      toast.error("Failed to accept request");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to accept request"));
     } finally {
       setActionLoading((prev) => ({ ...prev, [id]: false }));
     }
@@ -85,17 +77,10 @@ export default function FollowActivityPanel({
     setActionLoading((prev) => ({ ...prev, [id]: true }));
     try {
       await axios.put(`${BACKEND_URL}/api/users/${id}/reject-request`, {}, { withCredentials: true });
-      setReceived((prev) => prev.filter((r) => r._id !== id));
-      setPendingFollowCount(Math.max(0, pendingFollowCount - 1));
+      await fetchReceived();
       toast.success("Follow request rejected");
-      if (userData) {
-        setUserData({
-          ...userData,
-          followRequests: userData.followRequests?.filter((rId) => typeof rId === "string" ? rId !== id : (rId as UserSummary)._id !== id)
-        });
-      }
-    } catch {
-      toast.error("Failed to reject request");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to reject request"));
     } finally {
       setActionLoading((prev) => ({ ...prev, [id]: false }));
     }
@@ -107,13 +92,13 @@ export default function FollowActivityPanel({
     try {
       const res = await axios.put(`${BACKEND_URL}/api/users/${id}/follow`, {}, { withCredentials: true });
       if (res.data.requested === false) {
-        setSent((prev) => prev.filter((s) => s._id !== id));
+        await fetchSent();
         toast.success("Follow request cancelled");
       } else {
         toast.info(res.data.message || "Follow request state updated");
       }
-    } catch {
-      toast.error("Failed to cancel follow request");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to cancel follow request"));
     } finally {
       setActionLoading((prev) => ({ ...prev, [id]: false }));
     }

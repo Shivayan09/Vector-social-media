@@ -7,6 +7,7 @@ import { useMounted } from "@/lib/useMounted";
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { getErrorMessage } from "@/lib/error";
 
 type SupportModalProps = {
   open: boolean;
@@ -53,12 +54,7 @@ export default function SupportModal({ open, onClose, topic }: SupportModalProps
         onClose();
       }
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const errorMessage = error.response?.data?.message || "Failed to submit issue.";
-        toast.error(errorMessage);
-      } else {
-        toast.error("Failed to submit issue.");
-      }
+      toast.error(getErrorMessage(error, "Failed to submit issue."));
     } finally {
       setIsSubmitting(false);
     }
@@ -69,7 +65,7 @@ export default function SupportModal({ open, onClose, topic }: SupportModalProps
   return createPortal(
     <div
       onClick={isSubmitting ? undefined : onClose}
-      className={`fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 transition-opacity duration-200 ${
+      className={`fixed inset-0 z-9999 flex items-center justify-center bg-black/40 transition-opacity duration-200 ${
         open ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
     >
@@ -143,7 +139,7 @@ export default function SupportModal({ open, onClose, topic }: SupportModalProps
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="px-5 py-2 text-sm font-medium rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition cursor-pointer disabled:opacity-70 flex items-center justify-center min-w-[120px]"
+            className="px-5 py-2 text-sm font-medium rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition cursor-pointer disabled:opacity-70 flex items-center justify-center min-w-30"
           >
             {isSubmitting ? "Submitting..." : "Submit"}
           </button>

@@ -1,5 +1,12 @@
 import mongoose from "mongoose";
 
+export const NOTIFICATION_RETENTION_DAYS = Number.parseInt(
+  process.env.NOTIFICATION_RETENTION_DAYS || "",
+  10,
+) || 90;
+
+export const NOTIFICATION_RETENTION_SECONDS = NOTIFICATION_RETENTION_DAYS * 24 * 60 * 60;
+
 const notificationSchema = new mongoose.Schema(
   {
     recipient: {
@@ -48,11 +55,21 @@ notificationSchema.index(
   }
 );
 
+// Prevent duplicate follow-request-accepted notifications under concurrent acceptance.
+notificationSchema.index(
+  { recipient: 1, sender: 1, type: 1 },
+  { unique: true, partialFilterExpression: { type: "follow_request_accepted" } }
+);
+
 // Index for efficient notification inbox queries (filtering by recipient and sorting by newest)
 notificationSchema.index({ recipient: 1, createdAt: -1 });
 
-// TTL index for deleting old read notifications
-const retentionDays = parseInt(process.env.NOTIFICATION_RETENTION_DAYS) || 90;
-notificationSchema.index({ readAt: 1 }, { expireAfterSeconds: retentionDays * 24 * 60 * 60 });
+// TTL index for deleting notifications regardless of read state.
+// The retention window is driven by NOTIFICATION_RETENTION_DAYS so unread
+// notifications do not accumulate forever.
+notificationSchema.index(
+  { createdAt: 1 },
+  { expireAfterSeconds: NOTIFICATION_RETENTION_SECONDS },
+);
 
 export default mongoose.model("Notification", notificationSchema);

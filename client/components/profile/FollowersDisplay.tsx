@@ -23,8 +23,8 @@ export default function FollowersDisplay({ userId, emptyText }: Props) {
     useEffect(() => {
         const fetchFollowers = async () => {
             try {
-                const { data } = await axios.get(`${BACKEND_URL}/api/users/${userId}/followers`, { withCredentials: true });
-                setUsers(data);
+                const { data } = await axios.get(`${BACKEND_URL}/api/users/${userId}/followers?limit=50`, { withCredentials: true });
+                setUsers(data.followers || []);
             } finally {
                 setLoading(false);
             }

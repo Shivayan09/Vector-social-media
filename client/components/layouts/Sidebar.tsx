@@ -4,9 +4,10 @@ import { useState, useEffect, useCallback, ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Home, Search, Bell, User, Plus, Menu, X, Settings, LogOut, Send, LifeBuoy } from "lucide-react";
+import { Home, Search, Bell, User, Plus, Menu, X, Settings, LogOut, Send, LifeBuoy, Star } from "lucide-react";
 import CreateModal from "../modals/CreatePostModal";
 import { toast } from "react-toastify";
+import { getErrorMessage } from "@/lib/error";
 import axios from "axios";
 import { useAppContext } from "@/context/AppContext";
 import LogoutWarning from "../modals/LogoutWarning";
@@ -40,17 +41,15 @@ export default function Sidebar() {
     try {
       const { data } = await axios.post(BACKEND_URL + "/api/auth/logout", {}, { withCredentials: true });
       if (data.success) {
-        toast.success("Logged out successfully!");
+        socket.disconnect();
         setIsLoggedIn(false);
         setUserData(null);
+        setPosts([]);
+        toast.success("Logged out successfully!");
         router.replace("/auth/login");
       }
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error("Something went wrong");
-      }
+      toast.error(getErrorMessage(error));
     }
   };
 
@@ -218,6 +217,13 @@ export default function Sidebar() {
             active={pathname === "/main/settings"}
           />
 
+         <SidebarItem
+            icon={<Star className='h-5 md:h-7'/>}
+            label="Reviews"
+            href="/main/reviews"
+            active={pathname === "/main/reviews"}
+          />
+          
           <SidebarItem
             icon={<LifeBuoy className="h-5 md:h-7" />}
             label="Support"
