@@ -4,7 +4,7 @@ import { Button } from "../ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Eye, EyeOff, Plus } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
@@ -47,9 +47,17 @@ export default function RegistrationForm() {
     }
   };
 
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preview]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (preview) URL.revokeObjectURL(preview);
     setAvatarFile(file);
     setPreview(URL.createObjectURL(file));
   };

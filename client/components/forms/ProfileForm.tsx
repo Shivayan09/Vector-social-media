@@ -5,7 +5,7 @@ import Image from "next/image";
 import axios from "axios";
 import { Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { getErrorMessage } from "@/lib/error";
 
@@ -18,17 +18,25 @@ export default function ProfileForm() {
     const [loading, setLoading] = useState(false);
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
+    useEffect(() => {
+        return () => {
+            if (preview) URL.revokeObjectURL(preview);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [preview]);
+
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) {
             return;
         }
+        if (preview) URL.revokeObjectURL(preview);
         setAvatarFile(file);
-        const url = URL.createObjectURL(file);
-        setPreview(url);
+        setPreview(URL.createObjectURL(file));
     };
 
     const handleRemove = () => {
+        if (preview) URL.revokeObjectURL(preview);
         setPreview(null);
         setAvatarFile(null);
         if (fileRef.current) {

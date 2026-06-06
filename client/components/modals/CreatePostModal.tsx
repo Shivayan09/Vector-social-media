@@ -104,6 +104,13 @@ export default function CreatePostModal({ onClose, onPostCreated }: CreateModalP
         setTimeout(onClose, 200);
     };
 
+    useEffect(() => {
+        return () => {
+            if (imagePreview) URL.revokeObjectURL(imagePreview);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [imagePreview]);
+
     const processFile = (file: File) => {
         if (!file.type.startsWith("image/")) {
             toast.error("Only image files are allowed");
@@ -113,6 +120,7 @@ export default function CreatePostModal({ onClose, onPostCreated }: CreateModalP
             toast.error("File size must be less than 2MB");
             return;
         }
+        if (imagePreview) URL.revokeObjectURL(imagePreview);
         setImageFile(file);
         setImagePreview(URL.createObjectURL(file));
     };
@@ -418,7 +426,7 @@ export default function CreatePostModal({ onClose, onPostCreated }: CreateModalP
                                 <Image src={imagePreview} alt="Preview" width={800} height={400} unoptimized className="w-full h-full object-cover" />
                             </div>
                             <button 
-                                onClick={() => { setImageFile(null); setImagePreview(null); }} 
+                                onClick={() => { if (imagePreview) URL.revokeObjectURL(imagePreview); setImageFile(null); setImagePreview(null); }} 
                                 aria-label="Remove image"
                                 className="absolute top-3 right-3 bg-red-500/90 p-2 rounded-full text-white shadow-xl hover:bg-red-600 transition-all scale-90 group-hover:scale-100"
                             >

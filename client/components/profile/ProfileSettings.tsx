@@ -99,10 +99,18 @@ export default function ProfileSettings() {
     return null;
   }
 
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preview]);
+
   const handleAvatarChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (preview) URL.revokeObjectURL(preview);
     setSelectedFile(file);
     setPreview(URL.createObjectURL(file));
   };
@@ -127,6 +135,7 @@ export default function ProfileSettings() {
         setUserData(prev => prev ? { ...prev, avatar: res.data.avatar } : prev);
 
         setSelectedFile(null);
+        if (preview) URL.revokeObjectURL(preview);
         setPreview(null);
 
         toast.success("Profile picture updated");
