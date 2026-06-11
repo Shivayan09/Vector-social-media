@@ -186,6 +186,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
         socket.off("stop_typing", handleStopTyping);
         socket.off("conversation_read", handleConversationRead);
         socket.off("conversation:deleted", handleConversationDeleted);
+        // Include 'router' to prevent stale closures during conversation-deletion redirects
     };
   }, [userData, conversationId, BACKEND_URL, router]);
 
