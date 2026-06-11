@@ -127,6 +127,7 @@ export default function NotificationPanel({ search = "" }: Props) {
       });
       setNotifications((prev) => prev.filter((n) => n._id !== id));
       toast.success("Notification deleted");
+      window.dispatchEvent(new Event("notifications:read"));
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, "Delete failed"));
     } finally {
@@ -141,6 +142,7 @@ export default function NotificationPanel({ search = "" }: Props) {
       });
       setNotifications([]);
       toast.success("All notifications cleared");
+      window.dispatchEvent(new Event("notifications:read"));
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, "Delete all failed"));
     }
@@ -155,6 +157,7 @@ export default function NotificationPanel({ search = "" }: Props) {
       );
 
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      window.dispatchEvent(new Event("notifications:read"));
     } catch (err) {
       console.error(err);
     }
