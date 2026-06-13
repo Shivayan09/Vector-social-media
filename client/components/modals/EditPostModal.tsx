@@ -31,7 +31,7 @@ export default function EditPostModal({
   const [loading, setLoading] = useState(false);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
-  const MAX_CHARS = 1000;
+  const MAX_CHARS = 500;
   const charsLeft = MAX_CHARS - content.trim().length;
 
   const handleClose = () => {
@@ -220,6 +220,14 @@ export default function EditPostModal({
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
+                    if (!file.type.startsWith("image/")) {
+                      toast.error("Only image files are allowed.");
+                      return;
+                    }
+                    if (file.size > 2 * 1024 * 1024) {
+                      toast.error("Image must be under 2MB.");
+                      return;
+                    }
                     if (imagePreview?.startsWith("blob:")) {
                       URL.revokeObjectURL(imagePreview);
                     }
