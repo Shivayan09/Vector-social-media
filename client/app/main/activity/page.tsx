@@ -3,7 +3,6 @@
 import ActivitySidebar from "@/components/layouts/ActivitySidebar";
 import NotificationsPanel from "@/components/NotificationPanel";
 import FollowActivityPanel from "@/components/FollowActivityPanel";
-import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import SearchBar from "@/components/SearchBar";

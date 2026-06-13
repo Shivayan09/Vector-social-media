@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, UserPlus, X } from "lucide-react";
+import { UserPlus, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";

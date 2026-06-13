@@ -5,7 +5,7 @@ import Image from "next/image";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useAppContext } from "@/context/AppContext";
-import { ArrowRight, Search, Trash2 } from "lucide-react";
+import { ArrowRight, Trash2 } from "lucide-react";
 import ConfirmModal from "@/components/modals/DeleteWarning";
 import { toast } from "react-toastify";
 import SkeletonLoader from "@/components/loaders/SkeletonLoader";

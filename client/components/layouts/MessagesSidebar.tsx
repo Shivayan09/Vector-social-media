@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Send, UserPlus, X } from "lucide-react";
+import { Send, UserPlus, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
