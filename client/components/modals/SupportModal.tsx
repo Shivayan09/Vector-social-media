@@ -22,7 +22,11 @@ export default function SupportModal({ open, onClose, topic }: SupportModalProps
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [messageLen, setMessageLen] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const MAX_MSG_LEN = 1000;
 
   useEffect(() => {
     if (userData) {
@@ -34,12 +38,18 @@ export default function SupportModal({ open, onClose, topic }: SupportModalProps
   // Reset message whenever the modal is closed
   const handleClose = () => {
     setMessage("");
+    setMessageLen(0);
     onClose();
   };
 
   const handleSubmit = async () => {
     if (!name.trim() || !email.trim() || !message.trim()) {
       toast.error("Please fill in all fields.");
+      return;
+    }
+
+    if (!EMAIL_RE.test(email.trim())) {
+      toast.error("Please enter a valid email address.");
       return;
     }
 
@@ -125,12 +135,17 @@ export default function SupportModal({ open, onClose, topic }: SupportModalProps
             <label className="block text-sm font-medium text-foreground mb-1.5">Describe your issue</label>
             <textarea
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value.slice(0, MAX_MSG_LEN);
+                setMessage(val);
+                setMessageLen(val.length);
+              }}
               disabled={isSubmitting}
               rows={4}
               className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary disabled:opacity-50"
               placeholder="Please provide as much detail as possible..."
             />
+            <div className="text-xs text-right text-foreground/50 mt-1">{messageLen}/{MAX_MSG_LEN}</div>
           </div>
         </div>
 
