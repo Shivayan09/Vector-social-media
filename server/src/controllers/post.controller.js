@@ -219,98 +219,46 @@ if (!intent || (!content && !req.file && !hasPoll)) {
 
 if (pollQuestion && pollOptions) {
     const parsedOptions =
-  typeof pollOptions === "string"
-    ? JSON.parse(pollOptions)
-    : pollOptions;
+      typeof pollOptions === "string"
+        ? JSON.parse(pollOptions)
+        : pollOptions;
 
-if (!Array.isArray(parsedOptions)) {
-  return res.status(400).json({
-    success: false,
-    message: "Poll options must be an array"
-  });
-}
+    if (!Array.isArray(parsedOptions)) {
+      return res.status(400).json({
+        success: false,
+        message: "Poll options must be an array"
+      });
+    }
 
-const cleanedOptions = parsedOptions
-  .map(option => option?.trim())
-  .filter(Boolean);
+    const cleanedOptions = parsedOptions
+      .map(option => option?.trim())
+      .filter(Boolean);
 
-if (cleanedOptions.length < 2) {
-  return res.status(400).json({
-    success: false,
-    message: "Poll requires at least 2 options"
-  });
-}
+    if (cleanedOptions.length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: "Poll requires at least 2 options"
+      });
+    }
 
-if (
-  pollExpiresAt &&
-  new Date(pollExpiresAt) <= new Date()
-) {
-  return res.status(400).json({
-    success: false,
-    message: "Poll expiry must be in the future"
-  });
-}
+    if (
+      pollExpiresAt &&
+      new Date(pollExpiresAt) <= new Date()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Poll expiry must be in the future"
+      });
+    }
 
-poll = {
-  question: pollQuestion.trim(),
-  options: cleanedOptions.map(option => ({
-    text: option,
-    voters: []
-  })),
-  expiresAt: pollExpiresAt || null
-};
-    const parsedOptions =
-  typeof pollOptions === "string"
-    ? JSON.parse(pollOptions)
-    : pollOptions;
-
-if (!Array.isArray(parsedOptions)) {
-  return res.status(400).json({
-    success: false,
-    message: "Poll options must be an array"
-  });
-}
-
-const cleanedOptions = parsedOptions
-  .map(option => option?.trim())
-  .filter(Boolean);
-
-if (cleanedOptions.length < 2) {
-  return res.status(400).json({
-    success: false,
-    message: "Poll requires at least 2 options"
-  });
-}
-
-if (
-  pollExpiresAt &&
-  new Date(pollExpiresAt) <= new Date()
-) {
-  return res.status(400).json({
-    success: false,
-    message: "Poll expiry must be in the future"
-  });
-}
-  const parsedOptions =
-    typeof pollOptions === "string"
-      ? JSON.parse(pollOptions)
-      : pollOptions;
-
-  if (parsedOptions.length < 2) {
-    return res.status(400).json({
-      success: false,
-      message: "Poll must contain at least 2 options"
-    });
-  }
-
-  poll = {
-    question: pollQuestion,
-    options: parsedOptions.map(option => ({
-      text: option,
-      voters: []
-    })),
-    expiresAt: pollExpiresAt || null
-  };
+    poll = {
+      question: pollQuestion.trim(),
+      options: cleanedOptions.map(option => ({
+        text: option,
+        voters: []
+      })),
+      expiresAt: pollExpiresAt || null
+    };
 }
 
         const post = await Post.create({
