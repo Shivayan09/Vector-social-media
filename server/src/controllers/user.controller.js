@@ -738,7 +738,6 @@ export const searchUsers = asyncHandler(async (req, res) => {
         const {
     query,
     cursor,
-    location,
     sortBy
 } = req.query;
 
