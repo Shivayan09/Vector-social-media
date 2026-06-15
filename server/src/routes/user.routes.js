@@ -21,7 +21,7 @@ userRouter.put("/:id/reject-request", authMiddleware, followActionLimiter, rejec
 userRouter.get("/all", authMiddleware, getAllUsers);
 userRouter.get("/search", searchLimiter, authMiddleware, searchUsers);
 userRouter.get("/analytics", authMiddleware, getUserAnalytics);
-userRouter.get("/:username", optionalAuth, getUserProfile);
+userRouter.get("/:username", getUserProfile);
 userRouter.get("/:id/followers", authMiddleware, getFollowers);
 userRouter.get("/:id/following", authMiddleware, getFollowing);
 
