@@ -17,12 +17,20 @@ export default function ProfileForm() {
     const [description, setDescription] = useState("");
     const [loading, setLoading] = useState(false);
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [formError, setFormError] = useState("");
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file) {
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+            setFormError("Only image files are allowed");
             return;
         }
+        if (file.size > 5 * 1024 * 1024) {
+            setFormError("Avatar image must be less than 5MB");
+            return;
+        }
+        setFormError("");
         setAvatarFile(file);
         const url = URL.createObjectURL(file);
         setPreview(url);
@@ -41,23 +49,74 @@ export default function ProfileForm() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setFormError("");
+
+        // ── Validate username ──────────────────────────────────────────────
+        if (!username.trim()) {
+            setFormError("Enter username");
+            return;
+        }
+        if (username.trim().length < 3 || username.trim().length > 30) {
+            setFormError("Username must be between 3 and 30 characters.");
+            return;
+        }
+        if (!/^[a-zA-Z0-9_-]+$/.test(username.trim())) {
+            setFormError("Username can only contain letters, numbers, underscores, and hyphens.");
+            return;
+        }
+
+        // ── Validate bio ───────────────────────────────────────────────────
+        if (!bio.trim()) {
+            setFormError("Enter bio");
+            return;
+        }
+        if (bio.length > 30) {
+            setFormError("Bio must not exceed 30 characters.");
+            return;
+        }
+
+        // ── Validate description ───────────────────────────────────────────
+        if (!description.trim()) {
+            setFormError("Enter description");
+            return;
+        }
+        if (description.length > 200) {
+            setFormError("Description must not exceed 200 characters.");
+            return;
+        }
+
         try {
             setLoading(true);
+
+            // ── Upload avatar (non-fatal if it fails) ──────────────────────
             if (avatarFile) {
-                const formData = new FormData();
-                formData.append("avatar", avatarFile);
-                await axios.post(BACKEND_URL + "/api/users/avatar", formData, { withCredentials: true });
+                try {
+                    const formData = new FormData();
+                    formData.append("avatar", avatarFile);
+                    await axios.post(BACKEND_URL + "/api/users/avatar", formData, { withCredentials: true });
+                } catch {
+                    toast.warn("Avatar upload failed. You can update it later.");
+                }
             }
-            const { data } = await axios.post(BACKEND_URL + "/api/auth/profileSetup", { username, bio, description }, { withCredentials: true });
+
+            const { data } = await axios.post(
+                BACKEND_URL + "/api/auth/profileSetup",
+                { username, bio, description },
+                { withCredentials: true }
+            );
+
             if (data.success) {
                 toast.success("Profile created successfully!");
                 router.replace("/main");
                 return;
             } else {
+                setFormError(data.message || "Profile setup failed");
                 toast.error(data.message);
             }
         } catch (error: unknown) {
-            toast.error(getErrorMessage(error));
+            const message = getErrorMessage(error);
+            setFormError(message);
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -100,17 +159,50 @@ export default function ProfileForm() {
                 <p className="form-label text-left">Set a username</p>
                 <div className="form-inline-input">
                     <p>@</p>
-                    <input type="text" placeholder="demouser09" className="h-full w-full outline-none"
-                        onChange={(e) => setUsername(e.target.value)} />
+                    <input
+                        type="text"
+                        placeholder="demouser09"
+                        className="h-full w-full outline-none"
+                        onChange={(e) => setUsername(e.target.value)}
+                    />
                 </div>
-                <p className="form-label">Set a bio</p>
-                <textarea placeholder="Enter your bio (30 words max)" className="form-textarea h-10 py-1"
-                    onChange={(e) => setBio(e.target.value)} />
-                <p className="form-label mt-3">Set a description</p>
-                <textarea placeholder="Enter your bio (200 words max)" className="form-textarea h-20 py-1"
-                    onChange={(e) => setDescription(e.target.value)} />
-                <Button disabled={loading} className={`h-10 mt-2 w-full ${loading ? 'cursor-not-allowed bg-blue-400' : 'cursor-pointer bg-blue-500 hover:bg-blue-600'}`} onClick={handleSubmit}>
-                    {loading ? 'Setting your profile..' : 'Continue'}
+
+                <div className="flex items-center justify-between mt-3">
+                    <p className="form-label !mt-0">Set a bio</p>
+                    <span className={`text-xs ${bio.length > 30 ? "text-red-500" : "text-muted-foreground"}`}>
+                        {bio.length}/30
+                    </span>
+                </div>
+                <textarea
+                    placeholder="Enter your bio (30 characters max)"
+                    className="form-textarea h-10 py-1"
+                    onChange={(e) => setBio(e.target.value)}
+                />
+
+                <div className="flex items-center justify-between mt-3">
+                    <p className="form-label !mt-0">Set a description</p>
+                    <span className={`text-xs ${description.length > 200 ? "text-red-500" : "text-muted-foreground"}`}>
+                        {description.length}/200
+                    </span>
+                </div>
+                <textarea
+                    placeholder="Enter your description (200 characters max)"
+                    className="form-textarea h-20 py-1"
+                    onChange={(e) => setDescription(e.target.value)}
+                />
+
+                {formError && (
+                    <p className="mt-3 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600">
+                        {formError}
+                    </p>
+                )}
+
+                <Button
+                    disabled={loading}
+                    className={`h-10 mt-2 w-full ${loading ? "cursor-not-allowed bg-blue-400" : "cursor-pointer bg-blue-500 hover:bg-blue-600"}`}
+                    onClick={handleSubmit}
+                >
+                    {loading ? "Setting your profile.." : "Continue"}
                 </Button>
             </div>
         </div>

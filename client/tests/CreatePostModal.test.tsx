@@ -86,7 +86,7 @@ describe("CreatePostModal Image Validation And Preview", () => {
     });
 
     expect(toast.error).toHaveBeenCalledWith("Only image files are allowed");
-    expect(screen.queryByAltText("Preview")).not.toBeInTheDocument();
+    expect(screen.queryByAltText("Post image preview")).not.toBeInTheDocument();
   });
 
   it("rejects image files larger than 2MB and triggers toast error", async () => {
@@ -113,7 +113,7 @@ describe("CreatePostModal Image Validation And Preview", () => {
     await userEvent.upload(fileInput, oversizedFile);
 
     expect(toast.error).toHaveBeenCalledWith("File size must be less than 2MB");
-    expect(screen.queryByAltText("Preview")).not.toBeInTheDocument();
+    expect(screen.queryByAltText("Post image preview")).not.toBeInTheDocument();
   });
 
   it("accepts an image of exactly 2MB size", async () => {
@@ -137,7 +137,7 @@ describe("CreatePostModal Image Validation And Preview", () => {
     await userEvent.upload(fileInput, fileExactly2MB);
 
     expect(toast.error).not.toHaveBeenCalled();
-    const previewImg = screen.getByAltText("Preview");
+    const previewImg = screen.getByAltText("Post image preview");
     expect(previewImg).toBeInTheDocument();
     expect(previewImg).toHaveAttribute("src", "mock-image-url");
   });
@@ -162,7 +162,7 @@ describe("CreatePostModal Image Validation And Preview", () => {
 
     expect(URL.createObjectURL).toHaveBeenCalledWith(validFile);
     
-    const previewImg = screen.getByAltText("Preview");
+    const previewImg = screen.getByAltText("Post image preview");
     expect(previewImg).toBeInTheDocument();
     expect(previewImg).toHaveAttribute("src", "mock-image-url");
   });
@@ -185,14 +185,14 @@ describe("CreatePostModal Image Validation And Preview", () => {
 
     await userEvent.upload(fileInput, validFile);
 
-    expect(screen.getByAltText("Preview")).toBeInTheDocument();
+    expect(screen.getByAltText("Post image preview")).toBeInTheDocument();
 
     const trashButton = container.querySelector("button.bg-red-500\\/90") as HTMLButtonElement;
     expect(trashButton).toBeInTheDocument();
 
     await userEvent.click(trashButton);
 
-    expect(screen.queryByAltText("Preview")).not.toBeInTheDocument();
+    expect(screen.queryByAltText("Post image preview")).not.toBeInTheDocument();
     expect(screen.getByText("Drop your photos here")).toBeInTheDocument();
   });
 
@@ -216,7 +216,7 @@ describe("CreatePostModal Image Validation And Preview", () => {
     });
 
     expect(toast.warning).toHaveBeenCalledWith("Please drop only one image file");
-    expect(screen.queryByAltText("Preview")).not.toBeInTheDocument();
+    expect(screen.queryByAltText("Post image preview")).not.toBeInTheDocument();
   });
 
   it("closes the modal when Cancel is clicked", async () => {

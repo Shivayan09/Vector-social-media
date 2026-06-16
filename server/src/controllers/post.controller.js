@@ -14,6 +14,10 @@ import asyncHandler from "../utils/asyncHandler.js";
 // Prevents callers from triggering full-collection scans with deep .populate() chains.
 const MAX_LIMIT = 50;
 
+// Maximum number of likes to show in preview (rest shown as count)
+// Prevents massive response payloads from posts with thousands of likes
+const MAX_LIKES_PREVIEW = 10;
+
 // --------------- Shared helpers for post listing ---------------
 
 const buildBlockExclusion = async (reqUser) => {
@@ -86,7 +90,7 @@ const getTopPosts = (daysAgo, maxResults) => async (req, res) => {
       Number.isFinite(requestedLimit) && requestedLimit > 0 ? requestedLimit : maxResults,
       maxResults
     );
-    let filter = { createdAt: { $gte: since } };
+    let filter = { createdAt: { $gte: since }, isDeleted: { $ne: true } };
     let excludeUserIds = [];
 
     if (req.user) {
@@ -129,6 +133,8 @@ const getTopPosts = (daysAgo, maxResults) => async (req, res) => {
           _id: 1, content: 1, image: 1, intent: 1, likes: 1,
           commentsCount: 1, sharesCount: 1, likesCount: 1,
           createdAt: 1, updatedAt: 1, poll: 1,
+          createdAt: 1, updatedAt: 1,
+          isEdited: 1, editedAt: 1,
           "author._id": 1, "author.username": 1, "author.name": 1,
           "author.surname": 1, "author.avatar": 1,
         },
@@ -151,11 +157,23 @@ export const removePostById = async (postId) => {
     const session = await mongoose.startSession();
     try {
         await session.withTransaction(async () => {
+            const comments = await Comment.find({ post: postId }, "_id", { session });
+            const commentIds = comments.map(c => c._id);
+
+            if (commentIds.length > 0) {
+                await Report.deleteMany(
+                    { targetType: "comment", targetId: { $in: commentIds } },
+                    { session }
+                );
+            }
+
             await Comment.deleteMany({ post: postId }, { session });
             await Notification.deleteMany({ post: postId }, { session });
             await Report.deleteMany({ targetType: "post", targetId: postId }, { session });
             await User.updateMany({ bookmarks: postId }, { $pull: { bookmarks: postId } }, { session });
-            await post.deleteOne({ session });
+            post.isDeleted = true;
+            post.deletedAt = new Date();
+            await post.save({ session });
         });
     } finally {
         await session.endSession();
@@ -278,7 +296,9 @@ poll = {
     } catch (error) {
         await cleanupTempUpload(req.file);
         if (imagePublicId) {
-            await cloudinary.uploader.destroy(imagePublicId).catch(() => {});
+            await cloudinary.uploader.destroy(imagePublicId).catch((error) => {
+                console.error("Cloudinary cleanup failed:", error);
+            });
         }
         return res.status(error.statusCode || 500).json({
             success: false,
@@ -291,7 +311,7 @@ export const getPosts = asyncHandler(async (req, res) => {
         const cursor = req.query.cursor;
         const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), MAX_LIMIT);
 
-        let filter = {};
+        let filter = { isDeleted: { $ne: true } };
         if (req.user) {
             const { currentUserId, excludeUserIds } = await buildBlockExclusion(req.user);
             filter = buildVisibilityFilter(currentUserId, excludeUserIds, filter);
@@ -332,7 +352,8 @@ export const searchPosts = asyncHandler(async (req, res) => {
             return res.status(200).json({ posts: [], limit, hasMore: false, nextCursor: null });
         }
 
-        let filter = { $text: { $search: q } };
+
+        let filter = { $text: { $search: q }, isDeleted: { $ne: true } };
         if (req.user) {
             const { currentUserId, excludeUserIds } = await buildBlockExclusion(req.user);
             filter = buildVisibilityFilter(currentUserId, excludeUserIds, filter);
@@ -458,7 +479,9 @@ export const updatePost = async (req, res) => {
             });
             newImagePublicId = uploadResult.public_id;
             if (post.imagePublicId) {
-                await cloudinary.uploader.destroy(post.imagePublicId).catch(() => {});
+                await cloudinary.uploader.destroy(post.imagePublicId).catch((error) => {
+                    console.error("Cloudinary cleanup failed:", error);
+                });
             }
             post.image = uploadResult.secure_url;
             post.imagePublicId = newImagePublicId;
@@ -470,6 +493,8 @@ export const updatePost = async (req, res) => {
 
         post.content = normalizedContent;
         post.intent = intent;
+        post.isEdited = true;
+        post.editedAt = new Date();
 
         await post.save();
         const populatedPost = await post.populate([
@@ -484,7 +509,9 @@ export const updatePost = async (req, res) => {
     } catch (error) {
         await cleanupTempUpload(req.file);
         if (newImagePublicId) {
-            await cloudinary.uploader.destroy(newImagePublicId).catch(() => {});
+            await cloudinary.uploader.destroy(newImagePublicId).catch((error) => {
+                console.error("Cloudinary cleanup failed:", error);
+            });
         }
         res.status(error.statusCode || 500).json({
             success: false,
@@ -695,13 +722,13 @@ export const getPostsByUser = asyncHandler(async (req, res) => {
 
         let pinnedPosts = [];
         if (!cursor) {
-            pinnedPosts = await Post.find({ author: userId, isPinned: true, isFlaggedForReview: { $ne: true } })
+            pinnedPosts = await Post.find({ author: userId, isPinned: true, isFlaggedForReview: { $ne: true },isDeleted: { $ne: true } })
                 .populate("author", "username name avatar")
                 .populate(likesPopulate)
                 .sort({ _id: -1 });
         }
 
-        let postFilter = { author: userId, isPinned: { $ne: true }, isFlaggedForReview: { $ne: true } };
+        let postFilter = { author: userId, isPinned: { $ne: true }, isFlaggedForReview: { $ne: true },isDeleted: { $ne: true } };
         if (cursor) {
             if (mongoose.Types.ObjectId.isValid(cursor)) {
                 postFilter._id = { $lt: cursor };
@@ -712,20 +739,64 @@ export const getPostsByUser = asyncHandler(async (req, res) => {
 
         const normalPosts = await Post.find(postFilter)
             .populate("author", "username name avatar")
-            .populate(likesPopulate)
             .sort({ _id: -1 })
-            .limit(limit);
+            .limit(limit)
+            .lean();
 
         const posts = [...pinnedPosts, ...normalPosts];
-        const hasMore = normalPosts.length === limit;
-        const nextCursor = hasMore ? normalPosts[normalPosts.length - 1]._id : null;
-        const postsWithMeta = addBookmarkMeta(posts, req.user);
+
+        // Fetch likes separately with optimization:
+        // - Limit to MAX_LIKES_PREVIEW full documents
+        // - Include total count for all likes
+        const postsWithLikes = await Promise.all(
+            posts.map(async (post) => {
+                // Filter out blocked users from likes array
+                let likesAfterBlocking = post.likes;
+                if (excludeUserIds.length) {
+                    likesAfterBlocking = post.likes.filter(
+                        (likeId) => !excludeUserIds.some((excludedId) => excludedId.toString() === likeId.toString())
+                    );
+                }
+
+                // Fetch only the preview set of likes (limited documents)
+                const likesPreview = await User.find(
+                    { _id: { $in: likesAfterBlocking.slice(0, MAX_LIKES_PREVIEW) } },
+                    "username name avatar _id"
+                ).lean();
+
+                return {
+                    ...post,
+                    likes: likesPreview,
+                    likesCount: likesAfterBlocking.length,
+                    likesPreviewCount: Math.min(likesAfterBlocking.length, MAX_LIKES_PREVIEW),
+                };
+            })
+        );
+
+        // Populate author field
+        const postsWithAuthor = await Promise.all(
+            postsWithLikes.map(async (post) => {
+                const author = await User.findById(post.author, "username name avatar").lean();
+                return { ...post, author };
+            })
+        );
+
+        const hasMore = posts.length === limit;
+        const nextCursor = hasMore ? posts[posts.length - 1]._id : null;
+        const userBookmarkSet = req.user?.bookmarks
+            ? new Set(req.user.bookmarks.map(String))
+            : new Set();
+        const postsWithMeta = postsWithAuthor.map((p) => ({
+            ...p,
+            isBookmarked: userBookmarkSet.has(p._id.toString()),
+        }));
+
         return res.status(200).json({
-        success: true,
-        posts: postsWithMeta,
-        hasMore,
-        nextCursor,
-        limit,
+            success: true,
+            posts: postsWithMeta,
+            hasMore,
+            nextCursor,
+            limit,
         });
    
 });
@@ -745,7 +816,7 @@ export const getSinglePost = asyncHandler(async (req, res) => {
             excludeUserIds = [...blockedIds, ...blockerIds];
         }
 
-        const post = await Post.findById(postId)
+        const post = await Post.findOne({ _id: postId, isDeleted: { $ne: true } })
             .populate("author", "username name avatar isPrivate")
             .populate(
                 excludeUserIds.length
@@ -923,7 +994,8 @@ export const getBookmarks = asyncHandler(async (req, res) => {
           .json({ success: false, message: "Invalid cursor" });
       }
     }
-    const filter = { _id: { $in: bookmarkIds }, isFlaggedForReview: { $ne: true } };
+
+    const filter = { _id: { $in: bookmarkIds }, isFlaggedForReview: { $ne: true }, isDeleted: { $ne: true } };
     if (cursor) {
       filter._id = { $in: bookmarkIds, $lt: new mongoose.Types.ObjectId(cursor) };
     }
@@ -949,6 +1021,7 @@ export const getBookmarks = asyncHandler(async (req, res) => {
     const posts = await Post.find(filter)
       .sort({ _id: -1 })
       .limit(limit + 1)
+
       .populate("author", "username name surname avatar")
       .populate("likes", "username name avatar _id")
       .lean();
