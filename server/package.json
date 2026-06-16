@@ -24,6 +24,8 @@
     "express-rate-limit": "^7.1.5",
     "google-auth-library": "^10.6.2",
     "helmet": "^8.1.0",
+    "isomorphic-dompurify": "2.11.0",
+    "jsdom": "^26.0.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.1.4",
     "multer": "^2.0.2",

@@ -1,5 +1,6 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
 
 type FollowButtonProps = {
   userId: string;
@@ -20,6 +21,7 @@ export default function FollowButton({
   const [following, setFollowing] = useState(isFollowing);
   const [requested, setRequested] = useState(isRequested || false);
   const [loading, setLoading] = useState(false);
+  const prevRequestedRef = useRef(isRequested);
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
   useEffect(() => {
@@ -27,7 +29,10 @@ export default function FollowButton({
   }, [isFollowing]);
 
   useEffect(() => {
-    setRequested(isRequested || false);
+    if (isRequested !== prevRequestedRef.current) {
+      setRequested(isRequested || false);
+      prevRequestedRef.current = isRequested;
+    }
   }, [isRequested]);
 
   const toggleFollow = async () => {
@@ -38,6 +43,7 @@ export default function FollowButton({
       if (res.data.requested !== undefined) {
         setRequested(res.data.requested);
         setFollowing(false);
+        onFollowChange?.(false);
       } else {
         const next = res.data.followed;
         setFollowing(next);
@@ -45,9 +51,14 @@ export default function FollowButton({
         onFollowChange?.(next);
       }
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        console.error(err.message);
+      let message = "Something went wrong. Please try again.";
+      if (axios.isAxiosError(err)) {
+        message = err.response?.data?.message || message;
+      } else if (err instanceof Error) {
+        message = err.message || message;
       }
+      console.error(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

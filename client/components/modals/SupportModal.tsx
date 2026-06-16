@@ -24,6 +24,8 @@ export default function SupportModal({ open, onClose, topic }: SupportModalProps
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
   useEffect(() => {
     if (userData) {
       setName(userData.name || userData.username || "");
@@ -31,7 +33,6 @@ export default function SupportModal({ open, onClose, topic }: SupportModalProps
     }
   }, [userData, open]);
 
-  // Reset message whenever the modal is closed
   const handleClose = () => {
     setMessage("");
     onClose();
@@ -40,6 +41,14 @@ export default function SupportModal({ open, onClose, topic }: SupportModalProps
   const handleSubmit = async () => {
     if (!name.trim() || !email.trim() || !message.trim()) {
       toast.error("Please fill in all fields.");
+      return;
+    }
+    if (!emailRegex.test(email.trim())) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+    if (message.trim().length > 1000) {
+      toast.error("Message must be at most 1000 characters.");
       return;
     }
 
@@ -122,12 +131,18 @@ export default function SupportModal({ open, onClose, topic }: SupportModalProps
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Describe your issue</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              Describe your issue
+              <span className="float-right text-xs text-foreground/50 font-normal">
+                {message.length} / 1000
+              </span>
+            </label>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               disabled={isSubmitting}
               rows={4}
+              maxLength={1000}
               className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary disabled:opacity-50"
               placeholder="Please provide as much detail as possible..."
             />

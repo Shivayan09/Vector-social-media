@@ -89,12 +89,12 @@ describe("Notification Endpoints", () => {
     expect(updatedNotification.isRead).toBe(true);
   });
 
-  it("returns 500 when marking a notification as read with an invalid id", async () => {
+  it("returns 400 when marking a notification as read with an invalid id", async () => {
     const response = await request(app)
       .put("/api/notifications/invalid-id/read")
       .set("Cookie", cookie);
 
-    expect(response.statusCode).toBe(500);
+    expect(response.statusCode).toBe(400);
   });
 
   it("deletes a notification", async () => {
@@ -122,14 +122,14 @@ describe("Notification Endpoints", () => {
     expect(response.body.message).toBe("Notification not found");
   });
 
-  it("returns 500 when deleting a notification with an invalid id", async () => {
+  it("returns 400 when deleting a notification with an invalid id", async () => {
     const response = await request(app)
       .delete("/api/notifications/invalid-id")
       .set("Cookie", cookie);
 
-    expect(response.statusCode).toBe(500);
+    expect(response.statusCode).toBe(400);
     expect(response.body.success).toBe(false);
-    expect(response.body.message).toBe("Server error");
+    expect(response.body.message).toBe("Invalid ID format");
   });
 
   it("deletes all notifications for the logged in user", async () => {
@@ -188,14 +188,14 @@ describe("Notification Endpoints", () => {
     expect(response.body.message).toBe("Invalid request");
   });
 
-  it("returns 500 when bulk delete receives an invalid id", async () => {
+  it("returns 400 when bulk delete receives an invalid id", async () => {
     const response = await request(app)
       .post("/api/notifications/bulk-delete")
       .set("Cookie", cookie)
       .send({ ids: ["invalid-id"] });
 
-    expect(response.statusCode).toBe(500);
+    expect(response.statusCode).toBe(400);
     expect(response.body.success).toBe(false);
-    expect(response.body.message).toBe("Server error");
+    expect(response.body.message).toBe("Invalid ID format");
   });
 });

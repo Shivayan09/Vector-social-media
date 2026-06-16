@@ -78,7 +78,7 @@ describe("PostCard Image Loading Behavior", () => {
     expect(skeleton).toBeInTheDocument();
 
     // The image should be rendered but invisible/hidden (opacity-0)
-    const image = screen.getByAltText("Post attachment");
+    const image = screen.getByAltText("Post image by testuser: Check out this image!");
     expect(image).toBeInTheDocument();
     expect(image).toHaveClass("opacity-0");
 
@@ -89,7 +89,7 @@ describe("PostCard Image Loading Behavior", () => {
   it("should clear skeleton loader and show image when image successfully loads", () => {
     render(<PostCard post={mockPost} />);
 
-    const image = screen.getByAltText("Post attachment");
+    const image = screen.getByAltText("Post image by testuser: Check out this image!");
     
     // Simulate image loading successfully
     fireEvent.load(image);
@@ -107,7 +107,7 @@ describe("PostCard Image Loading Behavior", () => {
   it("should clear skeleton loader and show fallback UI when image fails to load", () => {
     render(<PostCard post={mockPost} />);
 
-    const image = screen.getByAltText("Post attachment");
+    const image = screen.getByAltText("Post image by testuser: Check out this image!");
 
     // Simulate image failing to load
     fireEvent.error(image);
@@ -116,7 +116,7 @@ describe("PostCard Image Loading Behavior", () => {
     expect(screen.queryByLabelText("Loading content")).not.toBeInTheDocument();
 
     // The image should be unmounted/removed from DOM
-    expect(screen.queryByAltText("Post attachment")).not.toBeInTheDocument();
+    expect(screen.queryByAltText("Post image by testuser: Check out this image!")).not.toBeInTheDocument();
 
     // Failed UI fallback should be visible
     expect(screen.getByText("Failed to load image")).toBeInTheDocument();

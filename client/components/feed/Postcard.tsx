@@ -77,6 +77,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
 
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
+    const likeInFlight = useRef(false);
     const [likeAnimating, setLikeAnimating] = useState(false);
     const [imageState, setImageState] = useState<{
         src: string | null;
@@ -115,56 +116,53 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     }
 
     const handleLike = async () => {
-        const previousLikes = localLikes;
+        if (likeInFlight.current) return;
+        if (!userData?.id) {
+            toast.error("User not authenticated");
+            return;
+        }
+
+        const shouldLike = !isLiked;
+        likeInFlight.current = true;
+
+        if (shouldLike) {
+            setLikeAnimating(true);
+            setTimeout(() => setLikeAnimating(false), 300);
+        }
+
+        const updatedLikes = shouldLike
+            ? getUniqueLikes([...uniqueLikes, currentUserLike ?? userData.id])
+            : uniqueLikes.filter((like) => getLikeUserId(like) !== userData.id);
+
+        setLocalLikes(updatedLikes);
+
+        if (setPost) {
+            setPost(prev =>
+                prev
+                    ? { ...prev, likes: updatedLikes }
+                    : prev
+            );
+        } else {
+            setPosts(prev =>
+                prev.map(p =>
+                    p._id === post._id
+                        ? { ...p, likes: updatedLikes }
+                        : p
+                )
+            );
+        }
+
         try {
-            // 🚨 guard: don't proceed if user id missing
-            if (!userData?.id) {
-                toast.error("User not authenticated");
-                return;
-            }
-
-            if (!isLiked) {
-                setLikeAnimating(true);
-                setTimeout(() => setLikeAnimating(false), 300);
-            }
-
-            const updatedLikes = isLiked
-                ? uniqueLikes.filter((like) => getLikeUserId(like) !== userData.id)
-                : getUniqueLikes([...uniqueLikes, currentUserLike ?? userData.id]);
-
-            // ✅ update local state safely
-            setLocalLikes(updatedLikes);
-            
-            if (setPost) {
-                setPost(prev =>
-                    prev
-                        ? {
-                            ...prev,
-                            likes: updatedLikes,
-                        }
-                        : prev
-                );
-            } else {
-                setPosts(prev =>
-                    prev.map(p =>
-                        p._id === post._id
-                            ? { ...p, likes: updatedLikes }
-                            : p
-                    )
-                );
-            }
-
-            // ✅ API call — use explicit like/unlike endpoint based on current state
-            const endpoint = isLiked
-                ? `${BACKEND_URL}/api/posts/${post._id}/unlike`
-                : `${BACKEND_URL}/api/posts/${post._id}/like`;
+            const endpoint = shouldLike
+                ? `${BACKEND_URL}/api/posts/${post._id}/like`
+                : `${BACKEND_URL}/api/posts/${post._id}/unlike`;
             const res = await axios.post<{ liked: boolean; likesCount: number }>(
                 endpoint,
                 {},
                 { withCredentials: true }
             );
             const { liked: serverLiked } = res.data;
-            if (serverLiked !== !isLiked) {
+            if (serverLiked !== shouldLike) {
                 const correctedLikes = serverLiked
                     ? getUniqueLikes([...uniqueLikes, currentUserLike ?? userData.id])
                     : uniqueLikes.filter((like) => getLikeUserId(like) !== userData.id);
@@ -176,18 +174,22 @@ export default function PostCard({ post, setPost }: PostCardProps) {
                 }
             }
         } catch (error) {
-            // 🚨 revert optimistic update
-            setLocalLikes(previousLikes);
+            const revertedLikes = shouldLike
+                ? uniqueLikes.filter((like) => getLikeUserId(like) !== userData.id)
+                : getUniqueLikes([...uniqueLikes, currentUserLike ?? userData.id]);
+            setLocalLikes(revertedLikes);
             if (setPost) {
-                setPost(prev => prev ? { ...prev, likes: previousLikes } : prev);
+                setPost(prev => prev ? { ...prev, likes: revertedLikes } : prev);
             } else {
-                setPosts(prev => prev.map(p => p._id === post._id ? { ...p, likes: previousLikes } : p));
+                setPosts(prev => prev.map(p => p._id === post._id ? { ...p, likes: revertedLikes } : p));
             }
             if (axios.isAxiosError(error) && error.response?.status === 403) {
                 toast.error("Action blocked");
             } else {
                 toast.error("Failed to like post");
             }
+        } finally {
+            likeInFlight.current = false;
         }
     };
 
@@ -518,7 +520,11 @@ Report post </button>
                         <Image
                             key={post.image}
                             src={post.image}
-                            alt="Post attachment"
+                            alt={
+                                post.content
+                                    ? `Post image by ${post.author?.username}: ${post.content.slice(0, 100)}`
+                                    : `Post image by ${post.author?.username}`
+                            }
                             width={1200}
                             height={800}
                             onLoad={() => {
@@ -585,7 +591,17 @@ Report post </button>
                 </div>
 
                 <div>
-                    <p className="text-sm sm:text-md">{timeAgo(post.createdAt)}</p>
+                    <p className="text-sm sm:text-md text-foreground/70 flex items-center gap-1">
+                        {timeAgo(post.createdAt)}
+                        {post.isEdited && (
+                            <span 
+                                title={post.editedAt ? `Edited: ${new Date(post.editedAt).toLocaleString()}` : 'Edited'}
+                                className="text-xs text-foreground/50 hover:text-foreground/80 transition-colors cursor-help"
+                            >
+                                • edited
+                            </span>
+                        )}
+                    </p>
                 </div>
             </div>
 

@@ -156,7 +156,7 @@ export default function Sidebar() {
 
             <div className="flex flex-col ml-3">
               <p className="font-semibold text-[1.1rem]">Hello</p>
-              <p className="text-slate-600 dark:text-gray-300">{userData?.name}!</p>
+              <p className="text-slate-600 dark:text-gray-300">{userData?.name || "User"}!</p>
             </div>
           </div>
         </div>
@@ -202,8 +202,8 @@ export default function Sidebar() {
           <SidebarItem
             icon={<User className="h-5 md:h-7" />}
             label="Profile"
-            href={`/main/user/${userData?.username}`}
-            active={pathname === `/main/user/${userData?.username}`}
+            href={userData?.username ? `/main/user/${userData.username}` : "#"}
+            active={userData?.username ? pathname === `/main/user/${userData.username}` : false}
           />
 
           <SidebarItem

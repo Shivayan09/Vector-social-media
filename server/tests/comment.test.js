@@ -301,5 +301,37 @@ describe('Comment Routes', () => {
       const postAfterDelete = await Post.findById(post._id);
       expect(postAfterDelete.commentsCount).toBe(1); // decremented by 2
     });
+    it('should not decrement commentsCount if comment is already flagged for review', async () => {
+      // 1. Create a normal comment
+      const commentToFlag = await Comment.create({
+        post: post._id,
+        author: user1._id,
+        content: "Comment that will be flagged"
+      });
+
+      // 2. Increment commentsCount to simulate normal comment creation
+      await Post.findByIdAndUpdate(post._id, { $inc: { commentsCount: 1 } });
+
+      let preFlagPost = await Post.findById(post._id);
+      expect(preFlagPost.commentsCount).toBe(2); // 1 from beforeEach + 1 new
+
+      // 3. Simulate the moderation flow: mark as flagged and decrement count
+      await Comment.findByIdAndUpdate(commentToFlag._id, { isFlaggedForReview: true });
+      await Post.findByIdAndUpdate(post._id, { $inc: { commentsCount: -1 } });
+
+      let postBeforeDelete = await Post.findById(post._id);
+      expect(postBeforeDelete.commentsCount).toBe(1);
+
+      // 4. Delete the comment via API
+      const res = await request(app)
+        .delete(`/api/comments/delete/${commentToFlag._id}`)
+        .set('Cookie', cookie1);
+
+      expect(res.status).toBe(200);
+
+      // 5. Verify count remains 1, no double decrement
+      const postAfterDelete = await Post.findById(post._id);
+      expect(postAfterDelete.commentsCount).toBe(1);
+    });
   });
 });

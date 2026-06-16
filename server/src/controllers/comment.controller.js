@@ -214,14 +214,23 @@ export const deleteComment = asyncHandler(async (req, res) => {
     let deletedNotifications = [];
     try {
         await session.withTransaction(async () => {
-            const replies = await Comment.find({ parentCommentId: comment._id }).select("_id").session(session);
+            const replies = await Comment.find({ parentCommentId: comment._id }).select("_id isFlaggedForReview").session(session);
             const replyIds = replies.map(r => r._id);
             const allCommentIds = [comment._id, ...replyIds];
+
+            let decrementCount = 0;
+            if (!comment.isFlaggedForReview) decrementCount++;
+            replies.forEach(r => {
+                if (!r.isFlaggedForReview) decrementCount++;
+            });
 
             await Comment.deleteMany({ _id: { $in: allCommentIds } }, { session });
             await Report.deleteMany({ targetType: "comment", targetId: { $in: allCommentIds } }, { session });
             await Notification.deleteMany({ comment: { $in: allCommentIds } }, { session });
-            await Post.findByIdAndUpdate(comment.post, { $inc: { commentsCount: -allCommentIds.length } }, { session });
+            
+            if (decrementCount > 0) {
+                await Post.findByIdAndUpdate(comment.post, { $inc: { commentsCount: -decrementCount } }, { session });
+            }
         });
     } finally {
         await session.endSession();

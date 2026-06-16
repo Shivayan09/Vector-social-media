@@ -47,7 +47,9 @@ export const uploadAvatar = async (req, res) => {
         });
         avatarPublicId = uploadResult.public_id;
         if (user.avatarPublicId) {
-            await cloudinary.uploader.destroy(user.avatarPublicId).catch(() => {});
+            await cloudinary.uploader.destroy(user.avatarPublicId).catch((error) => {
+                console.error("Cloudinary cleanup failed:", error);
+            });
         }
         user.avatar = uploadResult.secure_url;
         user.avatarPublicId = uploadResult.public_id;
@@ -59,7 +61,9 @@ export const uploadAvatar = async (req, res) => {
     } catch (error) {
         await cleanupTempUpload(req.file);
         if (avatarPublicId) {
-            await cloudinary.uploader.destroy(avatarPublicId).catch(() => {});
+            await cloudinary.uploader.destroy(avatarPublicId).catch((error) => {
+                console.error("Cloudinary cleanup failed:", error);
+            });
         }
         return res.status(error.statusCode || 500).json({
             success: false,
@@ -1000,22 +1004,22 @@ export const blockUser = async (req, res) => {
         if (opts.session) {
             [blockedOnCurrentCounts, blockerOnTargetCounts] = await Promise.all([
                 Comment.aggregate([
-                    { $match: { post: { $in: currentUserPostIds }, author: targetUser._id } },
+                    { $match: { post: { $in: currentUserPostIds }, author: targetUser._id, isFlaggedForReview: { $ne: true } } },
                     { $group: { _id: "$post", count: { $sum: 1 } } },
                 ]).session(opts.session),
                 Comment.aggregate([
-                    { $match: { post: { $in: targetUserPostIds }, author: currentUser._id } },
+                    { $match: { post: { $in: targetUserPostIds }, author: currentUser._id, isFlaggedForReview: { $ne: true } } },
                     { $group: { _id: "$post", count: { $sum: 1 } } },
                 ]).session(opts.session),
             ]);
         } else {
             [blockedOnCurrentCounts, blockerOnTargetCounts] = await Promise.all([
                 Comment.aggregate([
-                    { $match: { post: { $in: currentUserPostIds }, author: targetUser._id } },
+                    { $match: { post: { $in: currentUserPostIds }, author: targetUser._id, isFlaggedForReview: { $ne: true } } },
                     { $group: { _id: "$post", count: { $sum: 1 } } },
                 ]),
                 Comment.aggregate([
-                    { $match: { post: { $in: targetUserPostIds }, author: currentUser._id } },
+                    { $match: { post: { $in: targetUserPostIds }, author: currentUser._id, isFlaggedForReview: { $ne: true } } },
                     { $group: { _id: "$post", count: { $sum: 1 } } },
                 ]),
             ]);
@@ -1084,6 +1088,13 @@ export const blockUser = async (req, res) => {
         // Post-commit sweep: clean up any notifications created between the
         // transaction's Notification.deleteMany and this point (race window
         // from concurrent likePost, sendMessage, or toggleFollow operations).
+        const sweptNotifications = await Notification.find({
+            $or: [
+                { recipient: currentUserId, sender: targetUserId },
+                { recipient: targetUserId, sender: currentUserId },
+            ],
+        }).lean();
+
         await Notification.deleteMany({
             $or: [
                 { recipient: currentUserId, sender: targetUserId },
@@ -1091,8 +1102,13 @@ export const blockUser = async (req, res) => {
             ],
         });
 
-        // Emit socket events only after the transaction has committed
+        // Emit notification:removed for swept notifications
         const io = getIO();
+        for (const notif of sweptNotifications) {
+            io.to(notif.recipient.toString()).emit("notification:removed", {
+                notificationId: notif._id,
+            });
+        }
         io.to(currentUserId).emit("user:blocked", { blockedUserId: targetUserId, blockerId: currentUserId });
         io.to(targetUserId).emit("user:blocked", { blockedUserId: currentUserId, blockerId: currentUserId });
         io.to(currentUserId).emit("bookmarks:invalidated", { userId: targetUserId });

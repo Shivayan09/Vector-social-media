@@ -250,7 +250,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
     try {
       const oldest = messages[0];
       const { data } = await axios.get<MessagesResponse>(
-        `${BACKEND_URL}/api/messages/${conversationId}?before=${oldest.createdAt}&limit=${LIMIT}`,
+        `${BACKEND_URL}/api/messages/${conversationId}?before=${oldest._id}&limit=${LIMIT}`,
         { withCredentials: true }
       );
       const normalizedMessages = normalizeMessagesResponse(data);

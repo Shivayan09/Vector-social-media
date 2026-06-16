@@ -50,6 +50,14 @@ export default function RegistrationForm() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setFormError("Only image files are allowed");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setFormError("Avatar image must be less than 5MB");
+      return;
+    }
     setAvatarFile(file);
     setPreview(URL.createObjectURL(file));
   };
@@ -59,8 +67,7 @@ export default function RegistrationForm() {
 
     const cleanedPhone = phoneNumber.replace(/[\s-]/g, "");
 
-
-if (!name.trim()) {
+    if (!name.trim()) {
       return setFormError("Enter first name");
     }
     if (name.trim().length < 2 || name.trim().length > 100) {
@@ -98,29 +105,38 @@ if (!name.trim()) {
   };
 
   const handleSubmit = async () => {
+    // Clear any previous error first
+    setFormError("");
 
     if (!username.trim()) {
-      return toast.warn("Enter username");
+      setFormError("Enter username");
+      return;
     }
     if (username.trim().length < 3 || username.trim().length > 30) {
-      return toast.warn("Username must be between 3 and 30 characters.");
+      setFormError("Username must be between 3 and 30 characters.");
+      return;
     }
     if (!/^[a-zA-Z0-9_-]+$/.test(username.trim())) {
-      return toast.warn("Username can only contain letters, numbers, underscores, and hyphens.");
+      setFormError("Username can only contain letters, numbers, underscores, and hyphens.");
+      return;
     }
     if (!bio.trim()) {
-      return toast.warn("Enter bio");
+      setFormError("Enter bio");
+      return;
     }
     if (bio.length > 30) {
-      return toast.warn("Bio must not exceed 30 characters.");
+      setFormError("Bio must not exceed 30 characters.");
+      return;
     }
     if (!description.trim()) {
-      return toast.warn("Enter description");
+      setFormError("Enter description");
+      return;
     }
     if (description.length > 200) {
-      return toast.warn("Description must not exceed 200 characters.");
+      setFormError("Description must not exceed 200 characters.");
+      return;
     }
-    
+
     try {
       setLoading(true);
 
@@ -271,11 +287,29 @@ if (!name.trim()) {
             <input placeholder="demouser09" className="h-full w-full outline-none bg-transparent" onChange={(e) => setUsername(e.target.value)} />
           </div>
 
-          <p className="form-label">Set a bio</p>
-          <textarea placeholder="Enter your bio (30 words max)" className="form-textarea h-12 w-full" onChange={(e) => setBio(e.target.value)} />
+          <div className="flex items-center justify-between mt-3">
+            <p className="form-label !mt-0">Set a bio</p>
+            <span className={`text-xs ${bio.length > 30 ? "text-red-500" : "surface-text-muted"}`}>
+              {bio.length}/30
+            </span>
+          </div>
+          <textarea
+            placeholder="Enter your bio (30 characters max)"
+            className="form-textarea h-12 w-full"
+            onChange={(e) => setBio(e.target.value)}
+          />
 
-          <p className="form-label mt-3">Set a description</p>
-          <textarea placeholder="Enter your description (200 words max)" className="form-textarea h-24 w-full" onChange={(e) => setDescription(e.target.value)} />
+          <div className="flex items-center justify-between mt-3">
+            <p className="form-label !mt-0">Set a description</p>
+            <span className={`text-xs ${description.length > 200 ? "text-red-500" : "surface-text-muted"}`}>
+              {description.length}/200
+            </span>
+          </div>
+          <textarea
+            placeholder="Enter your description (200 characters max)"
+            className="form-textarea h-24 w-full"
+            onChange={(e) => setDescription(e.target.value)}
+          />
 
           <div className="flex items-center gap-2 mt-4 cursor-pointer" onClick={() => setIsPrivate(!isPrivate)}>
             <input
