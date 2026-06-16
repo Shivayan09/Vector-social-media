@@ -62,7 +62,7 @@ export default function LoginForm() {
             setLoading(true);
             const { data } = await axios.post(
                 BACKEND_URL + "/api/auth/login",
-                { username, password },
+                { username: username.trim(), password },
                 { withCredentials: true }
             );
 

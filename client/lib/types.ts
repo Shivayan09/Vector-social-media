@@ -52,6 +52,8 @@ export type Post = {
   createdAt: string;
   isBookmarked?: boolean;
   isPinned?: boolean;
+  isEdited?: boolean;
+  editedAt?: string;
 };
 
 export type Comment = {

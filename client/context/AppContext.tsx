@@ -61,11 +61,11 @@ export function AppContextProvider({
 }: {
   children: ReactNode;
 }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState<User | null>(null);
 
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [posts, setPosts] = useState<Post[]>([]);
 
@@ -75,6 +75,7 @@ export function AppContextProvider({
     if (!BACKEND_URL) {
       setIsLoggedIn(false);
       setUserData(null);
+      setLoading(false);
       return;
     }
 

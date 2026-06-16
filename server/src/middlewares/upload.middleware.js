@@ -36,7 +36,7 @@ export const uploadImage = (fieldName) => (req, res, next) => {
 
     const message =
       error.code === "LIMIT_FILE_SIZE"
-        ? "File size must be under 5MB"
+        ? "File size exceeds the maximum allowed size"
         : error.message || "Invalid image upload";
 
     return res.status(400).json({

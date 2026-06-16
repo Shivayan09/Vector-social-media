@@ -6,7 +6,9 @@ export const uploadToCloudinary = async (file, options) => {
     return await cloudinary.uploader.upload(file.path, options);
   } finally {
     if (file?.path) {
-      await unlink(file.path).catch(() => {});
+      await unlink(file.path).catch((error) => {
+        console.error("Failed to clean up temp file:", file.path, error.message);
+      });
     }
   }
 };

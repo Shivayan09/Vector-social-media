@@ -31,6 +31,7 @@ export default function MessagesSidebar() {
     const [query, setQuery] = useState("");
     const [results, setResults] = useState<User[]>([]);
     const [searching, setSearching] = useState(false);
+    const [isDebouncing, setIsDebouncing] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const { userData } = useAppContext();
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
@@ -52,11 +53,16 @@ export default function MessagesSidebar() {
     }, [BACKEND_URL]);
 
     useEffect(() => {
+        if (!query.trim()) {
+            setResults([]);
+            setIsDebouncing(false);
+            return;
+        }
+
+        setIsDebouncing(true);
+
         const delay = setTimeout(async () => {
-            if (!query.trim()) {
-                setResults([]);
-                return;
-            }
+            setIsDebouncing(false);
             try {
                 setSearching(true);
                 const res = await axios.get(`${BACKEND_URL}/api/users/search?query=${query}`, { withCredentials: true });
@@ -139,7 +145,7 @@ export default function MessagesSidebar() {
                     {loading ? (
                         <InlineLoader text="Loading users..." />
                     ) : query.trim() ? (
-                        searching ? (
+                        isDebouncing || searching ? (
                             <p className="text-sm opacity-50">Searching...</p>
                         ) : results.length === 0 ? (
                             <p className="text-sm opacity-50">No users found.</p>

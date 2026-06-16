@@ -184,8 +184,8 @@ describe("FollowButton Component", () => {
         expect(button).toHaveTextContent("Requested");
       });
 
-      // Callback should NOT be invoked for follow requests on private accounts
-      expect(mockOnFollowChange).not.toHaveBeenCalled();
+      // Callback notifies parent that user is no longer following
+      expect(mockOnFollowChange).toHaveBeenCalledWith(false);
     });
 
     it("handles private account cancel request flow (Requested -> Follow)", async () => {
@@ -210,7 +210,7 @@ describe("FollowButton Component", () => {
         expect(button).toHaveTextContent("Follow");
       });
 
-      expect(mockOnFollowChange).not.toHaveBeenCalled();
+      expect(mockOnFollowChange).toHaveBeenCalledWith(false);
     });
   });
 

@@ -59,7 +59,9 @@ function formatAllowedTypes(allowedFormats) {
 
 export async function cleanupTempUpload(file) {
   if (file?.path) {
-    await unlink(file.path).catch(() => {});
+    await unlink(file.path).catch((error) => {
+      console.error("Failed to clean up temp file:", file.path, error.message);
+    });
   }
 }
 
@@ -75,7 +77,12 @@ export async function validateImageUpload(file, { allowedFormats, maxSize, label
   }
 
   const allowed = new Set(allowedFormats);
-  const buffer = await readFile(file.path);
+  let buffer;
+  try {
+    buffer = await readFile(file.path);
+  } catch (error) {
+    throw uploadError(`Failed to read uploaded file: ${error.message}`, 500);
+  }
   const detectedFormat = detectImageType(buffer);
 
   if (!detectedFormat || !allowed.has(detectedFormat)) {

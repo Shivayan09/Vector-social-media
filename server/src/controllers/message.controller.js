@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Message from "../models/message.model.js";
 import Conversation from "../models/conversation.model.js";
 import Notification from "../models/notification.model.js";
@@ -44,29 +45,25 @@ export const getMessages = asyncHandler(async (req, res) => {
     const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), MAX_LIMIT);
     const before = req.query.before;
 
-    // Validate the before cursor before passing it to new Date().
-    // A truthy but non-date string such as "null", "undefined", or "1 OR 1=1"
-    // produces Invalid Date, which turns the $lt filter into a NaN comparison
-    // that silently returns zero results with HTTP 200.
-    let beforeDate;
+    let beforeId;
     if (before) {
-      beforeDate = new Date(before);
-      if (isNaN(beforeDate.getTime())) {
+      if (!mongoose.Types.ObjectId.isValid(before)) {
         return res.status(400).json({
-          message: "Invalid 'before' cursor: must be a valid ISO 8601 date string.",
+          message: "Invalid cursor.",
         });
       }
+      beforeId = new mongoose.Types.ObjectId(before);
     }
 
     const filter = {
       conversation: conversationId,
       isDeleted: false,
-      ...(beforeDate && { createdAt: { $lt: beforeDate } }),
+      ...(beforeId && { _id: { $lt: beforeId } }),
     };
 
     const messages = await Message.find(filter)
       .populate("sender", "username name avatar")
-      .sort({ createdAt: -1 })
+      .sort({ _id: -1 })
       .limit(limit);
 
     res.json({ messages: messages.reverse(), hasMore: messages.length === limit });
@@ -172,7 +169,9 @@ export const sendMessage = asyncHandler(async (req, res) => {
         if (nowBlocked) {
           await Message.findByIdAndDelete(message._id);
           if (imagePublicId) {
-            await cloudinary.uploader.destroy(imagePublicId).catch(() => {});
+            await cloudinary.uploader.destroy(imagePublicId).catch((error) => {
+              console.error("Cloudinary cleanup failed:", error);
+            });
           }
           return res.status(403).json({ message: "Action forbidden due to block status" });
         }
@@ -193,7 +192,9 @@ export const sendMessage = asyncHandler(async (req, res) => {
       if (!updatedConversation) {
         await Message.findByIdAndDelete(message._id);
         if (imagePublicId) {
-          await cloudinary.uploader.destroy(imagePublicId).catch(() => {});
+          await cloudinary.uploader.destroy(imagePublicId).catch((error) => {
+            console.error("Cloudinary cleanup failed:", error);
+          });
         }
         return res.status(404).json({ message: "Conversation deleted during send" });
       }
@@ -207,22 +208,19 @@ export const sendMessage = asyncHandler(async (req, res) => {
           conversation: conversationId,
           isRead: false,
         };
-        // findOneAndUpdate with new:false returns the pre-update doc,
-        // or null when a new doc was upserted. Only emit on first insert.
-        const existing = await Notification.findOneAndUpdate(
+        // Use updateOne to avoid a separate findOne query.
+        // upsertedId will only be populated if a new document was actually inserted.
+        const result = await Notification.updateOne(
           filter,
           { $setOnInsert: filter },
-          { upsert: true, returnDocument: "before" }
+          { upsert: true }
         );
         const io = getIO();
-        if (!existing) {
-          const notification = await Notification.findOne(filter);
-          if (notification) {
-            io.to(receiverId.toString()).emit("notification:new", {
-              notificationId: notification._id,
-              type: notification.type,
-            });
-          }
+        if (result.upsertedId) {
+          io.to(receiverId.toString()).emit("notification:new", {
+            notificationId: result.upsertedId,
+            type: filter.type,
+          });
         }
         
         io.to(receiverId.toString()).emit("receive_message", populated);
@@ -234,7 +232,9 @@ export const sendMessage = asyncHandler(async (req, res) => {
     } catch (error) {
       await cleanupTempUpload(req.file);
       if (imagePublicId) {
-        await cloudinary.uploader.destroy(imagePublicId).catch(() => {});
+        await cloudinary.uploader.destroy(imagePublicId).catch((error) => {
+          console.error("Cloudinary cleanup failed:", error);
+        });
       }
       return res.status(error.statusCode || 500).json({
         message: error.message || "Something went wrong"
@@ -364,6 +364,27 @@ export const deleteMessage = asyncHandler(async (req, res) => {
     await message.save();
 
     const io = getIO();
+
+    // Find and remove the associated notification for the other participant
+    if (conversation) {
+      const otherParticipant = conversation.participants.find(
+        p => p.toString() !== req.user._id.toString()
+      );
+      if (otherParticipant) {
+        const deletedNotification = await Notification.findOneAndDelete({
+          type: "message",
+          conversation: message.conversation,
+          sender: req.user._id,
+          recipient: otherParticipant,
+        });
+
+        if (deletedNotification) {
+          io.to(otherParticipant.toString()).emit("notification:removed", {
+            notificationId: deletedNotification._id,
+          });
+        }
+      }
+    }
 
     if (conversation) {
       conversation.participants.forEach((participantId) => {

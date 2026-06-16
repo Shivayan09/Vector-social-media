@@ -23,5 +23,7 @@ const conversationSchema = new mongoose.Schema(
 );
 
 conversationSchema.index({ participantsKey: 1 }, { unique: true, sparse: true });
+conversationSchema.index({ participants: 1 });
+conversationSchema.index({ deletedBy: 1, updatedAt: 1 });
 
 export default mongoose.model("Conversation", conversationSchema);

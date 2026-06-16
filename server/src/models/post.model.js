@@ -31,6 +31,26 @@ const postSchema = new mongoose.Schema({
     required: true
   },
 
+  isEdited: {
+    type: Boolean,
+    default: false
+  },
+
+  editedAt: {
+    type: Date,
+    default: null
+  },
+
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
+
+  deletedAt: {
+    type: Date,
+    default: null
+  },
+
   likes: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "User"
@@ -96,7 +116,13 @@ const postSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
+// Text index for searching posts by content and intent
 postSchema.index({ content: "text", intent: "text" });
+postSchema.index({ author: 1, _id: -1 });
+
+// Compound index for efficient cursor-based pagination on user profile posts
+// Used by getPostsByUser controller for O(log N) lookups instead of O(N) collection scans
+postSchema.index({ author: 1, _id: -1 });
 
 postSchema.pre("save", function () {
 

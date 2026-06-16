@@ -631,7 +631,8 @@ describe('Post and Comment Flows', () => {
       expect(res.body.message).toContain('deleted successfully');
       
       const dbPost = await Post.findById(newPost._id);
-      expect(dbPost).toBeNull();
+      expect(dbPost.isDeleted).toBe(true);
+      expect(dbPost.deletedAt).toBeDefined();
       
       expect(mockDestroy).toHaveBeenCalledWith('posts/dummy_image_public_id');
     });
@@ -659,7 +660,8 @@ describe('Post and Comment Flows', () => {
       expect(res.body.message).toContain('deleted successfully');
 
       const dbPost = await Post.findById(newPost._id);
-      expect(dbPost).toBeNull();
+      expect(dbPost.isDeleted).toBe(true);
+      expect(dbPost.deletedAt).toBeDefined();
 
       expect(mockDestroy).toHaveBeenCalledWith('posts/dummy_image_public_id');
 

@@ -34,10 +34,15 @@ export default function NotificationBell() {
     const handleNotification = () => {
       void fetchUnreadCount();
     };
+    const handleNotificationRemoved = () => {
+      void fetchUnreadCount();
+    };
     socket.on("notification:new", handleNotification);
+    socket.on("notification:removed", handleNotificationRemoved);
     return () => {
       window.clearTimeout(timeoutId);
       socket.off("notification:new", handleNotification);
+      socket.off("notification:removed", handleNotificationRemoved);
     };
   }, [fetchUnreadCount, userData]);
 
