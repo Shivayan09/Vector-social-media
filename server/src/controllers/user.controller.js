@@ -1177,3 +1177,46 @@ export const unblockUser = asyncHandler(async (req, res) => {
         });
 });
 
+export const getUserAnalytics = asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+
+    const user = await User.findById(userId);
+
+    const posts = await Post.find({ author: userId });
+
+    const totalPosts = posts.length;
+
+    const totalLikes = posts.reduce(
+        (sum, post) => sum + (post.likes?.length || 0),
+        0
+    );
+
+    const totalComments = posts.reduce(
+        (sum, post) => sum + (post.commentsCount || 0),
+        0
+    );
+
+    const totalShares = posts.reduce(
+        (sum, post) => sum + (post.sharesCount || 0),
+        0
+    );
+
+    const mostPopularPost = posts.sort(
+        (a, b) =>
+            (b.likes?.length || 0) -
+            (a.likes?.length || 0)
+    )[0];
+
+    res.status(200).json({
+        success: true,
+        analytics: {
+            totalPosts,
+            totalLikes,
+            totalComments,
+            totalShares,
+            followers: user.followersCount,
+            following: user.followingCount,
+            mostPopularPost,
+        },
+    });
+});

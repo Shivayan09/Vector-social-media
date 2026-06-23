@@ -1,8 +1,7 @@
 import express from "express";
 import authMiddleware from "../middlewares/auth.middleware.js";
 import { uploadImage } from "../middlewares/upload.middleware.js";
-import { getAllUsers, getFollowers, getFollowing, getUserProfile, searchUsers, toggleFollowUser, updateProfile, uploadAvatar, getSuggestedUsers, getFollowRequests, acceptFollowRequest, rejectFollowRequest, getSentFollowRequests, blockUser, unblockUser } from "../controllers/user.controller.js";
-import optionalAuth from "../middlewares/optionalAuth.middleware.js";
+import { getAllUsers, getFollowers, getFollowing, getUserProfile, searchUsers, toggleFollowUser, updateProfile, uploadAvatar, getSuggestedUsers, getFollowRequests, acceptFollowRequest, rejectFollowRequest, getSentFollowRequests, blockUser, unblockUser, getUserAnalytics } from "../controllers/user.controller.js";
 import { followActionLimiter, searchLimiter, socialActionLimiter } from "../middlewares/rateLimit.middleware.js";
 
 
@@ -21,7 +20,8 @@ userRouter.put("/:id/accept-request", authMiddleware, followActionLimiter, accep
 userRouter.put("/:id/reject-request", authMiddleware, followActionLimiter, rejectFollowRequest);
 userRouter.get("/all", authMiddleware, getAllUsers);
 userRouter.get("/search", searchLimiter, authMiddleware, searchUsers);
-userRouter.get("/:username", optionalAuth, getUserProfile);
+userRouter.get("/analytics", authMiddleware, getUserAnalytics);
+userRouter.get("/:username", getUserProfile);
 userRouter.get("/:id/followers", authMiddleware, getFollowers);
 userRouter.get("/:id/following", authMiddleware, getFollowing);
 
