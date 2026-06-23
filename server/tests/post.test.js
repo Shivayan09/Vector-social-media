@@ -146,7 +146,7 @@ describe('Post and Comment Flows', () => {
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
-      expect(res.body.message).toContain('either content or image are required');
+      expect(res.body.message).toContain('Post must contain content, image, or poll');
     });
 
     it('should rollback Cloudinary upload if Post.create fails', async () => {
