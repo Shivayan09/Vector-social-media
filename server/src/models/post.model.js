@@ -66,6 +66,16 @@ const postSchema = new mongoose.Schema({
     default: 0,
   },
 
+  viewCount: {
+  type: Number,
+  default: 0,
+},
+
+viewedBy: [{
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "User"
+}],
+
   sharedBy: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "User"

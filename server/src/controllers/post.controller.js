@@ -856,6 +856,26 @@ export const getSinglePost = asyncHandler(async (req, res) => {
         } else if (author.isPrivate) {
             return res.status(403).json({ message: "This post is from a private account. Follow them to see it." });
         }
+
+        if (req.user) {
+    const userId = req.user.id;
+
+    if (
+        !post.viewedBy?.some(
+            id => id.toString() === userId
+        )
+    ) {
+        await Post.findByIdAndUpdate(
+            postId,
+            {
+                $addToSet: { viewedBy: userId },
+                $inc: { viewCount: 1 }
+            }
+        );
+
+        post.viewCount = (post.viewCount || 0) + 1;
+    }
+}
         const postObj = post.toObject();
         postObj.isBookmarked = req.user?.bookmarks
             ? req.user.bookmarks.map(String).includes(post._id.toString())
@@ -877,7 +897,8 @@ export const incrementShare = asyncHandler(async (req, res) => {
         }
         const userId = req.user.id || req.user._id;
 
-        const post = await Post.findById(postId).select("author authorIsPrivate sharedBy sharesCount");
+        const post = await Post.findById(postId)
+.select("viewCount viewedBy author content image likes commentsCount sharesCount poll createdAt authorIsPrivate")
         if (!post) {
             return res.status(404).json({ success: false, message: "Post not found" });
         }
