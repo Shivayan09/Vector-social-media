@@ -13,6 +13,7 @@ const { default: app } = await import('../src/app.js');
 const { default: User } = await import('../src/models/user.model.js');
 const { default: Post } = await import('../src/models/post.model.js');
 const { default: Comment } = await import('../src/models/comment.model.js');
+const {default: Notification} = await import('../src/models/notification.model.js');
 
 describe('Comment Routes', () => {
   let cookie1;
@@ -301,6 +302,57 @@ describe('Comment Routes', () => {
       const postAfterDelete = await Post.findById(post._id);
       expect(postAfterDelete.commentsCount).toBe(1); // decremented by 2
     });
+
+    // Mention Notification Test
+    it('should create a mention notification when a user is mentioned in a comment', async () => {
+      const mentionedUser = await User.create({
+        name:"Alex",
+        surname:"Smith",
+        phoneNumber:"1234567890",
+        email:"alex@test.com",
+        password:"Password123",
+        username:"alexsmith",
+        bio:"Bio",
+        description:"Desc"  
+      });
+      await request(app)
+      .post(`/api/comments/add/${post._id}`)
+      .set('Cookie', cookie1)
+      .send({ content: `Hello @${mentionedUser.username}!` });
+
+      const notification = await Notification.findOne({
+        recipient: mentionedUser._id,
+        type: "mention"
+      });
+
+      expect(notification).not.toBeNull();
+      expect(notification.sender.toString()).toBe(user1._id.toString());
+    })
+     
+    // Test for Duplicate Mention Notification Prevention
+    it('should not create mention notification when post author is mentioned', async () => {
+      await request(app)
+        .post(`/api/comments/add/${post._id}`)
+        .set('Cookie', cookie2)
+        .send({
+          content: `Hello @${user1.username}`
+        });
+
+      const mentionNotification = await Notification.findOne({
+        recipient: user1._id,
+        type: "mention",
+      });
+
+      expect(mentionNotification).toBeNull();
+
+      const commentNotification = await Notification.findOne({
+        recipient: user1._id,
+        type: "comment",
+      });
+
+      expect(commentNotification).not.toBeNull();
+    });
+    
     it('should not decrement commentsCount if comment is already flagged for review', async () => {
       // 1. Create a normal comment
       const commentToFlag = await Comment.create({

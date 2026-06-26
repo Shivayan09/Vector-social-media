@@ -16,6 +16,11 @@ type CreateModalProps = {
     onPostCreated: (post: Post) => void;
 };
 
+type MentionedUser = {
+    _id: string;
+    username: string;
+    avatar?: string;
+};
 export default function CreatePostModal({ onClose, onPostCreated }: CreateModalProps) {
     const [visible, setVisible] = useState(true);
     const [intent, setIntent] = useState("");
@@ -33,6 +38,9 @@ export default function CreatePostModal({ onClose, onPostCreated }: CreateModalP
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
     const [autoSaveStatus, setAutoSaveStatus] = useState("");
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [mentionQuery, setMentionQuery] = useState("");
+    const [suggestions,setSuggestions] = useState<MentionedUser[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
 
     const router = useRouter();
 
@@ -236,6 +244,37 @@ export default function CreatePostModal({ onClose, onPostCreated }: CreateModalP
         { value: "reflect", label: "Reflect" },
     ];
 
+    // Prevent Continuous API Calls on Keypress
+        useEffect(() => {
+            if (!mentionQuery.trim()) {
+                setSuggestions([]);
+                setShowSuggestions(false);
+                return;
+            }
+            const timeout = setTimeout(async () => {
+                try {
+                    const response = await axios.get(
+                        `${BACKEND_URL}/api/users/search`,
+                        {
+                            params: { query: mentionQuery },
+                            withCredentials: true,
+                        }
+                    );
+
+                    const users: MentionedUser[] = response.data.users || [];
+
+                    setSuggestions(users);
+                    setShowSuggestions(users.length > 0);
+                } catch (error) {
+                    console.error(error);
+                    setSuggestions([]);
+                    setShowSuggestions(false);
+                }
+            }, 300); // 300ms debounce
+
+            return () => clearTimeout(timeout);
+        }, [mentionQuery, BACKEND_URL]);
+
     return (
         <>
             {/* --- FIX: aria-hidden hides background from screen readers --- */}
@@ -328,18 +367,102 @@ export default function CreatePostModal({ onClose, onPostCreated }: CreateModalP
                             onChange={(e) => {
                                 const value = e.target.value;
 
-                                if (value.length <= MAX_CHARS) {
-                                    setContent(value);
-                                } else {
+                                if (value.length > MAX_CHARS) {
                                     toast.error("Post content cannot exceed 500 characters");
+                                    return;
                                 }
+
+                                setContent(value);
+
+                                const match = value.match(/@([a-zA-Z0-9_]*)$/);
+
+                                if (!match) {
+                                    setMentionQuery("");
+                                    setShowSuggestions(false);
+                                    setSuggestions([]);
+                                    return;
+                                }
+
+                                const query = match[1];
+
+                                if (!query.trim()) {
+                                    setMentionQuery("");
+                                    setShowSuggestions(false);
+                                    setSuggestions([]);
+                                    return;
+                                }
+
+                                setMentionQuery(query);
                             }}
+                            
                             className={cn(
                                 "w-full h-40 resize-none rounded-2xl p-4 outline-none transition-all duration-200",
                                 "bg-black/5 dark:bg-white/5 border-2 border-transparent focus:border-primary/30",
                                 "text-foreground placeholder:text-foreground/40 text-lg leading-relaxed"
                             )}
                         />
+
+                    {showSuggestions && suggestions.length > 0 && (
+                    <div
+                        className="
+                            absolute left-0 right-0 top-full mt-2
+                            z-50
+                            bg-background
+                            border border-border
+                            rounded-xl
+                            shadow-lg
+                            overflow-hidden
+                            max-h-60
+                            overflow-y-auto
+                        "
+                    >
+                        {suggestions.map((user) => (
+                            <button
+                                key={user._id}
+                                type="button"
+                                onClick={() => {
+                                    const updatedContent = content.replace(
+                                        /@([a-zA-Z0-9_]*)$/,
+                                        `@${user.username} `
+                                    );
+
+                                    setContent(updatedContent);
+                                    setMentionQuery("");
+                                    setSuggestions([]);
+                                    setShowSuggestions(false);
+                                }}
+                                className="
+                                    w-full
+                                    flex
+                                    items-center
+                                    gap-3
+                                    px-4
+                                    py-3
+                                    text-left
+                                    hover:bg-muted
+                                    transition-colors
+                                "
+                            >
+                                {user.avatar ? (
+                                    <Image
+                                        src={user.avatar}
+                                        alt={user.username}
+                                        width={32}
+                                        height={32}
+                                        className="rounded-full"
+                                    />
+                                ) : (
+                                    <div className="w-8 h-8 rounded-full bg-muted" />
+                                )}
+
+                                <span className="font-medium">
+                                    @{user.username}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                )}
+                                        
                     </div>
 
                     <div className={cn(

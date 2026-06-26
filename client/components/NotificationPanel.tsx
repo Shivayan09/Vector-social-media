@@ -52,7 +52,7 @@ export default function NotificationPanel({ search = "" }: Props) {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [activeFilter, setActiveFilter] = useState<
-    "all" | "like" | "comment" | "follow" | "message"
+    "all" | "like" | "comment" | "follow" | "message" | "mention"
   >("all");
   const isFirstLoad = useRef(true);
 
@@ -323,6 +323,7 @@ export default function NotificationPanel({ search = "" }: Props) {
     follow_request_accepted: "accepted your follow request",
     post_removed_reported: "post flagged reported",
     comment_removed_reported: "comment flagged reported",
+    mention: "mention mentioned",
   };
 
   const FILTER_TABS = [
@@ -346,6 +347,12 @@ export default function NotificationPanel({ search = "" }: Props) {
       Icon: MessageCircle,
       types: ["message"],
     },
+    {
+      id : "mention" as const,
+      label:"Mentions",
+      Icon:Bell,
+      types:["mention"]
+    }
   ];
 
   const getTabCount = (types: string[] | null) =>
@@ -376,6 +383,10 @@ export default function NotificationPanel({ search = "" }: Props) {
       icon: MessageCircle,
       message: "No message notifications.",
     },
+    mention : {
+      icon: Bell,
+      message: "No mentions yet."
+    }
   };
 
   const filteredNotifications = notifications.filter((n) => {
@@ -553,6 +564,7 @@ export default function NotificationPanel({ search = "" }: Props) {
                       "Your post was flagged for review and hidden after receiving too many reports"}
                     {n.type === "comment_removed_reported" &&
                       "Your comment was flagged for review and hidden after receiving too many reports"}
+                    {n.type === "mention" && "mentioned you in a post"}
                   </p>
 
                   <p className="surface-text-muted mt-1 text-xs">

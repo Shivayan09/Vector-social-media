@@ -15,6 +15,12 @@ type EditPostModalProps = {
   onPostUpdated: (post: Post) => void;
 };
 
+type MentionedUser = {
+  _id: string;
+  username: string;
+  avatar?: string;
+};
+
 export default function EditPostModal({
   post,
   onClose,
@@ -29,6 +35,9 @@ export default function EditPostModal({
   );
   const [removeImage, setRemoveImage] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<MentionedUser[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL!;
   const MAX_CHARS = 500;
@@ -100,6 +109,37 @@ export default function EditPostModal({
     setRemoveImage(true);
   };
 
+  useEffect(() => {
+    if (!mentionQuery.trim()) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      try {
+        const response = await axios.get(
+          `${BACKEND_URL}/api/users/search`,
+          {
+            params: { query: mentionQuery },
+            withCredentials: true,
+          }
+        );
+
+        const users: MentionedUser[] = response.data.users || [];
+
+        setSuggestions(users);
+        setShowSuggestions(users.length > 0);
+      } catch (error) {
+        console.error(error);
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [mentionQuery, BACKEND_URL]);
+
   return (
     <>
       <div
@@ -162,13 +202,85 @@ export default function EditPostModal({
               maxLength={MAX_CHARS}
               placeholder="What's on your mind? Share your thoughts..."
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+
+                setContent(value);
+
+                const match = value.match(/@([a-zA-Z0-9_]*)$/);
+
+                if (!match) {
+                  setMentionQuery("");
+                  setSuggestions([]);
+                  setShowSuggestions(false);
+                  return;
+                }
+                const query = match[1];
+                if (!query.trim()) {
+                  setMentionQuery("");
+                  setSuggestions([]);
+                  setShowSuggestions(false);
+                  return;
+                }
+
+                setMentionQuery(query);
+              }}
               className={cn(
                 "w-full h-40 resize-none rounded-2xl p-4 outline-none transition-all duration-200",
                 "bg-black/5 dark:bg-white/5 border-2 border-transparent focus:border-primary/30",
                 "text-foreground placeholder:text-foreground/40 text-lg leading-relaxed",
               )}
             />
+
+          {showSuggestions && suggestions.length > 0 && (
+            <div
+              className="
+                absolute left-0 right-0 top-full mt-2
+                z-50 bg-background border border-border
+                rounded-xl shadow-lg overflow-hidden
+                max-h-60 overflow-y-auto
+              "
+            >
+              {suggestions.map((user) => (
+                <button
+                  key={user._id}
+                  type="button"
+                  onClick={() => {
+                    const updatedContent = content.replace(
+                      /@([a-zA-Z0-9_]*)$/,
+                      `@${user.username} `
+                    );
+
+                    setContent(updatedContent);
+                    setMentionQuery("");
+                    setSuggestions([]);
+                    setShowSuggestions(false);
+                  }}
+                  className="
+                    w-full flex items-center gap-3
+                    px-4 py-3 text-left
+                    hover:bg-muted transition-colors
+                  "
+                >
+                  {user.avatar ? (
+                    <Image
+                      src={user.avatar}
+                      alt={user.username}
+                      width={32}
+                      height={32}
+                      className="rounded-full"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-muted" />
+                  )}
+
+                  <span className="font-medium">
+                    @{user.username}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
             <div
               className={cn(
                 "text-xs mt-1 text-right font-medium transition-colors",

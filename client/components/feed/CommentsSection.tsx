@@ -16,11 +16,19 @@ import type { ReportReason } from "@/lib/types";
 import { reportComment } from "@/lib/reportApi";
 import Linkify from "../ui/Linkify";
 
+type MentionedUser = {
+_id: string;
+username: string;
+avatar?: string;
+};
 
 export default function CommentsSection({ postId, postAuthorId }: { postId: string; postAuthorId?: string }) {
     const { userData } = useAppContext();
     const [comments, setComments] = useState<Comment[]>([]);
     const [text, setText] = useState("");
+    const [mentionQuery, setMentionQuery] = useState("");
+    const [suggestions, setSuggestions] = useState<MentionedUser[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
@@ -385,16 +393,94 @@ export default function CommentsSection({ postId, postAuthorId }: { postId: stri
                             </button>
                         </div>
                     )}
-                    <div className="flex gap-2">
+                    <div className="relative flex gap-2">
                         <textarea
                             value={text}
-                            onChange={(e) => setText(e.target.value)}
+                            onChange={async (e) => {
+                            const value = e.target.value;
+                            setText(value);
+
+                            const match = value.match(/@([a-zA-Z0-9_]*)$/);
+
+                            if (!match) {
+                                setShowSuggestions(false);
+                                setSuggestions([]);
+                                return;
+                            }
+                            const query = match[1];
+                            if (!query) {
+                                setShowSuggestions(false);
+                                setSuggestions([]);
+                                return;
+                            }
+                            setMentionQuery(query);
+                            try {
+                                const response = await axios.get(
+                                `${BACKEND_URL}/api/users/search`,
+                                {
+                                    params: { query },
+                                    withCredentials: true,
+                                }
+                                );
+                                setSuggestions(response.data.users || []);
+                                setShowSuggestions(true);
+                            } catch (error) {
+                                console.error(error);
+                                setSuggestions([]);
+                                setShowSuggestions(false);
+                            }
+                            }}
                             onKeyDown={handleKeyDown}
                             placeholder={replyingTo ? `Reply to @${replyingTo.author?.username}...` : "Write a comment.."}
                             className="form-textarea mt-0 flex-1"
                             rows={2}
                         />
-                        <button
+
+                        {/* suggestions */}
+                        {showSuggestions && suggestions.length > 0 && (
+                        <div
+                            className="
+                            absolute z-50 mt-1 w-full
+                            bg-background border border-border
+                            rounded-lg shadow-lg max-h-60 overflow-y-auto
+                            "
+                        >
+                            {suggestions.map((user) => (
+                            <button
+                                key={user._id}
+                                type="button"
+                                onClick={() => {
+                                const updatedText = text.replace(
+                                    /@([a-zA-Z0-9_]*)$/,
+                                    `@${user.username} `
+                                );
+
+                                setText(updatedText);
+                                setMentionQuery("");
+                                setSuggestions([]);
+                                setShowSuggestions(false);
+                                }}
+                                className="
+                                w-full flex items-center gap-3
+                                px-4 py-3 text-left
+                                hover:bg-muted transition-colors
+                                "
+                            >
+                                <Image
+                                src={user.avatar || "/default-avatar.png"}
+                                alt={user.username}
+                                width={32}
+                                height={32}
+                                className="rounded-full"
+                                />
+
+                                <span>@{user.username}</span>
+                            </button>
+                            ))}
+                        </div>
+                        )}
+                        
+                       <button
                             disabled={!text.trim() || buttonLoading}
                             onClick={handlePost}
                             className="w-20 md:w-25 h-9 md:h-10 cursor-pointer bg-blue-500 text-white text-sm font-medium rounded-md disabled:opacity-50 self-end"

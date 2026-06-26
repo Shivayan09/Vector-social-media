@@ -769,6 +769,87 @@ describe('Post and Comment Flows', () => {
       expect(res2.body.posts.length).toBe(2);
       expect(res2.body.nextCursor).toBeNull();
     });
+
+    // Mention Notifications from post 
+    it("should create a mention notification when a user is mentioned in a post", async () => {
+      const mentionedUser = await User.create({
+        name: "Alex",
+        surname: "Smith",
+        phoneNumber: "7777777777",
+        email: "alex@test.com",
+        password: "Password123",
+        username: "alexsmith",
+        bio: "Bio",
+        description: "Desc",
+      });
+
+      const res = await request(app)
+        .post("/api/posts")
+        .set("Cookie", cookie)
+        .send({
+          content: `Hello @${mentionedUser.username}`,
+          intent: "share",
+        });
+
+      expect(res.status).toBe(201);
+
+      const notification = await Notification.findOne({
+        recipient: mentionedUser._id,
+        type: "mention",
+      });
+
+      expect(notification).not.toBeNull();
+      expect(notification.sender.toString()).toBe(user._id.toString());
+    });
+
+    // Self Mention 
+
+    it("should not create a mention notification when author mentions themselves", async () => {
+      await request(app)
+        .post("/api/posts")
+        .set("Cookie", cookie)
+        .send({
+          content: `Hello @${user.username}`,
+          intent: "share",
+        });
+
+      const notification = await Notification.findOne({
+        recipient: user._id,
+        type: "mention",
+      });
+
+      expect(notification).toBeNull();
+    });
+
+    //  Duplication Mention
+    it("should create only one mention notification for duplicate usernames", async () => {
+      const mentionedUser = await User.create({
+        name: "Alex",
+        surname: "Smith",
+        phoneNumber: "8888888888",
+        email: "alex2@test.com",
+        password: "Password123",
+        username: "alexsmith2",
+        bio: "Bio",
+        description: "Desc",
+      });
+
+      await request(app)
+        .post("/api/posts")
+        .set("Cookie", cookie)
+        .send({
+          content: `@alexsmith2 hello @alexsmith2`,
+          intent: "share",
+        });
+
+      const count = await Notification.countDocuments({
+        recipient: mentionedUser._id,
+        type: "mention",
+      });
+
+      expect(count).toBe(1);
+    });
+
   });
 });
 

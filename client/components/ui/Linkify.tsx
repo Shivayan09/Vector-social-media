@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 
 interface LinkifyProps {
     text: string;
@@ -7,6 +8,7 @@ interface LinkifyProps {
 const Linkify: React.FC<LinkifyProps> = ({ text }) => {
     // Regex to detect URLs
     const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const mentionRegex = /(@[a-zA-Z0-9_]+)/g;
 
     const parts = text.split(urlRegex);
 
@@ -45,7 +47,36 @@ const Linkify: React.FC<LinkifyProps> = ({ text }) => {
                         );
                     }
                 }
-                return <React.Fragment key={index}>{part}</React.Fragment>;
+                // Mention Hadling
+                const mentionParts = part.split(mentionRegex);
+                return (
+                <React.Fragment key={index}>
+                    {mentionParts.map((mentionPart, mentionIndex) => {
+                        if (mentionPart.startsWith("@")) {
+                            const username = mentionPart.slice(1);
+
+                            return (
+                                <Link
+                                    key={`${index}-${mentionIndex}`}
+                                    href={`/main/user/${username}`}
+                                    className="text-blue-500 hover:underline font-medium"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    {mentionPart}
+                                </Link>
+                            );
+                        }
+
+                        return (
+                            <React.Fragment
+                                key={`${index}-${mentionIndex}`}
+                            >
+                                {mentionPart}
+                            </React.Fragment>
+                        );
+                    })}
+                </React.Fragment>
+            );
             })}
         </>
     );
