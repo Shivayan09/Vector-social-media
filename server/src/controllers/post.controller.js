@@ -148,7 +148,7 @@ const getTopPosts = (daysAgo, maxResults) => async (req, res) => {
   "author.name": 1,
   "author.surname": 1,
   "author.avatar": 1,
-}
+},
       }
     ]);
 
