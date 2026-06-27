@@ -131,12 +131,25 @@ const getTopPosts = (daysAgo, maxResults) => async (req, res) => {
       { $unwind: "$author" },
       {
         $project: {
-          _id: 1, content: 1, image: 1, intent: 1, likes: 1,
-          commentsCount: 1, sharesCount: 1, likesCount: 1,
-          createdAt: 1, updatedAt: 1, poll: 1, isEdited: 1, editedAt: 1,
-          "author._id": 1, "author.username": 1, "author.name": 1,
-          "author.surname": 1, "author.avatar": 1,
-        },
+  _id: 1,
+  content: 1,
+  image: 1,
+  intent: 1,
+  likes: 1,
+  commentsCount: 1,
+  sharesCount: 1,
+  likesCount: 1,
+  createdAt: 1,
+  updatedAt: 1,
+  poll: 1,
+  isEdited: 1,
+  editedAt: 1,
+  "author._id": 1,
+  "author.username": 1,
+  "author.name": 1,
+  "author.surname": 1,
+  "author.avatar": 1,
+},
       }
     ]);
 
@@ -236,46 +249,46 @@ if (!intent || (!content && !req.file && !hasPoll)) {
 
 if (pollQuestion && pollOptions) {
     const parsedOptions =
-  typeof pollOptions === "string"
-    ? JSON.parse(pollOptions)
-    : pollOptions;
+      typeof pollOptions === "string"
+        ? JSON.parse(pollOptions)
+        : pollOptions;
 
-if (!Array.isArray(parsedOptions)) {
-  return res.status(400).json({
-    success: false,
-    message: "Poll options must be an array"
-  });
-}
+    if (!Array.isArray(parsedOptions)) {
+      return res.status(400).json({
+        success: false,
+        message: "Poll options must be an array"
+      });
+    }
 
-const cleanedOptions = parsedOptions
-  .map(option => option?.trim())
-  .filter(Boolean);
+    const cleanedOptions = parsedOptions
+      .map(option => option?.trim())
+      .filter(Boolean);
 
-if (cleanedOptions.length < 2) {
-  return res.status(400).json({
-    success: false,
-    message: "Poll requires at least 2 options"
-  });
-}
+    if (cleanedOptions.length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: "Poll requires at least 2 options"
+      });
+    }
 
-if (
-  pollExpiresAt &&
-  new Date(pollExpiresAt) <= new Date()
-) {
-  return res.status(400).json({
-    success: false,
-    message: "Poll expiry must be in the future"
-  });
-}
+    if (
+      pollExpiresAt &&
+      new Date(pollExpiresAt) <= new Date()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Poll expiry must be in the future"
+      });
+    }
 
-poll = {
-  question: pollQuestion.trim(),
-  options: cleanedOptions.map(option => ({
-    text: option,
-    voters: []
-  })),
-  expiresAt: pollExpiresAt || null
-};
+    poll = {
+      question: pollQuestion.trim(),
+      options: cleanedOptions.map(option => ({
+        text: option,
+        voters: []
+      })),
+      expiresAt: pollExpiresAt || null
+    };
 }
 
         const post = await Post.create({
