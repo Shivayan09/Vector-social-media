@@ -30,7 +30,19 @@ export default function ContactForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name.trim() || !formData.email.trim() || !formData.subject.trim() || !formData.message.trim()) {
+      const trimmedFormData = {
+      name: formData.name.trim(),
+      email: formData.email.trim(),
+      subject: formData.subject.trim(),
+      message: formData.message.trim(),
+    };
+
+    if (
+      !trimmedFormData.name ||
+      !trimmedFormData.email ||
+      !trimmedFormData.subject ||
+      !trimmedFormData.message
+    ) {
       toast.error("All fields are required");
       return;
     }
@@ -39,7 +51,7 @@ export default function ContactForm() {
       setLoading(true);
       const { data } = await axios.post(
         `${BACKEND_URL}/api/contact`,
-        formData
+        trimmedFormData
       );
 
       if (data.success) {
