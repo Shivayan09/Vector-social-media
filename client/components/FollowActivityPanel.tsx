@@ -30,13 +30,12 @@ export default function FollowActivityPanel({
         withCredentials: true,
       });
       setReceived(data);
-      setPendingFollowCount(data.length);
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to load received follow requests"));
     } finally {
       setLoadingReceived(false);
     }
-  }, [BACKEND_URL, setPendingFollowCount]);
+  }, [BACKEND_URL]);
 
   const fetchSent = useCallback(async () => {
     try {
@@ -57,12 +56,16 @@ export default function FollowActivityPanel({
     void fetchSent();
   }, [fetchReceived, fetchSent]);
 
+  useEffect(() => {
+    setPendingFollowCount(received.length);
+  }, [received.length, setPendingFollowCount]);
+
   const handleAccept = async (id: string) => {
     if (actionLoading[id]) return;
     setActionLoading((prev) => ({ ...prev, [id]: true }));
     try {
       await axios.put(`${BACKEND_URL}/api/users/${id}/accept-request`, {}, { withCredentials: true });
-      await fetchReceived();
+      setReceived((prev) => prev.filter((user) => user._id !== id));
       toast.success("Follow request accepted");
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to accept request"));
@@ -76,7 +79,7 @@ export default function FollowActivityPanel({
     setActionLoading((prev) => ({ ...prev, [id]: true }));
     try {
       await axios.put(`${BACKEND_URL}/api/users/${id}/reject-request`, {}, { withCredentials: true });
-      await fetchReceived();
+      setReceived((prev) => prev.filter((user) => user._id !== id));
       toast.success("Follow request rejected");
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to reject request"));
