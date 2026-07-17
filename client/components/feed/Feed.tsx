@@ -5,6 +5,7 @@ import axios from "axios";
 import PostList from "./PostList";
 import { useAppContext } from "@/context/AppContext";
 import CreatePostPopup from "./CreatePostPopup";
+import ScrollToTopButton from "./ScrollToTopButton";
 import SkeletonLoader from "../loaders/SkeletonLoader";
 import type { Post } from "@/lib/types";
 
@@ -166,6 +167,7 @@ export default function Feed() {
       )}
       <div ref={observerTarget} className="h-10" />
       <CreatePostPopup />
+      <ScrollToTopButton />
     </div>
   );
 }
