@@ -259,7 +259,9 @@ function EditableInput({
         value={value}
         disabled={!editable}
         onChange={onChange}
-        className={`w-full px-3 py-2 rounded-lg border ${editable ? "border-blue-500" : "bg-gray-100 cursor-not-allowed"
+        className={`w-full px-3 py-2 rounded-lg border bg-white text-gray-900 dark:bg-gray-800 dark:text-gray-100 ${editable
+            ? "border-blue-500"
+            : "border-gray-300 bg-gray-100 dark:border-gray-600 dark:bg-gray-700/60 dark:text-gray-300 cursor-not-allowed"
           }`}
       />
     </div>
@@ -290,7 +292,9 @@ function EditableTextarea({
         disabled={!editable}
         onChange={onChange}
         rows={3}
-        className={`w-full px-3 py-2 rounded-lg border ${editable ? "border-blue-500" : "bg-gray-100 cursor-not-allowed"
+        className={`w-full px-3 py-2 rounded-lg border bg-white text-gray-900 dark:bg-gray-800 dark:text-gray-100 ${editable
+            ? "border-blue-500"
+            : "border-gray-300 bg-gray-100 dark:border-gray-600 dark:bg-gray-700/60 dark:text-gray-300 cursor-not-allowed"
           }`}
       />
     </div>
