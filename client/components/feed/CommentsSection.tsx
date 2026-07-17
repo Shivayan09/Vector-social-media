@@ -22,7 +22,15 @@ username: string;
 avatar?: string;
 };
 
-export default function CommentsSection({ postId, postAuthorId }: { postId: string; postAuthorId?: string }) {
+export default function CommentsSection({
+    postId,
+    postAuthorId,
+    commentCount,
+}: {
+    postId: string;
+    postAuthorId?: string;
+    commentCount?: number;
+}) {
     const { userData } = useAppContext();
     const [comments, setComments] = useState<Comment[]>([]);
     const [text, setText] = useState("");
@@ -45,6 +53,7 @@ export default function CommentsSection({ postId, postAuthorId }: { postId: stri
     
     const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
     const [editContent, setEditContent] = useState("");
+    const [totalCommentCount, setTotalCommentCount] = useState(commentCount);
     const [editLoading, setEditLoading] = useState(false);
 
     const LIMIT = 20;
@@ -124,6 +133,7 @@ export default function CommentsSection({ postId, postAuthorId }: { postId: stri
                 setReplyingTo(null);
             } else {
                 setComments(prev => [data, ...prev]);
+                setTotalCommentCount(prev => (prev ?? comments.length) + 1);
             }
             setText("");
         } catch (error: unknown) {
@@ -158,6 +168,7 @@ export default function CommentsSection({ postId, postAuthorId }: { postId: stri
                 }));
             } else {
                 setComments(prev => prev.filter(c => c._id !== selectedComment._id));
+                setTotalCommentCount(prev => Math.max(0, (prev ?? comments.length) - 1));
             }
             toast.success("Comment deleted");
         } catch (error: unknown) {
@@ -372,7 +383,7 @@ export default function CommentsSection({ postId, postAuthorId }: { postId: stri
     return (
         <div className="mt-3 rounded-b-xl px-3 pt-4 pb-5 md:px-5">
             <p className="text-[0.8rem] font-semibold uppercase tracking-wide surface-text-muted mb-4">
-                Comments {comments.length > 0 && `· ${comments.length}`}
+                Comments {(totalCommentCount ?? comments.length) > 0 && `· ${totalCommentCount ?? comments.length}`}
             </p>
             {userData && (
                 <div className="flex flex-col gap-2 mb-5">
