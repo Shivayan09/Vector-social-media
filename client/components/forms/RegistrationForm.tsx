@@ -42,7 +42,7 @@ export default function RegistrationForm() {
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    if (/^\d*$/.test(value) && value.length <= 10) {
+    if (/^[\d+\s-]*$/.test(value)) {
       setPhone(value);
     }
   };
