@@ -1,13 +1,6 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
-import {
-  getMe,
-  login,
-  logout,
-  register,
-  forgotPassword,
-  resetPassword,
-} from "../controllers/auth.controller.js";
+import { getMe, login, logout, register, forgotPassword, resetPassword} from "../auth-service/auth.controller.js";
 import authMiddleware from "../middlewares/auth.middleware.js";
 import { googleAuth } from "../controllers/googleAuth.controller.js";
 

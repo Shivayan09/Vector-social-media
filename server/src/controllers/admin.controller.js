@@ -1,8 +1,8 @@
-import Post from "../models/post.model.js";
-import Comment from "../models/comment.model.js";
-import User from "../models/user.model.js";
-import Report from "../models/report.model.js";
-import asyncHandler from "../utils/asyncHandler.js";
+import Post from "../../../database/models/post.model.js";
+import Comment from "../../../database/models/comment.model.js";
+import User from "../../../database/models/user.model.js";
+import Report from "../../../database/models/report.model.js";
+import asyncHandler from "../../utils/asyncHandler.js";
 
 // @desc    Get all flagged posts and comments
 // @route   GET /api/admin/flagged
