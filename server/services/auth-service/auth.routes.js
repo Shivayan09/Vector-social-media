@@ -1,8 +1,8 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
-import { getMe, login, logout, register, forgotPassword, resetPassword} from "../auth-service/auth.controller.js";
-import authMiddleware from "../middlewares/auth.middleware.js";
-import { googleAuth } from "../controllers/googleAuth.controller.js";
+import { getMe, login, logout, register, forgotPassword, resetPassword} from "./controllers/auth.controller.js";
+import authMiddleware from "./middlewares/auth.middleware.js";
+import { googleAuth } from "./controllers/googleAuth.controller.js";
 
 const authRouter = express.Router();
 
@@ -24,12 +24,12 @@ const registerLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-//normal auth
 authRouter.post("/register", registerLimiter, register);
 authRouter.get("/me", authMiddleware, getMe);
 authRouter.post("/login", authLimiter, login);
 authRouter.post("/logout", logout);
 authRouter.post("/forgot-password", authLimiter, forgotPassword);
+
 const resetPasswordLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
@@ -41,8 +41,6 @@ const resetPasswordLimiter = rateLimit({
 });
 
 authRouter.post("/reset-password", resetPasswordLimiter, resetPassword);
-
-//google auth
 authRouter.post("/google", registerLimiter, googleAuth);
 
 export default authRouter;

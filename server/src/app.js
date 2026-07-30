@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
-import csrfProtection from "./middlewares/csrf.middleware.js";
+import csrfProtection from "../services/auth-service/csrf.middleware.js";
 import { apiLimiter } from "./middlewares/rateLimit.middleware.js";
 import authRouter from "./routes/auth.routes.js";
 import postRouter from "./routes/post.routes.js";

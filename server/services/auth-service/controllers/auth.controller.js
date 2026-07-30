@@ -1,12 +1,12 @@
-import User from "../../../database/models/user.model.js";
-import Follow from "../../../database/models/follow.model.js";
-import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "../../validators/user.validator.js";
+import User from "../../../../database/models/user.model.js";
+import Follow from "../../../../database/models/follow.model.js";
+import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "../../../validators/user.validator.js";
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import jwt from "jsonwebtoken";
-import { generateToken, getCookieOptions } from "../utils/generateToken.js";
-import asyncHandler from "../utils/asyncHandler.js";
+import { generateToken, getCookieOptions } from "../../../utils/generateToken.js";
+import asyncHandler from "../../../utils/asyncHandler.js";
 
 const sendResetEmail = async (email, token) => {
     const transporter = nodemailer.createTransport({
