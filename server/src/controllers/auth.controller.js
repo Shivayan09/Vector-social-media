@@ -11,7 +11,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 const sendResetEmail = async (email, token) => {
     const transporter = nodemailer.createTransport({
         host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-        port: parseInt(process.env.EMAIL_PORT) || 587,
+        port: parseInt(process.env.EMAIL_PORT, 10) || 587,
         auth: {
             user: process.env.EMAIL_USER || process.env.EMAIL,
             pass: process.env.EMAIL_PASS,
