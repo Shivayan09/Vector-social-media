@@ -42,7 +42,7 @@ export const getMessages = asyncHandler(async (req, res) => {
       }
     }
 
-    const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), MAX_LIMIT);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), MAX_LIMIT);
     const before = req.query.before;
 
     let beforeId;

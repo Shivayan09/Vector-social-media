@@ -176,13 +176,13 @@ export const getPostComments = asyncHandler(async (req, res) => {
     }
 
     const cursor = req.query.cursor || null;
-    const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), MAX_LIMIT);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), MAX_LIMIT);
 
     let excludeUserIds = [];
     if (req.user) {
         const currentUserId = req.user._id || req.user.id;
         const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
-        const blockerIds = blockers.map((u) => u._id);
+        const blockerIds = (blockers ?? []).map((u) => u._id);
         const blockedIds = req.user.blockedUsers || [];
         excludeUserIds = [...blockedIds, ...blockerIds];
     }
