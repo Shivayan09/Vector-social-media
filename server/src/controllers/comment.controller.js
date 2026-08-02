@@ -176,7 +176,7 @@ export const getPostComments = asyncHandler(async (req, res) => {
     }
 
     const cursor = req.query.cursor || null;
-    const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), MAX_LIMIT);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), MAX_LIMIT);
 
     let excludeUserIds = [];
     if (req.user) {
