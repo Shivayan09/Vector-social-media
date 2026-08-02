@@ -186,7 +186,7 @@ export const updateProfile = asyncHandler(async (req, res) => {
                     );
 
                     const notifications = await Notification.insertMany(
-                        pendingFollows.map(f => ({
+                        (pendingFollows ?? []).map(f => ({
                             recipient: f.follower,
                             sender: userId,
                             type: "follow_request_accepted",

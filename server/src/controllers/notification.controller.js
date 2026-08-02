@@ -8,7 +8,7 @@ export const getNotifications = asyncHandler(async (req, res) => {
         const limit = Math.min(parseInt(req.query.limit, 10) || 10, 50);
         const skip = (page - 1) * limit;
         const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
-        const blockerIds = blockers.map(u => u._id);
+        const blockerIds = (blockers ?? []).map(u => u._id);
         const blockedIds = req.user?.blockedUsers || [];
         const excludeIds = [...blockedIds, ...blockerIds];
         const filter = {

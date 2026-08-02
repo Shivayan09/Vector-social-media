@@ -148,7 +148,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
             );
         } else {
             setPosts(prev =>
-                prev.map(p =>
+                (prev ?? []).map(p =>
                     p._id === post._id
                         ? { ...p, likes: updatedLikes }
                         : p

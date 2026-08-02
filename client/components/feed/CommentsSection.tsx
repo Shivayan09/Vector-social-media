@@ -112,7 +112,7 @@ export default function CommentsSection({ postId, postAuthorId }: { postId: stri
             };
             const { data } = await axios.post(`${BACKEND_URL}/api/comments/${postId}`, payload, { withCredentials: true });
             if (replyingTo) {
-                setComments(prev => prev.map(c => {
+                setComments(prev => (prev ?? []).map(c => {
                     if (c._id === replyingTo._id) {
                         return {
                             ...c,
