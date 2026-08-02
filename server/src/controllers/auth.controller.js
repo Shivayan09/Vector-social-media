@@ -159,7 +159,7 @@ export const getMe = asyncHandler(async (req, res) => {
                 avatar: user.avatar,
                 isProfileComplete: user.isProfileComplete,
                 signupStep: user.signupStep,
-                followers: followers.map(f => f.follower.toString()),
+                followers: (followers ?? []).map(f => f.follower.toString()),
                 following: followings.map(f => f.following.toString()),
                 isPrivate: user.isPrivate,
                 followRequests: followRequests.map(f => f.follower.toString()),

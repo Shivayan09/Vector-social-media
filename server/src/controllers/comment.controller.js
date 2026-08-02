@@ -182,7 +182,7 @@ export const getPostComments = asyncHandler(async (req, res) => {
     if (req.user) {
         const currentUserId = req.user._id || req.user.id;
         const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
-        const blockerIds = blockers.map((u) => u._id);
+        const blockerIds = (blockers ?? []).map((u) => u._id);
         const blockedIds = req.user.blockedUsers || [];
         excludeUserIds = [...blockedIds, ...blockerIds];
     }

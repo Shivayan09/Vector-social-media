@@ -25,7 +25,7 @@ const buildBlockExclusion = async (reqUser) => {
     if (!reqUser) return { excludeUserIds: [], currentUserId: null };
     const currentUserId = reqUser._id || reqUser.id;
     const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
-    const blockerIds = blockers.map(u => u._id);
+    const blockerIds = (blockers ?? []).map(u => u._id);
     const blockedIds = reqUser.blockedUsers || [];
     const excludeUserIds = [...blockedIds, ...blockerIds];
     return { currentUserId, excludeUserIds };
