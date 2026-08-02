@@ -56,7 +56,7 @@ export const createReview = asyncHandler(async (req, res) => {
 
 export const getReviews = asyncHandler(async (req, res) => {
     const cursor = req.query.cursor;
-    const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), MAX_LIMIT);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), MAX_LIMIT);
     const target = req.query.target;
 
     let filter = {};
