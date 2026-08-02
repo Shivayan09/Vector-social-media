@@ -46,7 +46,7 @@ export const createConversation = asyncHandler(async (req, res) => {
         }
 
         const participantsKey = [senderId.toString(), receiverId.toString()]
-            .sort()
+            .sort((a, b) => a - b)
             .join(":");
 
         let convo = await Conversation.findOne({ participantsKey });

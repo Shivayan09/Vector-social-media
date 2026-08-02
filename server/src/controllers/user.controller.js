@@ -186,7 +186,7 @@ export const updateProfile = asyncHandler(async (req, res) => {
                     );
 
                     const notifications = await Notification.insertMany(
-                        pendingFollows.map(f => ({
+                        (pendingFollows ?? []).map(f => ({
                             recipient: f.follower,
                             sender: userId,
                             type: "follow_request_accepted",
@@ -590,7 +590,7 @@ export const getFollowers = asyncHandler(async (req, res) => {
         }
 
         const cursor = req.query.cursor || null;
-        const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), MAX_LIMIT);
+        const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), MAX_LIMIT);
 
         let filter = { following: req.params.id, status: "accepted" };
         if (cursor) {
@@ -649,7 +649,7 @@ export const getFollowing = asyncHandler(async (req, res) => {
         }
 
         const cursor = req.query.cursor || null;
-        const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), MAX_LIMIT);
+        const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), MAX_LIMIT);
 
         let filter = { follower: req.params.id, status: "accepted" };
         if (cursor) {

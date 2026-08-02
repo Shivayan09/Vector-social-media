@@ -4,11 +4,11 @@ import Follow from "../models/follow.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
 export const getNotifications = asyncHandler(async (req, res) => {
         const currentUserId = req.user?._id || req.user?.id;
-        const page = parseInt(req.query.page) || 1;
-        const limit = Math.min(parseInt(req.query.limit) || 10, 50);
+        const page = parseInt(req.query.page, 10) || 1;
+        const limit = Math.min(parseInt(req.query.limit, 10) || 10, 50);
         const skip = (page - 1) * limit;
         const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
-        const blockerIds = blockers.map(u => u._id);
+        const blockerIds = (blockers ?? []).map(u => u._id);
         const blockedIds = req.user?.blockedUsers || [];
         const excludeIds = [...blockedIds, ...blockerIds];
         const filter = {
