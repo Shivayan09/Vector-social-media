@@ -97,7 +97,7 @@ export default function PostCard({ post, setPost }: PostCardProps) {
     const imageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     function timeAgo(dateString: string) {
-        const now = new Date().getTime();
+        const now = Date.now();
         const past = new Date(dateString).getTime();
         const diff = Math.floor((now - past) / 1000);
         if (diff < 60) return `${diff}s ago`;

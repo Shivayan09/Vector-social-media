@@ -50,7 +50,7 @@ export default function CommentsSection({ postId, postAuthorId }: { postId: stri
     const LIMIT = 20;
 
     function timeAgo(dateString: string) {
-        const now = new Date().getTime();
+        const now = Date.now();
         const past = new Date(dateString).getTime();
         const diff = Math.floor((now - past) / 1000);
         if (diff < 60) return `${diff}s ago`;
