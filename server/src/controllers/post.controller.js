@@ -25,7 +25,7 @@ const buildBlockExclusion = async (reqUser) => {
     if (!reqUser) return { excludeUserIds: [], currentUserId: null };
     const currentUserId = reqUser._id || reqUser.id;
     const blockers = await User.find({ blockedUsers: currentUserId }).select("_id");
-    const blockerIds = blockers.map(u => u._id);
+    const blockerIds = (blockers ?? []).map(u => u._id);
     const blockedIds = reqUser.blockedUsers || [];
     const excludeUserIds = [...blockedIds, ...blockerIds];
     return { currentUserId, excludeUserIds };
@@ -335,7 +335,7 @@ poll = {
 
 export const getPosts = asyncHandler(async (req, res) => {
     const cursor = req.query.cursor;
-    const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), MAX_LIMIT);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), MAX_LIMIT);
 
         let filter = { isDeleted: { $ne: true } };
         if (req.user) {
@@ -372,7 +372,7 @@ export const searchPosts = asyncHandler(async (req, res) => {
 
     const q = req.query.q?.trim();
     const cursor = req.query.cursor;
-    const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), MAX_LIMIT);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), MAX_LIMIT);
 
     if (!q) {
         return res.status(200).json({ posts: [], limit, hasMore: false, nextCursor: null });
@@ -743,7 +743,7 @@ export const getPostsByUser = asyncHandler(async (req, res) => {
 
 
         const cursor = req.query.cursor;
-        const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), MAX_LIMIT);
+        const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), MAX_LIMIT);
 
         const likesPopulate = getLikesPopulate(excludeUserIds);
 
