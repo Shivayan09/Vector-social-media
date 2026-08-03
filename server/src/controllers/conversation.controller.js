@@ -395,3 +395,4 @@ export const deleteConversation = asyncHandler(async (req, res) => {
     });
 
 });
+.catch(err => console.error("Promise.all failed:", err));
