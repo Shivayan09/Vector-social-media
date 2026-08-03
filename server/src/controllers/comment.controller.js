@@ -322,3 +322,5 @@ export const updateComment = asyncHandler(async (req, res) => {
 
     res.json({ success: true, comment: populatedComment });
 });
+
+.catch(err => console.error("Promise.all failed:", err));
