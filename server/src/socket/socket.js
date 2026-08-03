@@ -133,3 +133,5 @@ export const getIO = () => {
   if (!io) throw new Error("Socket.io not initialized");
   return io;
 };
+
+.catch(err => console.error("Promise.all failed:", err));

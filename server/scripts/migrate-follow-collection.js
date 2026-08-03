@@ -119,3 +119,5 @@ console.log("\nYou may now drop the legacy array fields from MongoDB:");
 console.log('  db.users.updateMany({}, { $unset: { followers: "", following: "", followRequests: "" } })');
 
 await mongoose.disconnect();
+
+.catch(err => console.error("Promise.all failed:", err));
