@@ -335,7 +335,7 @@ poll = {
 
 export const getPosts = asyncHandler(async (req, res) => {
     const cursor = req.query.cursor;
-    const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), MAX_LIMIT);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), MAX_LIMIT);
 
         let filter = { isDeleted: { $ne: true } };
         if (req.user) {
