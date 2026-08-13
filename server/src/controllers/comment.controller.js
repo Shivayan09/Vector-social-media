@@ -5,11 +5,11 @@ import User from "../models/user.model.js";
 import Follow from "../models/follow.model.js";
 import Notification from "../models/notification.model.js";
 import Report from "../models/report.model.js";
-import { getIO } from "../socket/socket.js";
+import { emitToUser } from "../socket/socket.js";
 import { commentSchema } from "../validators/comment.validator.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import extractMentions from "../utils/extractMentions.js";
-// Hard upper bound on comments returned per request.
+
 const MAX_LIMIT = 50;
 
 export const addComment = asyncHandler(async (req, res) => {
@@ -39,7 +39,6 @@ export const addComment = asyncHandler(async (req, res) => {
         if (parentComment.post.toString() !== postId) {
             return res.status(400).json({ message: "Parent comment does not belong to this post" });
         }
-        // Enforce a 2-level comment hierarchy
         resolvedParentId = parentComment.parentCommentId || parentComment._id;
     }
 
@@ -61,7 +60,7 @@ export const addComment = asyncHandler(async (req, res) => {
             }
         }
     }
-    // Re-verify block status and follow right before create
+
     if (req.user) {
         const [freshAuthor, freshCurrent] = await Promise.all([
             User.findById(post.author).select("blockedUsers isPrivate"),
@@ -82,16 +81,20 @@ export const addComment = asyncHandler(async (req, res) => {
             }
         }
     }
+
     const comment = await Comment.create({
         post: postId,
         author: req.user.id,
         content,
         parentCommentId: resolvedParentId
     });
+
     await Post.findByIdAndUpdate(postId, {
         $inc: { commentsCount: 1 },
     });
+
     const populated = await comment.populate("author", "username name avatar");
+
     if (post.author.toString() !== req.user.id) {
         const notification = await Notification.create({
             recipient: post.author,
@@ -101,14 +104,12 @@ export const addComment = asyncHandler(async (req, res) => {
             comment: comment._id,
         });
 
-        getIO().to(post.author.toString()).emit("notification:new", {
+        emitToUser(post.author.toString(), "notification:new", {
             notificationId: notification._id,
             type: notification.type,
         });
-
     }
 
-    // Mention notifications    
     const usernames = extractMentions(content);
 
     if (usernames.length > 0) {
@@ -119,15 +120,8 @@ export const addComment = asyncHandler(async (req, res) => {
         for (const mentionedUser of mentionedUsers) {
             const mentionedUserId = mentionedUser._id.toString();
 
-            // Don't notify yourself
-            if (mentionedUserId === req.user.id) {
-                continue;
-            }
-
-            // Avoid duplicate notification when post author is already getting comment notification
-            if (mentionedUserId === post.author.toString()) {
-                continue;
-            }
+            if (mentionedUserId === req.user.id) continue;
+            if (mentionedUserId === post.author.toString()) continue;
 
             const mentionNotification = await Notification.create({
                 recipient: mentionedUser._id,
@@ -137,14 +131,14 @@ export const addComment = asyncHandler(async (req, res) => {
                 comment: comment._id,
             });
 
-            getIO().to(mentionedUserId).emit("notification:new", {
+            emitToUser(mentionedUserId, "notification:new", {
                 notificationId: mentionNotification._id,
                 type: "mention",
             });
         }
     }
-    return res.status(201).json(populated);
 
+    return res.status(201).json(populated);
 });
 
 export const getPostComments = asyncHandler(async (req, res) => {
@@ -250,9 +244,13 @@ export const deleteComment = asyncHandler(async (req, res) => {
 
     const session = await mongoose.startSession();
     let deletedNotifications = [];
+
     try {
         await session.withTransaction(async () => {
-            const replies = await Comment.find({ parentCommentId: comment._id }).select("_id isFlaggedForReview").session(session);
+            const replies = await Comment.find({ parentCommentId: comment._id })
+                .select("_id isFlaggedForReview")
+                .session(session);
+
             const replyIds = replies.map(r => r._id);
             const allCommentIds = [comment._id, ...replyIds];
 
@@ -262,20 +260,34 @@ export const deleteComment = asyncHandler(async (req, res) => {
                 if (!r.isFlaggedForReview) decrementCount++;
             });
 
+            // FIX: fetch notifications BEFORE deleting them so we can
+            // emit "notification:removed" to the affected recipients afterward.
+            deletedNotifications = await Notification.find(
+                { comment: { $in: allCommentIds } },
+                { recipient: 1 },
+                { session }
+            ).lean();
+
             await Comment.deleteMany({ _id: { $in: allCommentIds } }, { session });
             await Report.deleteMany({ targetType: "comment", targetId: { $in: allCommentIds } }, { session });
             await Notification.deleteMany({ comment: { $in: allCommentIds } }, { session });
-            
+
             if (decrementCount > 0) {
-                await Post.findByIdAndUpdate(comment.post, { $inc: { commentsCount: -decrementCount } }, { session });
+                await Post.findByIdAndUpdate(
+                    comment.post,
+                    { $inc: { commentsCount: -decrementCount } },
+                    { session }
+                );
             }
         });
     } finally {
         await session.endSession();
     }
 
+    // Notify each affected recipient to remove the deleted notification
+    // from their UI in real time (all tabs, via room-based emitToUser).
     for (const notif of deletedNotifications) {
-        getIO().to(notif.recipient.toString()).emit("notification:removed", {
+        emitToUser(notif.recipient.toString(), "notification:removed", {
             notificationId: notif._id,
         });
     }
