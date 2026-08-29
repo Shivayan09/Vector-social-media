@@ -38,15 +38,17 @@ export const registerSchema = z.object({
     .max(30, { message: "Username must not exceed 30 characters!" })
     .regex(/^[a-zA-Z0-9_-]+$/, { message: "Username can only contain letters, numbers, underscores, and hyphens!" }),
   bio: z
-    .string({ required_error: "Please enter a bio!" })
+    .string()
     .trim()
-    .min(1, { message: "Please enter a bio!" })
-    .max(30, { message: "Bio must not exceed 30 characters!" }),
+    .max(30, { message: "Bio must not exceed 30 characters!" })
+    .optional()
+    .default(""),
   description: z
-    .string({ required_error: "Please enter a description!" })
+    .string()
     .trim()
-    .min(1, { message: "Please enter a description!" })
-    .max(200, { message: "Description must not exceed 200 characters!" }),
+    .max(200, { message: "Description must not exceed 200 characters!" })
+    .optional()
+    .default(""),
   isPrivate: z.boolean().optional().default(false),
 });
 
