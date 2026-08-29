@@ -118,7 +118,11 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
           `${BACKEND_URL}/api/messages/${conversationId}/read-all`,
           {},
           { withCredentials: true }
-        ).catch((err) => console.error("Failed to mark incoming message as read:", err));
+        )
+        .then(() => {
+          window.dispatchEvent(new Event("messages:read"));
+        })
+        .catch((err) => console.error("Failed to mark incoming message as read:", err));
       }
     };
 
@@ -228,6 +232,7 @@ export default function ChatPage({ params }: { params: Promise<Params> }) {
             {},
             { withCredentials: true }
           );
+          window.dispatchEvent(new Event("messages:read"));
         } catch {
           // Silently handle error to not interrupt chat load
         }

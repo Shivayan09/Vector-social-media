@@ -81,17 +81,15 @@ export default function Sidebar() {
     const timeoutId = window.setTimeout(() => {
       void fetchUnreadCount();
     }, 0);
-    const interval = window.setInterval(() => {
-      void fetchUnreadCount();
-    }, 10000);
     const handleNotification = () => {
       void fetchUnreadCount();
     };
     socket.on("notification:new", handleNotification);
+    window.addEventListener("notifications:read", handleNotification);
     return () => {
       window.clearTimeout(timeoutId);
-      window.clearInterval(interval);
       socket.off("notification:new", handleNotification);
+      window.removeEventListener("notifications:read", handleNotification);
     };
   }, [fetchUnreadCount]);
 
@@ -106,22 +104,30 @@ export default function Sidebar() {
 
     void fetchAndUpdate();
 
-    const messageInterval = window.setInterval(() => {
-      if (isMounted) void fetchUnreadMessageCount();
-    }, 10000);
-
     const handleNotification = () => {
       if (isMounted) void fetchUnreadMessageCount();
     };
 
     socket.on("notification:new", handleNotification);
+    socket.on("conversation_read", handleNotification);
+    socket.on("conversation:deleted", handleNotification);
+    socket.on("conversation:participant_deleted", handleNotification);
+    window.addEventListener("messages:read", handleNotification);
 
     return () => {
       isMounted = false;
-      window.clearInterval(messageInterval);
       socket.off("notification:new", handleNotification);
+      socket.off("conversation_read", handleNotification);
+      socket.off("conversation:deleted", handleNotification);
+      socket.off("conversation:participant_deleted", handleNotification);
+      window.removeEventListener("messages:read", handleNotification);
     };
   }, [fetchUnreadMessageCount]);
+
+  useEffect(() => {
+    void fetchUnreadCount();
+    void fetchUnreadMessageCount();
+  }, [pathname, fetchUnreadCount, fetchUnreadMessageCount]);
 
   const isMain = pathname === "/main";
 
