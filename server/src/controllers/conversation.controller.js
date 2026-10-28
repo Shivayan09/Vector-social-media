@@ -317,36 +317,31 @@ export const getUserConversations = asyncHandler(async (req, res) => {
 
 });
 
-export const deleteConversation = asyncHandler(async (req, res) => {
-
-    const existingConvo = await Conversation.findOne({
-        _id: req.params.conversationId,
-        participants: req.user._id,
-    });
-
-    if (existingConvo) {
-        const otherParticipant = existingConvo.participants.find(
-            p => p.toString() !== req.user._id.toString()
-        );
-
-        if (otherParticipant) {
-            const otherUser = await User.findById(otherParticipant).select("blockedUsers");
-
-            const isBlocked =
-                req.user.blockedUsers?.some(
-                    id => id.toString() === otherParticipant.toString()
-                ) ||
-                otherUser?.blockedUsers?.some(
-                    id => id.toString() === req.user._id.toString()
-                );
-
-            if (isBlocked) {
-                return res.status(403).json({
-                    message: "Action forbidden due to block status"
-                });
-            }
-        }
+// Who may be told that the current user deleted a conversation: participants with no block in
+// either direction. Someone who blocked you should not learn about your activity, and you should
+// not signal someone you blocked. If the block status cannot be read, nobody is told, because the
+// deletion itself already succeeded and staying quiet is the safe failure.
+async function getUnblockedRecipients(currentUser, otherParticipants) {
+    try {
+        const others = await User.find({ _id: { $in: otherParticipants } }).select("blockedUsers");
+        const myId = currentUser._id.toString();
+        const iBlocked = new Set((currentUser.blockedUsers ?? []).map((id) => id.toString()));
+        return others
+            .filter((other) =>
+                !iBlocked.has(other._id.toString()) &&
+                !(other.blockedUsers ?? []).some((id) => id.toString() === myId)
+            )
+            .map((other) => other._id);
+    } catch {
+        return [];
     }
+}
+
+// Deleting a conversation only hides it from the current user's own list (soft delete), so it is
+// allowed whatever the block status is: a blocked user must still be able to clear their own
+// chat history. Block checks stay on createConversation and sendMessage, which contact the
+// other person.
+export const deleteConversation = asyncHandler(async (req, res) => {
 
     const convo = await Conversation.findOneAndUpdate(
         {
@@ -379,7 +374,9 @@ export const deleteConversation = asyncHandler(async (req, res) => {
         (pid) => pid.toString() !== req.user._id.toString()
     );
 
-    otherParticipants.forEach((pid) => {
+    const recipients = await getUnblockedRecipients(req.user, otherParticipants);
+
+    recipients.forEach((pid) => {
         getIO().to(pid.toString()).emit(
             "conversation:participant_deleted",
             {
