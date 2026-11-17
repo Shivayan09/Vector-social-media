@@ -372,7 +372,7 @@ export default function CommentsSection({ postId, postAuthorId }: { postId: stri
     return (
         <div className="mt-3 rounded-b-xl px-3 pt-4 pb-5 md:px-5">
             <p className="text-[0.8rem] font-semibold uppercase tracking-wide surface-text-muted mb-4">
-                Comments {comments.length > 0 && `· ${comments.length}`}
+                Comments {comments.length > 0 && `· ${comments.length}${hasMore ? '+' : ''}`}
             </p>
             {userData && (
                 <div className="flex flex-col gap-2 mb-5">
