@@ -808,8 +808,9 @@ export const getPostsByUser = asyncHandler(async (req, res) => {
             })
         );
 
-        const hasMore = posts.length === limit;
-        const nextCursor = hasMore ? posts[posts.length - 1]._id : null;
+        // Pinned posts are extra on the first page, so page state follows the normal posts only.
+        const hasMore = normalPosts.length === limit;
+        const nextCursor = hasMore ? normalPosts[normalPosts.length - 1]._id : null;
         const userBookmarkSet = req.user?.bookmarks
             ? new Set(req.user.bookmarks.map(String))
             : new Set();
