@@ -203,6 +203,7 @@ export const createPost = async (req, res) => {
         const hasPoll = pollQuestion && pollOptions;
 
 if (!intent || (!content && !req.file && !hasPoll)) {
+    await cleanupTempUpload(req.file);
     return res.status(400).json({
         success: false,
         message: "Post must contain content, image, or poll"
@@ -211,6 +212,7 @@ if (!intent || (!content && !req.file && !hasPoll)) {
 
         const validIntents = ["ask", "build", "share", "discuss", "reflect"];
         if (!validIntents.includes(intent)) {
+            await cleanupTempUpload(req.file);
             return res.status(400).json({
                 success: false,
                 message: "Invalid intent. Must be one of: ask, build, share, discuss, reflect"
@@ -448,6 +450,7 @@ export const updatePost = async (req, res) => {
         const { content = "", intent, removeImage } = req.body;
 
         if (!mongoose.Types.ObjectId.isValid(postId)) {
+            await cleanupTempUpload(req.file);
             return res.status(400).json({
                 success: false,
                 message: "Invalid post ID format",
@@ -456,6 +459,7 @@ export const updatePost = async (req, res) => {
 
         const validIntents = ["ask", "build", "share", "discuss", "reflect"];
         if (!intent || !validIntents.includes(intent)) {
+            await cleanupTempUpload(req.file);
             return res.status(400).json({
                 success: false,
                 message: "Invalid intent. Must be one of: ask, build, share, discuss, reflect",
@@ -464,6 +468,7 @@ export const updatePost = async (req, res) => {
 
         const post = await Post.findById(postId);
         if (!post) {
+            await cleanupTempUpload(req.file);
             return res.status(404).json({
                 success: false,
                 message: "Post not found",
@@ -471,6 +476,7 @@ export const updatePost = async (req, res) => {
         }
 
         if (post.author.toString() !== userId) {
+            await cleanupTempUpload(req.file);
             return res.status(403).json({
                 success: false,
                 message: "You are not allowed to edit this post",
@@ -481,6 +487,7 @@ export const updatePost = async (req, res) => {
         const shouldRemoveImage = removeImage === "true" || removeImage === true;
 
         if (normalizedContent.length > 1000) {
+            await cleanupTempUpload(req.file);
             return res.status(400).json({
                 success: false,
                 message: "Content must be 1000 characters or less",
@@ -488,6 +495,7 @@ export const updatePost = async (req, res) => {
         }
 
         if (!normalizedContent && !req.file && (shouldRemoveImage || !post.image)) {
+            await cleanupTempUpload(req.file);
             return res.status(400).json({
                 success: false,
                 message: "Either content or image is required",
