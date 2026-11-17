@@ -113,7 +113,6 @@ app.use(
   cors({
     origin: [
       "http://localhost:3000",
-      "http://vector-lac.vercel.app",
       "https://vector-lac.vercel.app",
       "https://vector-social-media.vercel.app",
       process.env.FRONTEND_URL,
