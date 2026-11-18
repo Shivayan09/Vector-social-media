@@ -851,5 +851,34 @@ describe('Post and Comment Flows', () => {
     });
 
   });
+
+describe('Poll Voting', () => {
+  it('should reject a decimal optionIndex', async () => {
+    post.poll = {
+      question: 'Which language do you prefer?',
+      options: [
+        { text: 'C++', voters: [] },
+        { text: 'Java', voters: [] }
+      ]
+    };
+
+    await post.save();
+
+    const res = await request(app)
+      .post(`/api/posts/${post._id}/vote`)
+      .set('Cookie', cookie)
+      .send({ optionIndex: 1.5 });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toBe('Invalid option');
+
+    const updatedPost = await Post.findById(post._id);
+
+    expect(updatedPost.poll.options[0].voters).toHaveLength(0);
+    expect(updatedPost.poll.options[1].voters).toHaveLength(0);
+  });
+});
+
 });
 
