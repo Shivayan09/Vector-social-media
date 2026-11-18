@@ -1186,6 +1186,7 @@ export const votePoll = asyncHandler(async (req, res) => {
   }
 
   if (
+    !Number.isInteger(optionIndex) ||
     optionIndex < 0 ||
     optionIndex >= post.poll.options.length
   ) {
