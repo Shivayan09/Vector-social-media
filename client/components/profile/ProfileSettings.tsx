@@ -181,8 +181,8 @@ export default function ProfileSettings() {
       return toast.warn("Phone number cannot be empty.");
     }
     const cleanedPhone = trimmedPhone.replace(/[\s-]/g, "");
-    if (!/^\d{10}$/.test(cleanedPhone)) {
-      return toast.warn("Please enter a valid 10-digit phone number.");
+    if (!/^\+?[1-9]\d{7,14}$/.test(cleanedPhone)) {
+      return toast.warn("Please enter a valid phone number.");
     }
 
     // ── Bio ──────────────────────────────────────────────────────────────────

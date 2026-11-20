@@ -80,13 +80,6 @@ const {
     isPrivate,
 } = validation.data;
 
-const cleanedPhone = phoneNumber.replace(/[\s-]/g, "");
-if (!/^\d{10}$/.test(cleanedPhone)) {
-    return res.status(400).json({
-        success: false,
-        message: "Please enter a valid 10 digit phone number!",
-    });
-}
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(409).json({
