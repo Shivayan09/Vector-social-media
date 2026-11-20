@@ -30,6 +30,7 @@ function mergeUniquePosts(
 export default function Feed() {
   const { posts, setPosts } = useAppContext();
   const [loading, setLoading] = useState(false);
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
   const hasMoreRef = useRef(true);
@@ -128,6 +129,16 @@ export default function Feed() {
     return () => observer.disconnect();
   }, [fetchPosts]);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollToTop(window.scrollY > 300);
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const displayPosts = useMemo(() => posts, [posts]);
 
   return (
@@ -165,6 +176,34 @@ export default function Feed() {
         </div>
       )}
       <div ref={observerTarget} className="h-10" />
+      {showScrollToTop && (
+        <button
+          type="button"
+          onClick={() =>
+            window.scrollTo({
+              top: 0,
+              behavior: "smooth",
+            })
+          }
+          className="fixed bottom-6 right-6 z-50 rounded-full bg-white/90 p-3 text-gray-700 shadow-lg transition hover:bg-white hover:text-blue-600 dark:bg-zinc-800/90 dark:text-gray-100 dark:hover:bg-zinc-800"
+          aria-label="Scroll to top"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 19V5" />
+            <path d="m5 12 7-7 7 7" />
+          </svg>
+        </button>
+      )}
       <CreatePostPopup />
     </div>
   );
