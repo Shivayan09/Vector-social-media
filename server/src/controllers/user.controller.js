@@ -740,10 +740,10 @@ export const getSuggestedUsers = asyncHandler(async (req, res) => {
 
 export const searchUsers = asyncHandler(async (req, res) => {
         const {
-            query,
-            cursor,
-            sortBy
-        } = req.query;
+    query,
+    cursor,
+    sortBy
+} = req.query;
 
         if (!query) {
             return res.json({
